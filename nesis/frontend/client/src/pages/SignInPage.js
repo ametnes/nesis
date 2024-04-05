@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import styled from 'styled-components';
-import { ReactComponent as Nesis } from '../images/NosisIcon.svg';
+import { ReactComponent as Nesis } from '../images/NesisIcon.svg';
 import { Formik, Form as FormikForm } from 'formik';
 import { TextField } from '../components/form';
 import { required } from '../components/form/validators';

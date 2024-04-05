@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { PersonCircle, QuestionSquare } from 'react-bootstrap-icons';
 import { useCurrentSession, useSignOut } from '../SessionContext';
 import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
-import { ReactComponent as Logo } from '../images/NosisIcon.svg';
+import { ReactComponent as Logo } from '../images/NesisIcon.svg';
 import styled from 'styled-components/macro';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
