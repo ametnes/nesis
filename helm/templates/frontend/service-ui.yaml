@@ -1,0 +1,22 @@
+{{- $fullName := include "nesis.fullname" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nesis.fullname" . }}-frontend
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+  {{- with .Values.frontend.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: http-frontend
+      protocol: TCP
+      name: http-frontend
+  selector:
+    {{- include "nesis.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend

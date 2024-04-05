@@ -1,0 +1,39 @@
+{{- $fullname:= include "nesis.fullname" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-rag
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag
+spec:
+  type: {{ .Values.rag.service.type }}
+  {{- if and .Values.rag.service.loadBalancerIP (eq .Values.rag.service.type "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.rag.service.loadBalancerIP  }}
+  {{- end }}
+  {{- if .Values.rag.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range .Values.rag.service.loadBalancerSourceRanges }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.rag.service.externalIPs }}
+  externalIPs:
+    {{- toYaml .Values.rag.service.externalIPs | nindent 4 }}
+  {{- end }}
+  {{- if .Values.rag.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.rag.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- if and .Values.rag.service.clusterIP (eq .Values.rag.service.type "ClusterIP") }}
+  clusterIP: {{ .Values.rag.service.clusterIP }}
+  {{- end }}
+  ports:
+  - name: http-rag
+    port: {{ .Values.rag.service.port }}
+    {{- if  .Values.rag.service.nodePort }}
+    nodePort: {{ .Values.rag.service.nodePort }}
+    {{- end }}
+    targetPort: http-rag
+  selector:
+    {{- include "nesis.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: rag

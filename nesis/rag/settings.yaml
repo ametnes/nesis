@@ -1,0 +1,38 @@
+# The default configuration file.
+# Syntax in `rag/settings/settings.py`
+server:
+  port: ${NESIS_RAG_SERVER_PORT:8080}
+
+data:
+  models_folder: ${NESIS_RAG_DATA_MODELS_FOLDER:local_data/models}
+  local_data_folder: local_data/rag
+
+llm:
+  mode: openai
+  # Should be matching the selected model
+  max_new_tokens: 512
+  context_window: 3900
+  tokenizer: mistralai/Mistral-7B-Instruct-v0.2
+
+embedding:
+  # Should be matching the value above in most cases
+  mode: ${NESIS_RAG_EMBEDDING_MODE:local}
+  ingest_mode: simple
+
+vectorstore:
+  database: pgvector
+
+pgvector:
+  url: ${NESIS_RAG_PGVECTOR_URL:postgresql://postgres:password@localhost:65432/nesis}
+  table: ${NESIS_RAG_EMBEDDING_TABLE:embeddings}
+  dimensions: ${NESIS_RAG_EMBEDDING_DIMENSIONS:1536}
+
+local:
+  prompt_style: "llama2"
+  llm_hf_repo_id: TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+  llm_hf_model_file: mistral-7b-instruct-v0.2.Q4_K_M.gguf
+  embedding_hf_model_name: BAAI/bge-small-en-v1.5
+
+openai:
+  api_key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_API_MODEL:gpt-3.5-turbo}

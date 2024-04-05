@@ -1,0 +1,15 @@
+{{- $fullname:= include "nesis.fullname" . }}
+{{- if .Values.rag.config }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-rag
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag
+data:
+{{- with .Values.config }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
