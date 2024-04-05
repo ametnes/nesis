@@ -3,33 +3,41 @@
   <img height="100" src="https://raw.githubusercontent.com/ametnes/nesis/main/nesis/frontend/client/src/images/NesisIcon.svg" alt="Nesis" title="Nesis">
 </p>
 
-![Frontend](https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg) ![API](https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg)  ![RAG](https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<p align="center">
+
+   ![Frontend](https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg) ![API](https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg)  ![RAG](https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+</p>
 
 ## Built with ❤️ by [**_Ametnes_**](https://cloud.ametnes.com/)
 
 ---
 # 👋 What is Nesis❓
 
-Enterprise ready knowledge discovery solution that empowers users to
-1. Interact with vast document repositories in a conversational AI style.
-2. Control access to the document repositories using Role Based Access Controls.
-3. Connects to vast number of repositories such as S3, Windows Shares, MinIO
-4. Can be deployed in your cloud or on-premises.
-
-
 ## Overview
-Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasource, collecting
+Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasources, collecting
 information and making it available in a conversation manner. Nesis leverages generative AI to aggregate information
-collected from documents in multiple formats such as pdf, docx, xlsx.
+collected from documents in multiple formats such as pdf, docx, xlsx into meaning human-readable compositions. Allowing you to;
+
+1. Converse with your document via a simple chat interface.
+2. Conveniently view comparisons between documents.
+3. Summarise large documents
 
 ## Main features
 Nesis is built to handle large amounts of data at scale. Enabling connectivity to multitudes of datasources, 
-Nesis is able to transform data in various formats into vector embeddings to be used by your LLM of choice.
+Nesis is able to transform data from various formats into vector embeddings to be used by your LLM of choice.
+
+Enterprise ready knowledge discovery solution that empowers users to
+1. 🗣Interact with vast document repositories in a conversational AI style.
+2. 🛂Role based access control access to the document repositories.
+3. 🗄Connects to vast number of repositories such as S3, Windows Shares, MinIO
+4. ☁ 🏢Can be deployed in your cloud or on-premises.
+5. 🔐User session management.
 
 ## Deployment
 Nesis is packaged with container technology and is able to run within any containerized orchestrated environment such as docker compose and kubernetes.
 
-## What does Nesis mean
+## What does Nesis mean?
 Nesis is derived from the greek noun gnosis which means knowledge.
 
 ## Getting started
