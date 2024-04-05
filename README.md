@@ -4,7 +4,10 @@
 </p>
 
 <p align="center">
-   ![Frontend](https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg) ![API](https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg)  ![RAG](https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+   <a href="https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg" alt="Test Frontend"/></a>
+   <a href="https://github.com/ametnes/nesis/actions/workflows/test_api.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg" alt="Test Frontend"/></a>
+   <a href="https://github.com/ametnes/nesis/actions/workflows/test_rag.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg" alt="Test Frontend"/></a>
+   <a href="./LICENSE" target="_blank"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"/></a>
 </p>
 
 ## Built with ❤️ by [**_Ametnes_**](https://cloud.ametnes.com/)
