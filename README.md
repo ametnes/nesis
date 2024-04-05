@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img height="100" src="https://github.com/ametnes/.github/raw/update-emojis/nesis/frontend/client/src/images/NosisIcon.svg" alt="Nesis" title="Nesis">
+  <img height="100" src="https://raw.githubusercontent.com/ametnes/nesis/main/nesis/frontend/client/src/images/NesisIcon.svg" alt="Nesis" title="Nesis">
 </p>
 
 ![Frontend](https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg) ![API](https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg)  ![RAG](https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
