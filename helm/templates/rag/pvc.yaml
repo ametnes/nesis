@@ -1,0 +1,27 @@
+{{- $fullName := include "nesis.fullname" . -}}
+{{- if and .Values.rag.persistence .Values.rag.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullName }}-rag
+{{- with .Values.rag.persistence.annotations  }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+  labels:
+{{ include "nesis.labels" . | indent 4 }}
+  app.kubernetes.io/component: rag
+spec:
+  accessModes:
+  {{- toYaml .Values.rag.persistence.accessModes | nindent 4 }}
+  {{- if .Values.rag.persistence.storageClass }}
+    {{- if eq "~" .Values.rag.persistence.storageClass }}
+  storageClassName: ""
+    {{- else }}
+  storageClassName: {{ .Values.rag.persistence.storageClass }}
+    {{- end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.rag.persistence.size }}
+{{- end }}

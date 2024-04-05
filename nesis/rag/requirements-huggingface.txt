@@ -1,0 +1,2 @@
+# Required for local embeddings model
+llama-index-embeddings-huggingface==0.1.3

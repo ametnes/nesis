@@ -1,0 +1,88 @@
+# Use this compose file to spin up services to support your local development of Nesis
+# docker-compose -f compose-dev.yml up
+
+version: '3'
+
+networks:
+  ametnes:
+    driver: overlay
+    attachable: true
+
+services:
+  memcached:
+    image: bitnami/memcached:1.6.19
+    ports:
+      - "11211:11211"
+    networks:
+      - ametnes
+  samba:
+    image: andyzhangx/samba:win-fix
+    command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
+    ports:
+      - '2445:445'
+    networks:
+      - ametnes
+    volumes:
+      - 'samba_data2:/smbshare'
+    environment:
+      - USERNAME=username
+      - PASSWORD=password
+  minio:
+      image: docker.io/bitnami/minio:2022
+      ports:
+        - '59000:9000'
+        - '59001:9001'
+      networks:
+        - ametnes
+      volumes:
+        - 'minio_data:/data'
+      environment:
+        - MINIO_ROOT_USER=your_username
+        - MINIO_ROOT_PASSWORD=your_password
+        - MINIO_DEFAULT_BUCKETS=documents
+  postgres16:
+    image: "ametnes/postgresql:16-debian-12"
+    ports:
+      - "65432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nesis
+    volumes:
+      - postgres16_data:/var/lib/postgresql/data
+    restart: on-failure
+    networks:
+      - ametnes
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    ports:
+      - 16333:6333
+      - 16334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    volumes:
+      - ./qdrant_data:/qdrant_data
+    networks:
+      - ametnes
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      # Default configuration for persist_directory in chromadb/config.py
+      # Currently it's located in "/chroma/chroma/"
+      - chroma-data:/chroma/chroma/
+    ports:
+      - 18000:8000
+    networks:
+      - ametnes
+volumes:
+  minio_data:
+  samba_data2:
+  postgres16_data:
+  qdrant_data:
+  chroma-data:

@@ -1,0 +1,65 @@
+{
+  "name": "nosis",
+  "version": "0.0.1",
+  "description": "Nesis",
+  "main": "main.js",
+  "scripts": {
+    "test:api": "mocha --recursive --timeout 5000 --reporter spec \"server/api/**/*spec.js\"",
+    "test:int": "mocha --recursive --timeout 15000 --reporter spec \"server/tests/**/*spec.js\"",
+    "test:coverage": "nyc mocha --recursive --timeout 5000 --reporter spec \"server/api/**/*spec.js\"",
+    "test:watch": "mocha --watch --recursive --timeout 5000 --reporter spec server/api/**/*spec.js",
+    "start:server": "node server/main.js",
+    "start:server:local": "set PROFILE=DEV && node server/main.js",
+    "start:client": "cd client && npm run start",
+    "format": "node_modules/.bin/prettier --write .",
+    "format:check": "node_modules/.bin/prettier --check ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@https://github.com/ametnes/nosis.git"
+  },
+  "author": "Nesis Contributors",
+  "license": "ISC",
+  "homepage": "https://https://github.com/ametnes/nosis#readme",
+  "bugs": {
+    "url": "https://https://github.com/ametnes/nosis/issues"
+  },
+  "dependencies": {
+    "app-root-path": "^3.1.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mindsdb-js-sdk": "^2.2.2",
+    "superagent": "^8.1.2",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
+    "prettier": "^3.0.3",
+    "sinon": "^17.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "shared-config"
+    ],
+    "rules": {
+      "eqeqeq": "off"
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
