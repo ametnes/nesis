@@ -5,7 +5,7 @@ server:
 
 data:
   models_folder: ${NESIS_RAG_DATA_MODELS_FOLDER:local_data/models}
-  local_data_folder: local_data/rag
+  local_data_folder: ${NESIS_RAG_DATA_LOCAL_DATA_FOLDER:local_data/rag}
 
 llm:
   mode: openai

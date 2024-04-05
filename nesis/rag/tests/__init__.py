@@ -61,7 +61,7 @@ config = {
         "db": "nesis",
     },
     "memcache": {
-        "hosts": [os.environ.get("NESIS_MEMCACHED_HOSTS", "127.0.0.1:11211")],
+        "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
         "session": {"expiry": 0},
         "cache": {
             "timeout_default": 300,

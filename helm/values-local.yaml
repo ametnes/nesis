@@ -1,11 +1,12 @@
 api:
   env:
-    - name: LOG_LEVEL
-      value: DEBUG
+    # - name: LOG_LEVEL
+    #   value: DEBUG
     - name: NESIS_ADMIN_EMAIL
       value: test@domain.com
     - name: NESIS_ADMIN_PASSWORD
       value: password
+
   ingress:
     enabled: true
 
@@ -15,7 +16,6 @@ frontend:
 
 rag:
   enabled: true
-
   podSecurityContext:
     fsGroup: 400
   securityContext:
@@ -24,43 +24,14 @@ rag:
 
   persistence:
     enabled: true
-    size: 30Gi
+    size: 10Gi
   
   ingress:
     enabled: true
 
   extraEnv:
-    - name: PYTORCH_MPS_HIGH_WATERMARK_RATIO
-      value: '0.0'
-    - name: HF_HUB_CACHE
-      value: /home/worker/app/local_data/models
-    - name: HF_HOME
-      value: /home/worker/app/local_data/models
     - name: OPENAI_API_KEY
       value: sk-
     # - name: OPENAI_API_BASE
     #   value: http://
   config: null
-
-postgresql:
-  enabled: true
-  primary:
-    initdb:
-      user: postgres
-      password: password
-      scripts:
-        createdb.sql: |-
-          CREATE DATABASE nesis;
-          CREATE DATABASE embeddings;
-    persistence:
-      enabled: true
-      size: 1Gi
-    resources:
-      limits:
-        memory: 256Mi
-        cpu: 250m
-  auth:
-    postgresPassword: password
-
-memcached:
-  enabled: true

@@ -31,15 +31,15 @@ spec:
       initContainers:
       - name: init
         image: busybox:1.28
-        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $OPTIMAI_APP_DB_HOST $OPTIMAI_APP_DB_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
+        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $NESIS_API_DATABASE_HOST $NESIS_API_DATABASE_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
         env:
         {{- if .Values.api.env }}
         {{- toYaml .Values.api.env | nindent 10 }}
         {{- end }}
         {{- if and .Values.postgresql .Values.postgresql.enabled }}
-          - name: OPTIMAI_APP_DB_HOST
+          - name: NESIS_API_DATABASE_HOST
             value: {{ $fullname }}-postgresql
-          - name: OPTIMAI_APP_DB_PORT
+          - name: NESIS_API_DATABASE_PORT
             value: "5432"
         {{- end }}
       containers:
@@ -99,7 +99,7 @@ spec:
               value: http://{{ $fullname }}-rag:8080
           {{- end }}
           {{- if and .Values.memcached .Values.memcached.enabled }}
-            - name: NESIS_MEMCACHED_HOSTS
+            - name: NESIS_MEMCACHE_HOSTS
               value: {{ $fullname }}-memcached
           {{- end }}
           {{- if .Values.api.env }}

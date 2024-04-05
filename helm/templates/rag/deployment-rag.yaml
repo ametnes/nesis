@@ -31,6 +31,20 @@ spec:
       serviceAccountName: {{ include "nesis.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.rag.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: init
+        image: busybox:1.28
+        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $NESIS_API_DATABASE_HOST $NESIS_API_DATABASE_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
+        env:
+        {{- if .Values.api.env }}
+        {{- toYaml .Values.api.env | nindent 10 }}
+        {{- end }}
+        {{- if and .Values.postgresql .Values.postgresql.enabled }}
+          - name: NESIS_API_DATABASE_HOST
+            value: {{ $fullname }}-postgresql
+          - name: NESIS_API_DATABASE_PORT
+            value: "5432"
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -66,7 +80,7 @@ spec:
       {{- if and .Values.rag.persistence .Values.rag.persistence.enabled }}
       - name: mdb-data
         persistentVolumeClaim:
-          claimName: {{ $fullname }}
+          claimName: {{ $fullname }}-rag
       {{- end }}
       {{- if .Values.rag.config }}
       - name: config

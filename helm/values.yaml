@@ -62,7 +62,7 @@ frontend:
   # If not configured, the probe is enabled using the following values
   livenessProbe:
     enabled: true
-    port: http
+    port: http-frontend
     initialDelaySeconds: 5
     # failureThreshold:
     # periodSeconds:
@@ -74,7 +74,7 @@ frontend:
   # If not configured, the probe is enabled using the following values
   readinessProbe:
     enabled: true
-    port: http
+    port: http-frontend
     initialDelaySeconds: 5
     # failureThreshold:
     # periodSeconds:
@@ -104,26 +104,13 @@ frontend:
     #    hosts:
     #      - chart-example.local
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # extraVolumeMounts:
-  #   - name: mage-fs
-  #     mountPath: /home/src
-
-  # extraVolumes:
-  #   - name: mage-fs
-  #     hostPath:
-  #       path: /path/to/mage_project
+  resources:
+    limits:
+      cpu: 256m
+      memory: 512Mi
+    requests:
+      cpu: 256m
+      memory: 512Mi
 
   # config: Default configuration for optim as environment variables. These get injected directly in the container.
   config: {}
@@ -168,7 +155,7 @@ api:
   # If not configured, the probe is enabled using the following values
   livenessProbe:
     enabled: true
-    port: http
+    port: http-api
     initialDelaySeconds: 5
     # failureThreshold:
     # periodSeconds:
@@ -180,7 +167,7 @@ api:
   # If not configured, the probe is enabled using the following values
   readinessProbe:
     enabled: true
-    port: http
+    port: http-api
     initialDelaySeconds: 5
     # failureThreshold:
     # periodSeconds:
@@ -210,26 +197,13 @@ api:
     #    hosts:
     #      - chart-example.local
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  # extraVolumeMounts:
-  #   - name: mage-fs
-  #     mountPath: /home/src
-
-  # extraVolumes:
-  #   - name: mage-fs
-  #     hostPath:
-  #       path: /path/to/mage_project
+  resources:
+    limits:
+      cpu: 512m
+      memory: 512Mi
+    requests:
+      cpu: 512m
+      memory: 512Mi
 
   # config: Default configuration for optim as environment variables. These get injected directly in the container.
   config: {}
@@ -259,6 +233,7 @@ rag:
     targetMemory: ""
 
   image:
+    repository: ametnes/nesis
     tag: "latest-rag"
     pullPolicy: Always
 
@@ -272,7 +247,7 @@ rag:
     enabled: true
     size: 10Gi
     storageClass: ~
-    path: /home/worker/app/local_data
+    path: /app/nesis/local_data
     accessModes:
       - ReadWriteOnce
 
@@ -286,25 +261,54 @@ rag:
     loadBalancerSourceRanges: []
     annotations:
 
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
 
   extraEnv:
     - name: PYTORCH_MPS_HIGH_WATERMARK_RATIO
       value: '0.0'
-    - name: PGPT_PROFILES
-      value: 'vllm'
-    - name: PGPT_UI_ENABLED
-      value: "false"
     - name: HF_HUB_CACHE
       value: /app/nesis/local_data/models
     - name: HF_HOME
       value: /app/nesis/local_data/models
-#    - name: OPENAI_API_KEY
-#      value:
+    - name: NESIS_RAG_DATA_MODELS_FOLDER
+      value: /app/nesis/local_data/models
   config: null
-
 
 postgresql:
   enabled: true
+  primary:
+    initdb:
+      user: postgres
+      password: password
+      scripts:
+        createdb.sql: |-
+          CREATE DATABASE nesis;
+          CREATE DATABASE embeddings;
+    persistence:
+      enabled: true
+      size: 1Gi
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 250m
+      requests:
+        memory: 256Mi
+        cpu: 250m
+  auth:
+    postgresPassword: password
 
 memcached:
   enabled: true
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 250m
+    requests:
+      memory: 256Mi
+      cpu: 250m
