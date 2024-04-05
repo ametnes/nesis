@@ -1,0 +1,30 @@
+{{- $fullname:= include "nesis.fullname" . }}
+{{- if and .Values.rag.autoscaling .Values.rag.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullname }}-rag
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rag
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "nesis.fullname" . }}-rag
+  minReplicas: {{ .Values.rag.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.rag.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.rag.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.rag.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.rag.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.rag.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

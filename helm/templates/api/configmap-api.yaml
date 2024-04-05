@@ -1,0 +1,11 @@
+{{ if .Values.api.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nesis.fullname" . }}-api
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+data:
+  {{ toYaml .Values.api.config | indent 2 }}
+{{ end }}

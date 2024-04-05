@@ -1,0 +1,33 @@
+name: Test Frontend
+
+on:
+  push:
+    paths:
+      - "nesis/frontend/client/**"
+      - "nesis/frontend/server/**"
+  pull_request:
+    paths:
+      - "nesis/frontend/client/**"
+      - "nesis/frontend/server/**"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Frontend
+    defaults:
+      run:
+        working-directory: ./nesis/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install frontend dependencies
+        run: npm install --legacy-peer-deps --prefix client --only dev
+      - name: Install server dependencies
+        run: npm install --legacy-peer-deps
+      - run: npm run format:check
+        name: Check formatting
+      - name: Test API
+        run: npm run test:api

@@ -1,0 +1,86 @@
+name: Package Nesis
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch'
+        required: true
+        default: main
+      tag:
+        description: 'Tag'
+        required: true
+        default: latest
+
+jobs:
+  package_api:
+    name: API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./nesis/api/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api
+
+  package_frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.dockerfile_branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push frontend Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./nesis/frontend/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend
+          build-args: |
+            PUBLIC_URL=/
+            PROFILE=PROD
+
+  package_rag:
+    name: RAG
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.dockerfile_branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push RAG docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          file: ./nesis/rag/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag

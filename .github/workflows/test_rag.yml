@@ -1,0 +1,70 @@
+name: Test Rag Engine
+
+on:
+  push:
+    paths:
+      - "nesis/rag/core/**"
+      - "nesis/rag/tests/**"
+      - "nesis/rag/core/requirements*"
+  pull_request:
+    paths:
+      - "nesis/rag/core/**"
+      - "nesis/rag/tests/**"
+      - "nesis/rag/core/requirements*"
+
+jobs:
+  linter:
+    name: Black formatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "./nesis/api/"
+          version: "24.3.0"
+
+  test:
+    runs-on: ubuntu-latest
+    name: Test RAG API
+    services:
+      postgres:
+        image: ametnes/postgresql:16-debian-12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: nesis
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd "pg_isready -h localhost -U $$POSTGRES_USER"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      memcached:
+        image: bitnami/memcached:1.6.19
+        ports:
+          - 11211:11211
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-test.txt -r nesis/rag/requirements-huggingface.txt
+      - name: Run unit tests
+        env:
+          NESIS_MEMCACHE_HOSTS: localhost:11211
+          NESIS_RAG_PGVECTOR_URL: postgresql://postgres:password@localhost:5432/nesis
+          NESIS_RAG_EMBEDDING_MODE: local
+          OPENAI_API_KEY: sk_some_key
+        run: |
+          pytest nesis/rag/tests/

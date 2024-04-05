@@ -1,0 +1,12 @@
+{{- $fullname:= include "nesis.fullname" . }}
+{{ if .Values.frontend.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nesis.fullname" . }}-frontend
+  labels:
+    {{- include "nesis.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+data:
+  {{ toYaml .Values.frontend.config | indent 2 }}
+{{ end }}

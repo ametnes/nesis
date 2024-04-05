@@ -1,0 +1,86 @@
+{
+  "name": "ametnes-optimal",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.3",
+    "@mui/material": "^5.15.3",
+    "axios": "^1.5.1",
+    "babel-plugin-named-exports-order": "^0.0.2",
+    "babel-plugin-styled-components": "^2.1.4",
+    "bootstrap": "^5.3.2",
+    "date-fns": "^2.30.0",
+    "formik": "^2.4.5",
+    "highcharts": "^11.1.0",
+    "highcharts-react-official": "^3.2.1",
+    "lodash.shuffle": "^4.2.0",
+    "query-string": "^8.1.0",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.9.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.11.0",
+    "react-modal": "^3.16.1",
+    "react-router-dom": "^5.1.2",
+    "react-scripts": "5.0.1",
+    "react-select": "^5.7.7",
+    "styled-components": "^6.0.8",
+    "react-bootstrap-icons": "^1.0.1-alpha3",
+    "superagent": "^8.1.2",
+    "uuid": "^9.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^7.4.6",
+    "@storybook/addon-interactions": "^7.4.6",
+    "@storybook/addon-links": "^7.4.6",
+    "@storybook/addon-onboarding": "^1.0.8",
+    "@storybook/blocks": "^7.4.6",
+    "@storybook/preset-create-react-app": "^7.4.6",
+    "@storybook/react": "^7.4.6",
+    "@storybook/react-webpack5": "^7.4.6",
+    "@storybook/testing-library": "^0.2.2",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "eslint-plugin-storybook": "^0.6.14",
+    "prop-types": "^15.8.1",
+    "storybook": "^7.4.6",
+    "webpack": "^5.88.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "build:prod": "GENERATE_SOURCEMAP=false react-scripts build",
+    "test:ci": "react-scripts test --env=jest-environment-jsdom-sixteen && exit $?",
+    "test": "react-scripts test --watchAll=false --env=jest-environment-jsdom-sixteen",
+    "eject": "react-scripts eject",
+    "lint": "eslint src",
+    "storybook": "start-storybook -p 6006 -s public",
+    "build-storybook": "build-storybook -s public"
+  },
+  "proxy": "http://localhost:8000",
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "coveragePathIgnorePatterns": [
+      "node_modules",
+      "<rootDir>/src/index.js"
+    ]
+  }
+}
