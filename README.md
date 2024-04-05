@@ -38,6 +38,7 @@ Enterprise ready knowledge discovery solution that empowers users to
 ## Getting started
 To get started with Nesis
 
+### Deploy with Docker Compose
 1. Obtain your **OPENAI_API_KEY** and update the compose.yml file entry.
 2. Start all services locally with the provided docker compose file.
 
@@ -45,10 +46,10 @@ To get started with Nesis
    docker-compose -f compose.yml up
    ```
 
-2. Then connect to your instance via http://localhost:58000 and login with email/password = some.email@domain.com/password
-3. Connect to your minio instance via http://localhost:59001/ and login username/password = your_username/your_password
-4. Upload some document in your minio `documents` bucket
-5. Back in your Nesis page, register the minio datasource with
+2. Then connect to your instance via http://localhost:58000 and login with `email/password` = `some.email@domain.com/password`
+3. Connect to your minio instance via http://localhost:59001/ and login with `username/password` = `your_username/your_password`
+4. Upload some documents into your minio `documents` bucket.
+5. Back on your Nesis page, register the minio datasource with
    1. Navigate to **Settings** -> **Datasource** -> **Add**
    2. Enter the details;
    
@@ -60,8 +61,11 @@ To get started with Nesis
       8. Click **Create**
 9. After about 5 minutes, the background process will start indexing documents and then you should be able to query your documents.
 
-## Deployment
-Nesis is packaged with container technology and is able to run within any containerized orchestrated environment such as docker compose and kubernetes.
+### Deploy with Kubernetes
+To deploy Nesis into your kubernetes cluster, run
+```commandline
+helm upgrade --install my-nesis-instance helm -f helm/values-local.yaml
+```
 
 ## What does Nesis mean?
 Nesis is derived from the greek noun gnosis which means knowledge.
