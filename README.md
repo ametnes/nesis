@@ -4,9 +4,7 @@
 </p>
 
 <p align="center">
-
    ![Frontend](https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg) ![API](https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg)  ![RAG](https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
 </p>
 
 ## Built with ❤️ by [**_Ametnes_**](https://cloud.ametnes.com/)
