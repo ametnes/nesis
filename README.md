@@ -67,6 +67,7 @@ To deploy Nesis into your kubernetes cluster, run
 ```commandline
 helm upgrade --install my-nesis-instance helm -f helm/values-local.yaml
 ```
+All possible values configuration is documented in the helm [README.md](./helm/README.md) file
 
 ## What does Nesis mean?
 Nesis is derived from the greek noun gnosis which means knowledge.
