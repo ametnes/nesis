@@ -87,6 +87,5 @@ export { Client };
 // local
 export const API_PREFIX = `/api`;
 //deployment
-// export const API_PREFIX = `/optim/api`;
 const client = new Client(API_PREFIX);
 export default client;

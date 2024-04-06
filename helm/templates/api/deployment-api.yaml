@@ -22,9 +22,16 @@ spec:
         {{- include "nesis.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: api
     spec:
-      {{- with .Values.api.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else if .Values.api.imagePullSecrets }}
+      imagePullSecrets:
+      {{- with .Values.api.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
@@ -111,16 +118,25 @@ spec:
           {{if .Values.api.extraVolumeMounts }}
             {{- toYaml .Values.api.extraVolumeMounts | nindent 12 }}
           {{- end }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
+      {{- with .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.api.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       affinity:
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      tolerations:
+      {{- with .Values.api.tolerations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:

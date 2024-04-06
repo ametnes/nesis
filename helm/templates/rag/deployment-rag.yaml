@@ -24,9 +24,16 @@ spec:
         {{- include "nesis.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: rag
     spec:
-      {{- with .Values.rag.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else if .Values.rag.imagePullSecrets }}
+      imagePullSecrets:
+      {{- with .Values.rag.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       serviceAccountName: {{ include "nesis.serviceAccountName" . }}
       securityContext:
@@ -91,15 +98,24 @@ spec:
         configMap:
           name: {{ $fullname }}
       {{- end }}
-      {{- with .Values.rag.nodeSelector }}
       nodeSelector:
+      {{- with .Values.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.rag.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+      {{- with .Values.affinity }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.rag.affinity }}
-      affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.rag.tolerations }}
       tolerations:
+      {{- with .Values.rag.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
