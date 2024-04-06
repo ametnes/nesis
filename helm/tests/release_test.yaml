@@ -1,0 +1,159 @@
+suite: Release
+#templates:
+#  - api/deployment-api.yaml
+#  - api/service-api.yaml
+#  - rag/deployment-rag.yaml
+#  - rag/service-rag.yaml
+#  - frontend/deployment-frontend.yaml
+#  - frontend/service-frontend.yaml
+release:
+  name: my-release
+
+tests:
+  # API
+  - it: should set api deployment release name
+    template: api/deployment-api.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-api
+
+  - it: should set api service release name
+    template: api/service-api.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-api
+
+  - it: should set hpa release name
+    template: api/hpa-api.yaml
+    set:
+      api:
+        autoscaling:
+          enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-api
+
+  - it: should set configmap release name
+    template: api/configmap-api.yaml
+    set:
+      api:
+        config:
+          key: value
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-api
+
+  # RAG
+  - it: should set rag deployment release name
+    template: rag/deployment-rag.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-rag
+
+  - it: should set rag service release name
+    template: rag/service-rag.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-rag
+
+  - it: should set hpa release name
+    template: rag/hpa-rag.yaml
+    set:
+      rag:
+        autoscaling:
+          enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-rag
+
+  - it: should set configmap release name
+    template: rag/configmap-rag.yaml
+    set:
+      rag:
+        config:
+          key: value
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-rag
+
+  # Frontend
+  - it: should set frontend deployment release name
+    template: frontend/deployment-frontend.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-frontend
+
+  - it: should set frontend service release name
+    template: frontend/service-frontend.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-frontend
+
+  - it: should set hpa release name
+    template: frontend/hpa-frontend.yaml
+    set:
+      frontend:
+        autoscaling:
+          enabled: true
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-frontend
+
+  - it: should set configmap release name
+    template: frontend/configmap-frontend.yaml
+    set:
+      frontend:
+        config:
+          key: value
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-frontend
+
+  - it: should set ingress release name
+    template: frontend/ingress-frontend.yaml
+    set:
+      frontend:
+        ingress:
+          enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: my-release-nesis-frontend

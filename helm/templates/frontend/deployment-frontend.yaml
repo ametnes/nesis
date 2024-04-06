@@ -22,9 +22,16 @@ spec:
         {{- include "nesis.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: frontend
     spec:
-      {{- with .Values.frontend.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else if .Values.frontend.imagePullSecrets }}
+      imagePullSecrets:
+      {{- with .Values.frontend.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.frontend.podSecurityContext | nindent 8 }}
@@ -69,7 +76,7 @@ spec:
           envFrom:
             {{- if .Values.frontend.config }}
             - configMapRef:
-                name: {{ include "nesis.fullname" . }}-env
+                name: {{ include "nesis.fullname" . }}-frontend
             {{- end }}
             {{- if .Values.frontend.existingSecret }}
             - secretRef:
@@ -77,7 +84,7 @@ spec:
             {{- end }}
           env:
             - name: API_URL
-              value: http://{{ $fullname }}-api:{{ .Values.api.service.port }}
+              value: http://{{ $fullname }}-api:{{ .Values.frontend.service.port }}
           {{- if .Values.frontend.env }}
             {{- toYaml .Values.frontend.env | nindent 12 }}
           {{- else if .Values.frontend.extraEnvs }}
@@ -87,16 +94,25 @@ spec:
           {{if .Values.frontend.extraVolumeMounts }}
             {{- toYaml .Values.frontend.extraVolumeMounts | nindent 12 }}
           {{- end }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
+      {{- with .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.frontend.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       affinity:
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.frontend.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      tolerations:
+      {{- with .Values.frontend.tolerations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:

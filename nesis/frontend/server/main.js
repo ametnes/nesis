@@ -25,7 +25,6 @@ async function init() {
   // Serve the static files from the React app
   // const home = process.env.APP_HOME || __dirname + '../';
   // logger.info(`Running server from ${home}`);
-  // app.use('/optim', express.static(path.join(home, '/client')));
   // app.use(express.static(path.join(home, '/static-client')));
 
   const API = {

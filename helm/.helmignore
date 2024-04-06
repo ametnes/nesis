@@ -21,6 +21,4 @@
 .idea/
 *.tmproj
 .vscode/
-# frontend/
-# api/
-# rag/
+tests

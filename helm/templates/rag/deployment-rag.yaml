@@ -24,13 +24,34 @@ spec:
         {{- include "nesis.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: rag
     spec:
-      {{- with .Values.rag.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else if .Values.rag.imagePullSecrets }}
+      imagePullSecrets:
+      {{- with .Values.rag.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       serviceAccountName: {{ include "nesis.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.rag.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: init
+        image: busybox:1.28
+        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $NESIS_API_DATABASE_HOST $NESIS_API_DATABASE_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
+        env:
+        {{- if .Values.rag.env }}
+        {{- toYaml .Values.rag.env | nindent 10 }}
+        {{- end }}
+        {{- if and .Values.postgresql .Values.postgresql.enabled }}
+          - name: NESIS_API_DATABASE_HOST
+            value: {{ $fullname }}-postgresql
+          - name: NESIS_API_DATABASE_PORT
+            value: "5432"
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -48,6 +69,10 @@ spec:
           {{- toYaml .Values.rag.extraEnv | nindent 12 }}
           {{- end }}
           envFrom:
+            {{- if .Values.rag.config }}
+            - configMapRef:
+                name: {{ include "nesis.fullname" . }}-rag
+            {{- end }}
             {{- if .Values.rag.existingSecret }}
             - secretRef:
                 name: {{ .Values.rag.existingSecret }}
@@ -59,29 +84,38 @@ spec:
           {{- end }}
           {{- if .Values.rag.config }}
           - name: config
-            mountPath: /home/worker/app/config/
+            mountPath: {{ .Values.rag.persistence.path }}/config/
             readOnly: true
           {{- end }}
       volumes:
       {{- if and .Values.rag.persistence .Values.rag.persistence.enabled }}
       - name: mdb-data
         persistentVolumeClaim:
-          claimName: {{ $fullname }}
+          claimName: {{ $fullname }}-rag
       {{- end }}
       {{- if .Values.rag.config }}
       - name: config
         configMap:
           name: {{ $fullname }}
       {{- end }}
-      {{- with .Values.rag.nodeSelector }}
       nodeSelector:
+      {{- with .Values.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.rag.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+      {{- with .Values.affinity }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.rag.affinity }}
-      affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.rag.tolerations }}
       tolerations:
+      {{- with .Values.rag.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}

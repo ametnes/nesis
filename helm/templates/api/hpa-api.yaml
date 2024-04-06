@@ -2,7 +2,7 @@
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "nesis.fullname" . }}
+  name: {{ include "nesis.fullname" . }}-api
   labels:
     {{- include "nesis.labels" . | nindent 4 }}
 spec:

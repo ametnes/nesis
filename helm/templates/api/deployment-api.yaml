@@ -22,24 +22,31 @@ spec:
         {{- include "nesis.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: api
     spec:
-      {{- with .Values.api.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- else if .Values.api.imagePullSecrets }}
+      imagePullSecrets:
+      {{- with .Values.api.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
       initContainers:
       - name: init
         image: busybox:1.28
-        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $OPTIMAI_APP_DB_HOST $OPTIMAI_APP_DB_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
+        command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $NESIS_API_DATABASE_HOST $NESIS_API_DATABASE_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
         env:
         {{- if .Values.api.env }}
         {{- toYaml .Values.api.env | nindent 10 }}
         {{- end }}
         {{- if and .Values.postgresql .Values.postgresql.enabled }}
-          - name: OPTIMAI_APP_DB_HOST
+          - name: NESIS_API_DATABASE_HOST
             value: {{ $fullname }}-postgresql
-          - name: OPTIMAI_APP_DB_PORT
+          - name: NESIS_API_DATABASE_PORT
             value: "5432"
         {{- end }}
       containers:
@@ -83,7 +90,7 @@ spec:
           envFrom:
             {{- if .Values.api.config }}
             - configMapRef:
-                name: {{ include "nesis.fullname" . }}-env
+                name: {{ include "nesis.fullname" . }}-api
             {{- end }}
             {{- if .Values.api.existingSecret }}
             - secretRef:
@@ -99,7 +106,7 @@ spec:
               value: http://{{ $fullname }}-rag:8080
           {{- end }}
           {{- if and .Values.memcached .Values.memcached.enabled }}
-            - name: NESIS_MEMCACHED_HOSTS
+            - name: NESIS_MEMCACHE_HOSTS
               value: {{ $fullname }}-memcached
           {{- end }}
           {{- if .Values.api.env }}
@@ -111,16 +118,25 @@ spec:
           {{if .Values.api.extraVolumeMounts }}
             {{- toYaml .Values.api.extraVolumeMounts | nindent 12 }}
           {{- end }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
+      {{- with .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.api.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       affinity:
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      tolerations:
+      {{- with .Values.api.tolerations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
