@@ -69,7 +69,7 @@ spec:
           envFrom:
             {{- if .Values.frontend.config }}
             - configMapRef:
-                name: {{ include "nesis.fullname" . }}-env
+                name: {{ include "nesis.fullname" . }}-frontend
             {{- end }}
             {{- if .Values.frontend.existingSecret }}
             - secretRef:

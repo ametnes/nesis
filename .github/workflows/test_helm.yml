@@ -12,8 +12,9 @@ env:
   HELM_VERSION: 3.6.3
 
 jobs:
-  release:
+  test:
     runs-on: ubuntu-latest
+    name: Test Helm Charts
     steps:
       - name: Checkout
         uses: actions/checkout@v2

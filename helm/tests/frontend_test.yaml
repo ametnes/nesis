@@ -1,0 +1,106 @@
+suite: API Deployment
+templates:
+  - frontend/deployment-frontend.yaml
+  - frontend/service-frontend.yaml
+set:
+  fullnameOverride: nesis
+
+release:
+  name: my-release
+
+tests:
+  # Deployment
+  - it: should set default values
+    template: frontend/deployment-frontend.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: nesis-frontend
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ametnes/nesis:latest-frontend
+      - equal:
+          path: spec.replicas
+          value: 1
+
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/component: frontend
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/component: frontend
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+
+  - it: should set overrides
+    template: frontend/deployment-frontend.yaml
+    set:
+      frontend:
+        image:
+          repository: someregistry/somerepo
+          tag: latest
+          pullPolicy: IfNoAvailable
+        replicaCount: 2
+        imagePullSecrets:
+          - name: secret1-name
+          - name: secret2-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: someregistry/somerepo:latest
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNoAvailable
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret1-name
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret2-name
+      - equal:
+          path: spec.replicas
+          value: 2
+
+
+
+  - it: should set config
+    template: frontend/deployment-frontend.yaml
+    set:
+      fullnameOverride: nesis
+      frontend:
+        config:
+          some-key: some-value
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].configMapRef.name
+          value: nesis-frontend
+
+  # Service
+  - it: should set default values
+    template: frontend/service-frontend.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: nesis-frontend
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+      - isSubset:
+          path: spec.selector
+          content:
+            app.kubernetes.io/component: frontend
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+

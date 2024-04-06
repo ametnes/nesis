@@ -1,0 +1,126 @@
+suite: API Deployment
+templates:
+  - rag/deployment-rag.yaml
+  - rag/service-rag.yaml
+set:
+  fullnameOverride: nesis
+
+release:
+  name: my-release
+
+tests:
+  # Deployment
+  - it: should set default values
+    template: rag/deployment-rag.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: nesis-rag
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ametnes/nesis:latest-rag
+      - equal:
+          path: spec.replicas
+          value: 1
+
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/component: rag
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/component: rag
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+
+  - it: should set overrides
+    template: rag/deployment-rag.yaml
+    set:
+      rag:
+        image:
+          repository: someregistry/somerepo
+          tag: latest
+          pullPolicy: IfNoAvailable
+        replicaCount: 2
+        imagePullSecrets:
+          - name: secret1-name
+          - name: secret2-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: someregistry/somerepo:latest
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNoAvailable
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret1-name
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: secret2-name
+      - equal:
+          path: spec.replicas
+          value: 2
+
+
+
+  - it: should set config
+    template: rag/deployment-rag.yaml
+    set:
+      fullnameOverride: nesis
+      rag:
+        config:
+          some-key: some-value
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].configMapRef.name
+          value: nesis-rag
+
+
+  - it: should set secret
+    template: rag/deployment-rag.yaml
+    set:
+      fullnameOverride: nesis
+      rag:
+        existingSecret: some-secret-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].secretRef.name
+          value: some-secret-name
+
+  - it: should not set secret
+    template: rag/deployment-rag.yaml
+    set:
+      fullnameOverride: nesis
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom[0].secretRef.name
+
+  # Service
+  - it: should set default values
+    template: rag/service-rag.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: nesis-rag
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+      - isSubset:
+          path: spec.selector
+          content:
+            app.kubernetes.io/component: rag
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: nesis
+
