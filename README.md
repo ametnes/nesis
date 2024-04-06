@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img height="100" src="https://raw.githubusercontent.com/ametnes/nesis/main/nesis/frontend/client/src/images/NesisIcon.svg" alt="Nesis" title="Nesis">
+  <img height="100" src="https://raw.githubusercontent.com/ametnes/nesis/main/nesis/frontend/client/src/images/Nesis.svg" alt="Nesis" title="Nesis">
 </p>
 
 <p align="center">
@@ -10,8 +10,6 @@
    <a href="https://github.com/ametnes/nesis/actions/workflows/test_helm.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_helm.yml/badge.svg" alt="Test Helm"/></a>
    <a href="./LICENSE" target="_blank"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"/></a>
 </p>
-
-## Built with ❤️ by [**_Ametnes_**](https://cloud.ametnes.com/)
 
 ---
 # 👋 What is Nesis❓
@@ -24,6 +22,9 @@ collected from different documents in multiple formats such as pdf, docx, xlsx a
 1. Converse with your document via a simple chat interface.
 2. Conveniently view comparisons between documents.
 3. Summarise large documents.
+
+## 📜 Documentation
+Read the Nesis documentation [here](./docs/README.md)
 
 ## 🎰 Main features
 Nesis is built to handle large amounts of data at scale. Enabling connectivity to multitudes of datasources, 
@@ -81,7 +82,7 @@ If enough users support to have the feature, we will be sure to include it in ou
 🌟 If you think that this project has been useful to you, please give it a star.
 
 ## Origins
-This project has been inspired by other projects. Here is a list of some of them;
+This project has been inspired by other open-source projects. Here is a list of some of them;
 
 - [privateGPT](https://github.com/imartinez/privateGPT)
 - [localGPT](https://github.com/PromtEngineer/localGPT)
