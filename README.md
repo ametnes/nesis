@@ -18,8 +18,8 @@
 
 ## Overview
 Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasources, collecting
-information and making it available in a conversation manner. Nesis leverages generative AI to aggregate information
-collected from documents in multiple formats such as pdf, docx, xlsx into meaning human-readable compositions. Allowing you to;
+information and making it available in a conversation manner. Nesis leverages generative AI to aggregate document chunks
+collected from different documents in multiple formats such as pdf, docx, xlsx and turn them into meaning human-readable compositions. Allowing you to;
 
 1. Converse with your document via a simple chat interface.
 2. Conveniently view comparisons between documents.
@@ -31,8 +31,8 @@ Nesis is able to transform data from various formats into vector embeddings to b
 
 Enterprise ready knowledge discovery solution that empowers users to
 1. 🗣Interact with vast document repositories in a conversational AI style.
-2. 🛂Role based access control access to the document repositories.
-3. 🗄Connect to vast number of repositories such as S3, Windows Shares, MinIO
+2. 🛂Role based access control access to the document repositories, ensuring that the enterprise user only views information they are allowed to.
+3. 🗄Connect to vast number of repositories. Currently, S3, Windows Shares, MinIO
 4. ☁ 🏢Can be deployed in your cloud or on-premises.
 5. 🔐User session management.
 
