@@ -7,6 +7,7 @@
    <a href="https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_frontend.yml/badge.svg" alt="Test Frontend"/></a>
    <a href="https://github.com/ametnes/nesis/actions/workflows/test_api.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_api.yml/badge.svg" alt="Test Frontend"/></a>
    <a href="https://github.com/ametnes/nesis/actions/workflows/test_rag.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_rag.yml/badge.svg" alt="Test Frontend"/></a>
+   <a href="https://github.com/ametnes/nesis/actions/workflows/test_helm.yml" target="_blank"><img src="https://github.com/ametnes/nesis/actions/workflows/test_helm.yml/badge.svg" alt="Test Helm"/></a>
    <a href="./LICENSE" target="_blank"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"/></a>
 </p>
 
