@@ -7,13 +7,6 @@ api:
     - name: NESIS_ADMIN_PASSWORD
       value: password
 
-  ingress:
-    enabled: true
-
-frontend:
-  ingress:
-    enabled: true
-
 rag:
   enabled: true
   podSecurityContext:
@@ -26,9 +19,6 @@ rag:
     enabled: true
     size: 10Gi
   
-  ingress:
-    enabled: true
-
   extraEnv:
     - name: OPENAI_API_KEY
       value: sk-

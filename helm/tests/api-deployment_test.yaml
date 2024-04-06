@@ -1,0 +1,45 @@
+suite: API Deployment
+templates:
+  - api/deployment-api.yaml
+tests:
+  - it: should set default values
+    set:
+      fullnameOverride: nesis
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: nesis-api
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ametnes/nesis:latest-api
+
+  - it: should set image
+    set:
+      fullnameOverride: nesis
+      api:
+        image:
+          repository: someregistry/somerepo
+          tag: latest
+          pullPolicy: IfNoAvailable
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: someregistry/somerepo:latest
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNoAvailable
+
+
+  - it: should set config
+    set:
+      fullnameOverride: nesis
+      api:
+        config:
+          some-key: some-value
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom[0].configMapRef.name
+          value: nesis-api
+

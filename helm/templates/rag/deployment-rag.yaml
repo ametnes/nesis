@@ -36,8 +36,8 @@ spec:
         image: busybox:1.28
         command: ['sh', '-c', 'echo -e "Checking for the availability of database"; while ! nc -z $NESIS_API_DATABASE_HOST $NESIS_API_DATABASE_PORT; do sleep 1; printf "-"; done; echo -e " >>  server has started";']
         env:
-        {{- if .Values.api.env }}
-        {{- toYaml .Values.api.env | nindent 10 }}
+        {{- if .Values.rag.env }}
+        {{- toYaml .Values.rag.env | nindent 10 }}
         {{- end }}
         {{- if and .Values.postgresql .Values.postgresql.enabled }}
           - name: NESIS_API_DATABASE_HOST
@@ -73,7 +73,7 @@ spec:
           {{- end }}
           {{- if .Values.rag.config }}
           - name: config
-            mountPath: /home/worker/app/config/
+            mountPath: {{ .Values.rag.persistence.path }}/config/
             readOnly: true
           {{- end }}
       volumes:

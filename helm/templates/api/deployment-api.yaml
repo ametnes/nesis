@@ -83,7 +83,7 @@ spec:
           envFrom:
             {{- if .Values.api.config }}
             - configMapRef:
-                name: {{ include "nesis.fullname" . }}-env
+                name: {{ include "nesis.fullname" . }}-api
             {{- end }}
             {{- if .Values.api.existingSecret }}
             - secretRef:
