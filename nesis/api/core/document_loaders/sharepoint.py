@@ -25,14 +25,14 @@ _sharepoint_context = None
 
 def fetch_documents(**kwargs) -> None:
     try:
-        pgpt_endpoint = kwargs["pgpt_endpoint"]
+        rag_endpoint = kwargs["rag_endpoint"]
         connection = kwargs["connection"]
 
         _sync_sharepoint_documents(
-            **kwargs, connection=connection, pgpt_endpoint=pgpt_endpoint
+            **kwargs, connection=connection, rag_endpoint=rag_endpoint
         )
         _unsync_sharepoint_documents(
-            **kwargs, connection=connection, pgpt_endpoint=pgpt_endpoint
+            **kwargs, connection=connection, rag_endpoint=rag_endpoint
         )
     except:
         _LOG.exception("Error fetching sharepoint documents")
@@ -55,13 +55,13 @@ def _sync_sharepoint_documents(**kwargs):
 
         file_locations = doc_store_connection.get("file_locations")
 
-        pgpt_endpoint = kwargs["pgpt_endpoint"]
+        rag_endpoint = kwargs["rag_endpoint"]
 
         location_names = file_locations.split(",")
         work_dir = f"/tmp/{uuid.uuid4()}"
         pathlib.Path(work_dir).mkdir(parents=True)
 
-        _LOG.info(f"Initializing sharepoint syncing to endpoint {pgpt_endpoint}")
+        _LOG.info(f"Initializing sharepoint syncing to endpoint {rag_endpoint}")
 
         # Sharepoint stores documents in different ways, in folders and there is a concept of lists Most document
         # libraries are stores as lists, thus we can safely assume that the locations provided in the settings are
@@ -108,7 +108,7 @@ def _sync_sharepoint_documents(**kwargs):
                             for document_data in rag_metadata.get("data") or []:
                                 try:
                                     http_client.delete(
-                                        url=f"{pgpt_endpoint}/v1/ingest/{document_data['doc_id']}"
+                                        url=f"{rag_endpoint}/v1/ingest/{document_data['doc_id']}"
                                     )
                                 except:
                                     _LOG.warn(
@@ -123,7 +123,7 @@ def _sync_sharepoint_documents(**kwargs):
                                 )
 
                     response = http_client.upload(
-                        url=f"{pgpt_endpoint}/v1/ingest",
+                        url=f"{rag_endpoint}/v1/ingest",
                         filepath=downloaded_file_name,
                         field="file",
                     )
@@ -155,7 +155,7 @@ def _sync_sharepoint_documents(**kwargs):
                         f"Error when getting and ingesting file {file.name} - {ex}"
                     )
 
-        _LOG.info(f"Completed syncing to endpoint {pgpt_endpoint}")
+        _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
 
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)
@@ -165,7 +165,7 @@ def _unsync_sharepoint_documents(**kwargs):
     global _sharepoint_context
     http_client: http.HttpClient = kwargs["http_client"]
     doc_store_connection = kwargs["connection"]
-    pgpt_endpoint = kwargs["pgpt_endpoint"]
+    rag_endpoint = kwargs["rag_endpoint"]
 
     try:
         site_url = doc_store_connection.get("site_url")
@@ -193,7 +193,7 @@ def _unsync_sharepoint_documents(**kwargs):
                     for document_data in rag_metadata.get("data") or []:
                         try:
                             http_client.delete(
-                                url=f"{pgpt_endpoint}/v1/ingest/{document_data['doc_id']}"
+                                url=f"{rag_endpoint}/v1/ingest/{document_data['doc_id']}"
                             )
                         except:
                             _LOG.warn(
