@@ -81,7 +81,7 @@ def _connect_samba_server(connection):
         raise
 
 
-def _sync_samba_documents(connection, pgpt_endpoint, http_client, metadata):
+def _sync_samba_documents(connection, rag_endpoint, http_client, metadata):
 
     username = connection["user"]
     password = connection["password"]
@@ -110,7 +110,7 @@ def _sync_samba_documents(connection, pgpt_endpoint, http_client, metadata):
             continue
         try:
             _process_file(
-                connection, file_share, work_dir, http_client, pgpt_endpoint, metadata
+                connection, file_share, work_dir, http_client, rag_endpoint, metadata
             )
         except:
             _LOG.warn(
@@ -119,12 +119,12 @@ def _sync_samba_documents(connection, pgpt_endpoint, http_client, metadata):
             )
     _LOG.info(
         f"Completed syncing files from samba server {endpoint} "
-        f"to endpoint {pgpt_endpoint}"
+        f"to endpoint {rag_endpoint}"
     )
 
 
 def _process_file(
-    connection, file_share, work_dir, http_client, pgpt_endpoint, metadata
+    connection, file_share, work_dir, http_client, rag_endpoint, metadata
 ):
     username = connection["user"]
     password = connection["password"]
@@ -138,7 +138,7 @@ def _process_file(
             )
             for dir_file in dir_files:
                 _process_file(
-                    connection, dir_file, work_dir, http_client, pgpt_endpoint, metadata
+                    connection, dir_file, work_dir, http_client, rag_endpoint, metadata
                 )
         return
 
@@ -195,7 +195,7 @@ def _process_file(
                     try:
                         util.un_ingest_file(
                             http_client=http_client,
-                            endpoint=pgpt_endpoint,
+                            endpoint=rag_endpoint,
                             doc_id=document_data["doc_id"],
                         )
                     except:
@@ -223,7 +223,7 @@ def _process_file(
         try:
             response = ingest_file(
                 http_client=http_client,
-                endpoint=pgpt_endpoint,
+                endpoint=rag_endpoint,
                 metadata=_metadata,
                 file_path=file_path,
             )
@@ -247,11 +247,11 @@ def _process_file(
             exc_info=True,
         )
     _LOG.info(
-        f"Completed syncing files from shared_file share {file_share.path} to endpoint {pgpt_endpoint}"
+        f"Completed syncing files from shared_file share {file_share.path} to endpoint {rag_endpoint}"
     )
 
 
-def _unsync_samba_documents(connection, pgpt_endpoint, http_client):
+def _unsync_samba_documents(connection, rag_endpoint, http_client):
     try:
         username = connection["user"]
         password = connection["password"]
@@ -276,7 +276,7 @@ def _unsync_samba_documents(connection, pgpt_endpoint, http_client):
                     try:
                         util.un_ingest_file(
                             http_client=http_client,
-                            endpoint=pgpt_endpoint,
+                            endpoint=rag_endpoint,
                             doc_id=document_data["doc_id"],
                         )
                     except:
@@ -285,6 +285,6 @@ def _unsync_samba_documents(connection, pgpt_endpoint, http_client):
                         )
                 _LOG.info(f"Deleting document {document.filename}")
                 delete_document(document_id=document.id)
-        _LOG.info(f"Completed unsyncing files from endpoint {pgpt_endpoint}")
+        _LOG.info(f"Completed unsyncing files from endpoint {rag_endpoint}")
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)

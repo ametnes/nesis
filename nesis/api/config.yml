@@ -2,7 +2,7 @@ database:
     url: postgresql://postgres:password@localhost:65432/nesis
     debug: false
 
-llm:
+rag:
     endpoint: "http://localhost:9080"
 
 service:

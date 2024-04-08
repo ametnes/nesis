@@ -17,7 +17,7 @@ _LOG = logging.getLogger(__name__)
 def fetch_documents(**kwargs) -> None:
     try:
         config = kwargs["config"] or {}
-        pgpt_endpoint = (config.get("llm") or {}).get("endpoint")
+        rag_endpoint = (config.get("rag") or {}).get("endpoint")
         http_client = kwargs["http_client"]
         datasource_list: List[Datasource] = DatasourceService.get_datasources()
 
@@ -25,7 +25,7 @@ def fetch_documents(**kwargs) -> None:
             if datasource.type == DatasourceType.MINIO:
                 s3_documents.fetch_documents(
                     connection=datasource.connection,
-                    pgpt_endpoint=pgpt_endpoint,
+                    rag_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata={"datasource": datasource.name},
                 )
@@ -33,20 +33,20 @@ def fetch_documents(**kwargs) -> None:
                 sharepoint_documents.fetch_documents(
                     **kwargs,
                     connection=datasource.connection,
-                    pgpt_endpoint=pgpt_endpoint,
+                    rag_endpoint=rag_endpoint,
                     metadata={"datasource": datasource.name}
                 )
             if datasource.type == DatasourceType.GOOGLE_DRIVE:
                 google_drive.fetch_documents(
                     connection=datasource.connection,
-                    llm_endpoint=pgpt_endpoint,
+                    llm_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata={"datasource": datasource.name},
                 )
             if datasource.type == DatasourceType.WINDOWS_SHARE:
                 samba.fetch_documents(
                     connection=datasource.connection,
-                    llm_endpoint=pgpt_endpoint,
+                    llm_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata={"datasource": datasource.name},
                 )

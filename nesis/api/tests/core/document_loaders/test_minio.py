@@ -83,7 +83,7 @@ def test_fetch_documents(minio_instance: mock.MagicMock, session: Session) -> No
         connection=data["connection"],
         http_client=http_client,
         metadata={"datasource": "documents"},
-        pgpt_endpoint="http://localhost:8080",
+        rag_endpoint="http://localhost:8080",
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]

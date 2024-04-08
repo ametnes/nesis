@@ -27,7 +27,7 @@ _LOG = logging.getLogger(__name__)
 
 def fetch_documents(
     connection: Dict[str, str],
-    pgpt_endpoint: str,
+    rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: Dict[str, Any],
 ) -> None:
@@ -47,14 +47,14 @@ def fetch_documents(
         _sync_s3_documents(
             client=_minio_client,
             connection=connection,
-            pgpt_endpoint=pgpt_endpoint,
+            rag_endpoint=rag_endpoint,
             http_client=http_client,
             metadata=metadata,
         )
         _unsync_s3_documents(
             client=_minio_client,
             connection=connection,
-            pgpt_endpoint=pgpt_endpoint,
+            rag_endpoint=rag_endpoint,
             http_client=http_client,
         )
     except:
@@ -64,7 +64,7 @@ def fetch_documents(
 def _sync_s3_documents(
     client: Minio,
     connection: dict,
-    pgpt_endpoint: str,
+    rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: dict,
 ) -> None:
@@ -81,7 +81,7 @@ def _sync_s3_documents(
         work_dir = f"/tmp/{uuid.uuid4()}"
         pathlib.Path(work_dir).mkdir(parents=True)
 
-        _LOG.info(f"Initializing syncing to endpoint {pgpt_endpoint}")
+        _LOG.info(f"Initializing syncing to endpoint {rag_endpoint}")
 
         for bucket_name in bucket_names_parts:
             try:
@@ -93,7 +93,7 @@ def _sync_s3_documents(
                 _sync_document(
                     client=client,
                     connection=connection,
-                    pgpt_endpoint=pgpt_endpoint,
+                    rag_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata=metadata,
                     bucket_name=bucket_name,
@@ -101,7 +101,7 @@ def _sync_s3_documents(
                     work_dir=work_dir,
                 )
 
-        _LOG.info(f"Completed syncing to endpoint {pgpt_endpoint}")
+        _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
 
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)
@@ -110,7 +110,7 @@ def _sync_s3_documents(
 def _sync_document(
     client: Minio,
     connection: dict,
-    pgpt_endpoint: str,
+    rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: dict,
     bucket_name: str,
@@ -155,7 +155,7 @@ def _sync_document(
                     try:
                         util.un_ingest_file(
                             http_client=http_client,
-                            endpoint=pgpt_endpoint,
+                            endpoint=rag_endpoint,
                             doc_id=document_data["doc_id"],
                         )
                     except:
@@ -173,7 +173,7 @@ def _sync_document(
         try:
             response = ingest_file(
                 http_client=http_client,
-                endpoint=pgpt_endpoint,
+                endpoint=rag_endpoint,
                 metadata=_metadata,
                 file_path=file_path,
             )
@@ -206,7 +206,7 @@ def _sync_document(
 
 
 def _unsync_s3_documents(
-    client: Minio, connection: dict, pgpt_endpoint: str, http_client: http.HttpClient
+    client: Minio, connection: dict, rag_endpoint: str, http_client: http.HttpClient
 ) -> None:
 
     try:
@@ -226,7 +226,7 @@ def _unsync_s3_documents(
                     for document_data in rag_metadata.get("data") or []:
                         try:
                             http_client.delete(
-                                url=f"{pgpt_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
+                                url=f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
                             )
                         except:
                             _LOG.warn(
