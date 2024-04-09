@@ -11,6 +11,7 @@ from nesis.api.core.models.entities import (
     Datasource,
     DatasourceStatus,
     DatasourceType,
+    RoleAction,
 )
 
 from nesis.api.core.services.util import (
@@ -38,6 +39,13 @@ class DatasourceService(ServiceOperation):
         self._LOG.info("Initializing service...")
 
     def _authorized(self, session, token, action):
+        """
+        Check if request is authenticated
+        :param session:
+        :param token:
+        :param action:
+        :return:
+        """
         services.authorized(
             session_service=self._session_service,
             session=session,
@@ -47,6 +55,11 @@ class DatasourceService(ServiceOperation):
         )
 
     def create(self, **kwargs):
+        """
+        Create a datasource. Must have Datasource.CREATE permissions
+        :param kwargs:
+        :return:
+        """
         datasource = kwargs["datasource"]
 
         session = DBSession()
@@ -106,12 +119,23 @@ class DatasourceService(ServiceOperation):
                 session=session, token=kwargs.get("token"), action=Action.READ
             )
 
+            # Get datasources this user is authorized to access
+            authorized_datasources: list[RoleAction] = services.authorized_resources(
+                self._session_service,
+                session=session,
+                token=kwargs.get("token"),
+                action=Action.READ,
+                resource_type=objects.ResourceType.DATASOURCES,
+            )
+
+            datasources = {ds.resource for ds in authorized_datasources}
+
             session.expire_on_commit = False
             query = session.query(Datasource)
             if datasource_id:
                 query = query.filter(Datasource.uuid == datasource_id)
 
-            return query.all()
+            return [ds for ds in query.all() if ds.name in datasources]
         except Exception as e:
             self._LOG.exception(f"Error when fetching settings")
             raise
