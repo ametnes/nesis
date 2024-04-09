@@ -81,6 +81,7 @@ class HttpClient(object):
         """
         Upload a file. We ensure that it is threadsafe by locking on the self_link using Memcached's add method.
         """
+
         self_link = metadata.get("self_link")
         if self_link is None:
             raise ValueError("Invalid metadata. Must have a self_link link")
@@ -104,8 +105,12 @@ class HttpClient(object):
                     response = req.post(
                         url=url, files=multipart_form_data, params=data, data=data
                     )
-                    if response.status_code != 200:
-                        response.raise_for_status()
+                    match response.status_code:
+                        case 400:
+                            # ValueError is fitting since 400 means the data we sent is invalid
+                            raise ValueError(response.text)
+                        case 500 | 501 | 503:
+                            response.raise_for_status()
                     return response.text
             finally:
                 self._cache.delete(self_link)

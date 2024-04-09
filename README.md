@@ -14,14 +14,19 @@
 ---
 # 👋 What is Nesis❓
 
-## Overview
 Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasources, collecting
+
+
 information and making it available in a conversation manner. Nesis leverages generative AI to aggregate document chunks
 collected from different documents in multiple formats such as pdf, docx, xlsx and turn them into meaning human-readable compositions. Allowing you to;
 
 1. Converse with your document via a simple chat interface.
 2. Conveniently view comparisons between documents.
 3. Summarise large documents.
+
+# Demo
+
+https://github.com/ametnes/nesis/assets/86433807/64ea0ad8-5615-4111-8f6e-61ce7d3ad2fc
 
 ## 📜 Documentation
 Read the Nesis documentation [here](./docs/README.md)

@@ -177,11 +177,14 @@ def _sync_document(
                 metadata=_metadata,
                 file_path=file_path,
             )
+            response_json = json.loads(response)
+
+        except ValueError:
+            _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
+            response_json = {}
         except UserWarning:
             _LOG.debug(f"File {file_path} is already processing")
             return
-
-        response_json = json.loads(response)
 
         save_document(
             document_id=item.etag,
