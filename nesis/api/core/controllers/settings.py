@@ -31,7 +31,7 @@ def operate_settings(module):
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
     except util.PermissionException:
-        return jsonify(error_message("Forbidden resource")), 403
+        return jsonify(error_message("Forbidden action on resource")), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -66,7 +66,7 @@ def operate_setting(module, setting_id):
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
     except util.PermissionException:
-        return jsonify(error_message("Forbidden resource")), 403
+        return jsonify(error_message("Forbidden action on resource")), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
