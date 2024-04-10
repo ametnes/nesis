@@ -22,11 +22,6 @@ async function init() {
   logger.info(`Running server from ${home}`);
   app.use(express.static(home));
 
-  // Serve the static files from the React app
-  // const home = process.env.APP_HOME || __dirname + '../';
-  // logger.info(`Running server from ${home}`);
-  // app.use(express.static(path.join(home, '/static-client')));
-
   const API = {
     SESSIONS: '/api/sessions',
     SETTINGS: '/api/:module/settings',

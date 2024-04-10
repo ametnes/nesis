@@ -63,10 +63,14 @@ const post = (requests, profile) => async (request, response) => {
     });
   }
 
-  const endpoint = `${url}/datasources`;
-  logger.info(`Getting endpoint ${endpoint}`);
-  requests
-    .post(endpoint)
+  const post = datasource.id === null || datasource.id === undefined;
+  const endpoint = post
+    ? `${url}/datasources`
+    : `${url}/datasources/${datasource.id}`;
+
+  const backEndRequest = (
+    post ? requests.post(endpoint) : requests.put(endpoint)
+  )
     .set('Accept', 'application/json')
     .set('Content-Type', 'application/json')
     .set(
@@ -77,7 +81,10 @@ const post = (requests, profile) => async (request, response) => {
           : ''
       }`,
     )
-    .send(datasource)
+    .send(datasource);
+
+  logger.info(`Pushing to endpoint ${endpoint}`);
+  backEndRequest
     .then((res) => {
       response.status(res.status).send(res.body);
     })

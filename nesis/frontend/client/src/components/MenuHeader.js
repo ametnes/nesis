@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { PersonCircle, QuestionSquare } from 'react-bootstrap-icons';
 import { useCurrentSession, useSignOut } from '../SessionContext';
 import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
-import { ReactComponent as Logo } from '../images/NesisIcon.svg';
+import { ReactComponent as Logo } from '../images/Nesis.svg';
 import styled from 'styled-components/macro';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
@@ -28,8 +28,9 @@ const LogoContainer = styled.div`
 
 const LogoFull = styled(Logo)`
   display: block;
-  height: 35px;
-  width: 35px;
+  height: 105px;
+  width: 105px;
+  margin-right: 10px;
 `;
 
 const UserControlsRow = styled.div`
@@ -88,12 +89,17 @@ export default function MenuHeader({ onMobileMenuClick }) {
           <Hamburger />
         </MobileMenuTrigger>
         <LogoContainer>
-          <LogoFull /> Nesis - Enterprise Knowledge
+          <LogoFull />
         </LogoContainer>
         {session && (
           <UserControlsRow>
             <HeaderToolBarIcon>
-              <QuestionSquare size={iconSize} className="help-icon" /> Help
+              <a
+                href="https://github.com/ametnes/nesis/blob/main/docs/README.md"
+                target="_blank"
+              >
+                <QuestionSquare size={iconSize} className="help-icon" /> Help
+              </a>
             </HeaderToolBarIcon>
             <HeaderToolBarIcon>
               <PersonCircle size={iconSize} className="account-icon" />

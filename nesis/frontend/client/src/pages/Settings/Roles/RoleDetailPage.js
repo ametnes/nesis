@@ -101,7 +101,7 @@ function DocumentForm({
   initialValues = {
     id: role?.id,
     name: role?.name,
-    policy: JSON.stringify(role?.policy || '', null, 4),
+    policy: JSON.stringify(role?.policy || 'Enter value json here', null, 4),
   },
 }) {
   const history = useHistory();
@@ -138,6 +138,9 @@ function DocumentForm({
               placeholder="Name"
               name="name"
               validate={required}
+              disabled={
+                initialValues?.id !== null && initialValues?.id !== undefined
+              }
             />
             <Field
               component="textarea"

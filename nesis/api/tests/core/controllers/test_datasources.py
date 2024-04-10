@@ -25,6 +25,11 @@ def client():
     return cloud_app.test_client()
 
 
+@pytest.fixture
+def tc():
+    return ut.TestCase()
+
+
 def get_admin_session(client):
     admin_data = {
         "name": "s3 documents",
@@ -37,7 +42,7 @@ def get_admin_session(client):
     ).json
 
 
-def test_datasources(client):
+def test_create_datasource_invalid_input(client, tc):
     # Get the prediction
     payload = {
         "type": "minio",
@@ -94,7 +99,87 @@ def test_datasources(client):
     )
     assert 400 == response.status_code, response.json
 
-    assert 400 == response.status_code, response.json
+
+def test_create_datasource(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "host": "localhost",
+            "port": "5432",
+            "database": "initdb",
+        },
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Duplicate datasource name should be rejected as a conflict
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 409 == response.status_code
+    assert "exists" in response.json["message"]
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    print(response.json)
+    assert 1 == len(response.json["items"])
+
+    # Retrieve the datasource by id
+    datasource_id = response.json["items"][0]["id"]
+    response = client.get(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+    print(response.json)
+    assert response.json.get("connection") is not None
+
+    # When we delete the datasource, is it really gone?
+    response = client.delete(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+
+    response = client.get(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 404 == response.status_code, response.json
+
+
+def test_update_datasources(client, tc):
+    # Create a datasource
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "host": "localhost",
+            "port": "5432",
+            "database": "initdb",
+        },
+    }
+
+    admin_session = get_admin_session(client=client)
+
     response = client.post(
         f"/v1/datasources",
         headers=tests.get_header(token=admin_session["token"]),
@@ -103,8 +188,6 @@ def test_datasources(client):
     assert 200 == response.status_code, response.json
     assert response.json.get("connection") is not None
     print(json.dumps(response.json["connection"]))
-
-    print(yaml.dump(tests.config))
 
     response = client.get(
         "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
@@ -120,12 +203,21 @@ def test_datasources(client):
         headers=tests.get_header(token=admin_session["token"]),
     )
     assert 200 == response.status_code, response.json
-    print(response.json)
-    assert response.json.get("connection") is not None
 
-    response = client.delete(
+    datasource = response.json
+
+    datasource["connection"] = {
+        "user": "root",
+        "password": "some.password",
+        "host": "some.other.host.tld",
+        "port": "3360",
+        "database": "initdb",
+    }
+
+    response = client.put(
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(datasource),
     )
     assert 200 == response.status_code, response.json
 
@@ -133,4 +225,9 @@ def test_datasources(client):
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),
     )
-    assert 404 == response.status_code, response.json
+
+    # Datasource password is never emitted so we skip it
+    tc.assertDictEqual(
+        response.json["connection"],
+        {k: v for k, v in datasource["connection"].items() if k != "password"},
+    )

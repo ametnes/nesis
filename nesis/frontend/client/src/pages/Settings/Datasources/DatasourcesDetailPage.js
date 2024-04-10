@@ -78,32 +78,37 @@ export default function DataSourceDetailsPage({ onSuccess }) {
 }
 
 function CreateDataSource({ onSuccess, onError }) {
+  const location = useLocation();
   return (
     <>
-      <ModalTitle>Connect new Datasource</ModalTitle>
+      <ModalTitle>
+        {location?.state?.id ? `Edit` : `Create`} datasource
+      </ModalTitle>
       <DataSourceForm
+        datasource={location?.state}
         onSuccess={onSuccess}
         onError={onError}
-        submitButtonText={'Create'}
+        submitButtonText={location?.state?.id ? `Edit` : `Create`}
       />
     </>
   );
 }
 
 function DataSourceForm({
+  datasource,
   onSuccess,
   onError,
   submitButtonText = 'Submit',
   initialValues = {
-    module: 'data',
-    name: '',
+    id: datasource?.id,
+    name: datasource?.name,
+    type: datasource?.type,
     connection: {
-      user: '',
+      user: datasource?.connection?.user,
       password: '',
-      endpoint: '',
-      port: '',
-      database: '',
-      dataobjects: '',
+      endpoint: datasource?.connection?.endpoint,
+      port: datasource?.connection?.port,
+      dataobjects: datasource?.connection?.dataobjects,
     },
   },
 }) {
@@ -119,7 +124,7 @@ function DataSourceForm({
         actions.resetForm();
         onSuccess();
         addToast({
-          title: `Dataobject created`,
+          title: `Datasource created`,
           content: 'Operation is successful',
         });
       })
@@ -140,6 +145,7 @@ function DataSourceForm({
               isDisabled={false}
               options={TypeOptions}
               placeholder={`Select type`}
+              value="connection.type"
             />
             <FormRow>
               <Column>
@@ -150,6 +156,10 @@ function DataSourceForm({
                   placeholder="Name"
                   name="name"
                   validate={required}
+                  disabled={
+                    initialValues?.id !== null &&
+                    initialValues?.id !== undefined
+                  }
                 />
               </Column>
             </FormRow>

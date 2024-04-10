@@ -76,4 +76,10 @@ export const OutlinedSquareButton = styled(SquareButton)`
   }
 `;
 
+export const EditOutlinedSquareButton = styled(OutlinedSquareButton)`
+  min-width: 50px;
+  margin-left: 8px;
+  margin-right: 8px;
+`;
+
 export default SquareButton;
