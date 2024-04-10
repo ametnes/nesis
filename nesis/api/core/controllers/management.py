@@ -126,6 +126,8 @@ def operate_roles():
         else:
             results = services.role_service.get(token=token)
             return jsonify({"items": [item.to_dict() for item in results]})
+    except util.ConflictException as se:
+        return jsonify(error_message(str(se))), 409
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
@@ -170,6 +172,8 @@ def operate_role(role_id):
                 token=token, id=role_id, role=request.json
             )
             return jsonify(result.to_dict())
+    except util.ConflictException as se:
+        return jsonify(error_message(str(se))), 409
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
     except util.PermissionException:

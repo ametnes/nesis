@@ -363,6 +363,9 @@ class RoleService(ServiceOperation):
                 except ValueError:
                     raise ServiceException("Invalid role policy")
 
+            if not isinstance(role_policy, dict):
+                raise ServiceException("Invalid policy document")
+
             role_action_list = []
 
             try:
@@ -408,10 +411,15 @@ class RoleService(ServiceOperation):
             role_record.policy = role_action_list
 
             return role_record
-        except Exception as e:
+        except Exception as exc:
             session.rollback()
-            self.__LOG.exception(f"Error when creating role")
-            raise
+            error_str = str(exc).lower()
+
+            if ("unique constraint" in error_str) and ("uq_role_name" in error_str):
+                # valid failure
+                raise ConflictException("Role name already exists")
+            else:
+                raise
         finally:
             if session:
                 session.close()
@@ -510,6 +518,9 @@ class RoleService(ServiceOperation):
             else:
                 role_actions: Optional[dict] = {}
 
+            if not isinstance(role_actions, dict):
+                raise ServiceException("Invalid policy document")
+
             role_action_items = []
             for action in role_actions.get("items") or []:
                 action_resource: Optional[str] = action.get("resource")
@@ -553,10 +564,15 @@ class RoleService(ServiceOperation):
 
             return role_record
 
-        except Exception as e:
+        except Exception as exc:
             session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
+            error_str = str(exc).lower()
+
+            if ("unique constraint" in error_str) and ("uq_role_name" in error_str):
+                # valid failure
+                raise ConflictException("Role name already exists")
+            else:
+                raise
         finally:
             if session:
                 session.close()

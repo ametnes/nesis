@@ -157,6 +157,9 @@ function DocumentForm({
               placeholder="Email"
               name="email"
               validate={required}
+              disabled={
+                initialValues?.id !== null && initialValues?.id !== undefined
+              }
             />
             <TextField
               type="password"

@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import uuid
 
 import pytest
 from sqlalchemy.orm.session import Session
@@ -25,6 +26,45 @@ def client():
     return cloud_app.test_client()
 
 
+def test_create_invalid_role(client):
+
+    session = tests.get_admin_session(app=client)
+
+    # A role
+    role = {
+        "name": "document-manager",
+        "policy": {"items": [{"action": "read", "resource": "users"}]},
+    }
+    response = client.post(
+        f"/v1/roles",
+        headers=tests.get_header(token=session["token"]),
+        data=json.dumps(role),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Test duplicate role
+    response = client.post(
+        f"/v1/roles",
+        headers=tests.get_header(token=session["token"]),
+        data=json.dumps(role),
+    )
+    assert 409 == response.status_code, response.json
+
+    # Test creating an invalid role with a string policy document
+    response = client.post(
+        f"/v1/roles",
+        headers=tests.get_header(token=session["token"]),
+        data=json.dumps(
+            {
+                **role,
+                "name": str(uuid.uuid4()),
+                "policy": json.dumps(role["policy"]) + "Some.Extra.String",
+            }
+        ),
+    )
+    assert 400 == response.status_code, response.json
+
+
 def test_create_role(client):
 
     session = tests.get_admin_session(app=client)
@@ -40,14 +80,24 @@ def test_create_role(client):
         data=json.dumps(role),
     )
     assert 200 == response.status_code, response.json
-    print(json.dumps(response.json))
+
+    # Test creating a role with a string policy document
+    response = client.post(
+        f"/v1/roles",
+        headers=tests.get_header(token=session["token"]),
+        data=json.dumps(
+            {**role, "name": str(uuid.uuid4()), "policy": json.dumps(role["policy"])}
+        ),
+    )
+    assert 200 == response.status_code, response.json
+
     #
-    # All retried users should not have their passwords exposed
+    # Get all roles. Should have 2 here
     response = client.get(
         f"/v1/roles", headers=tests.get_header(token=session["token"])
     )
     assert 200 == response.status_code, response.json
-    assert 1 == len(response.json["items"])
+    assert 2 == len(response.json["items"])
 
     response = client.get(
         f"/v1/roles/{response.json['items'][0]['id']}",

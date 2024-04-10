@@ -138,6 +138,9 @@ function DocumentForm({
               placeholder="Name"
               name="name"
               validate={required}
+              disabled={
+                initialValues?.id !== null && initialValues?.id !== undefined
+              }
             />
             <Field
               component="textarea"

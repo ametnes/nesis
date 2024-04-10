@@ -114,7 +114,6 @@ class DatasourceService(ServiceOperation):
                 raise ConflictException("Datasource name already exists")
             else:
                 raise
-            raise
         finally:
             if session:
                 session.close()
