@@ -46,7 +46,8 @@ const DeleteButtonContainer = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  margin-left: 16px;
+  margin-left: 8px;
+  margin-right: 8px;
 
   fill: ${(props) => props.theme.danger2};
 

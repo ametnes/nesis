@@ -292,28 +292,28 @@ const DocumentsGPTPage = () => {
                     </td>
                   </tr>
                 )}
-                {paginatedDocuments.map((Documents) => (
-                  <tr key={Documents.id}>
-                    <td>{Documents.name}</td>
-                    <td>{Documents.email}</td>
-                    <td>{Documents.enabled ? 'True' : 'False'}</td>
-                    <td style={{ display: 'flex' }}>
-                      <DeleteItemButton
-                        onClick={() => {
-                          setCurrentItem(Documents.id);
-                          showConfirmModal();
-                        }}
-                      />
+                {paginatedDocuments.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.enabled ? 'True' : 'False'}</td>
+                    <td style={{ display: 'flex', padding: '5px' }}>
                       <EditOutlinedSquareButton
                         onClick={() =>
                           history.push({
-                            pathname: `/settings/users/${Documents.id}/edit`,
-                            state: Documents,
+                            pathname: `/settings/users/${user.id}/edit`,
+                            state: user,
                           })
                         }
                       >
                         Edit
                       </EditOutlinedSquareButton>
+                      <DeleteItemButton
+                        onClick={() => {
+                          setCurrentItem(user.id);
+                          showConfirmModal();
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

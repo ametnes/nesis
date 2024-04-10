@@ -101,7 +101,7 @@ function DocumentForm({
   initialValues = {
     id: role?.id,
     name: role?.name,
-    policy: JSON.stringify(role?.policy || '', null, 4),
+    policy: JSON.stringify(role?.policy || 'Enter value json here', null, 4),
   },
 }) {
   const history = useHistory();

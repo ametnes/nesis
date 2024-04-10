@@ -276,27 +276,27 @@ const DocumentsGPTPage = () => {
                     </td>
                   </tr>
                 )}
-                {paginatedDocuments.map((Roles) => (
-                  <tr key={Roles.id}>
-                    <td>{Roles.name}</td>
-                    <td>{Roles?.create_date}</td>
+                {paginatedDocuments.map((role) => (
+                  <tr key={role.id}>
+                    <td>{role.name}</td>
+                    <td>{role?.create_date}</td>
                     <td style={{ display: 'flex' }}>
-                      <DeleteItemButton
-                        onClick={() => {
-                          setCurrentItem(Roles.id);
-                          showConfirmModal();
-                        }}
-                      />
                       <EditOutlinedSquareButton
                         onClick={() =>
                           history.push({
-                            pathname: `/settings/roles/${Roles.id}/edit`,
-                            state: Roles,
+                            pathname: `/settings/roles/${role.id}/edit`,
+                            state: role,
                           })
                         }
                       >
                         Edit
                       </EditOutlinedSquareButton>
+                      <DeleteItemButton
+                        onClick={() => {
+                          setCurrentItem(role.id);
+                          showConfirmModal();
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}
