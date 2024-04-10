@@ -203,10 +203,12 @@ class Datasource(Base):
     id = Column(BigInteger, primary_key=True, nullable=False)
     uuid = Column(Unicode(255), unique=True, nullable=False)
     type = Column(Enum(DatasourceType, name="datasource_type"), nullable=False)
-    name = Column(Unicode(255), nullable=False, unique=True)
+    name = Column(Unicode(255), nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     status = Column(Enum(DatasourceStatus, name="datasource_status"), nullable=False)
     connection = Column(JSONB, nullable=False)
+
+    __table_args__ = (UniqueConstraint("name", name="uq_datasource_name"),)
 
     def __init__(
         self,

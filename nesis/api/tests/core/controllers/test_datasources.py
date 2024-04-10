@@ -122,11 +122,17 @@ def test_create_datasource(client, tc):
         data=json.dumps(payload),
     )
     assert 200 == response.status_code, response.json
-    assert response.json.get("connection") is not None
-    print(json.dumps(response.json["connection"]))
 
-    print(yaml.dump(tests.config))
+    # Duplicate datasource name should be rejected as a conflict
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 409 == response.status_code
+    assert "exists" in response.json["message"]
 
+    # Test that we have only the one datasource
     response = client.get(
         "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
     )
@@ -134,8 +140,8 @@ def test_create_datasource(client, tc):
     print(response.json)
     assert 1 == len(response.json["items"])
 
+    # Retrieve the datasource by id
     datasource_id = response.json["items"][0]["id"]
-
     response = client.get(
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),
@@ -144,6 +150,7 @@ def test_create_datasource(client, tc):
     print(response.json)
     assert response.json.get("connection") is not None
 
+    # When we delete the datasource, is it really gone?
     response = client.delete(
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),

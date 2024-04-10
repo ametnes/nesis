@@ -29,6 +29,8 @@ def operate_datasources():
                 return jsonify({"items": [item.to_dict() for item in results]})
             case _:
                 raise Exception("Should never be reached")
+    except util.ConflictException as se:
+        return jsonify(error_message(str(se))), 409
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
@@ -79,6 +81,8 @@ def operate_datasource(datasource_id):
                 return jsonify(result.to_dict())
             case _:
                 raise Exception("Should never be reached really")
+    except util.ConflictException as se:
+        return jsonify(error_message(str(se))), 409
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:

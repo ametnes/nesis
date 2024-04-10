@@ -20,6 +20,7 @@ from nesis.api.core.services.util import (
     is_valid_resource_name,
     has_valid_keys,
     PermissionException,
+    ConflictException,
 )
 
 _LOG = logging.getLogger(__name__)
@@ -102,9 +103,17 @@ class DatasourceService(ServiceOperation):
             session.commit()
             session.refresh(entity)
             return entity
-        except Exception as e:
+        except Exception as exc:
             session.rollback()
-            self._LOG.exception(f"Error when creating setting")
+            error_str = str(exc).lower()
+
+            if ("unique constraint" in error_str) and (
+                "uq_datasource_name" in error_str
+            ):
+                # valid failure
+                raise ConflictException("Datasource name already exists")
+            else:
+                raise
             raise
         finally:
             if session:

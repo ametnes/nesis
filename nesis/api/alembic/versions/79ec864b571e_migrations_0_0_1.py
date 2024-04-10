@@ -1,4 +1,4 @@
-"""migrations-0.1.2-api
+"""migrations-0.0.1
 
 Revision ID: 79ec864b571e
 Revises: 

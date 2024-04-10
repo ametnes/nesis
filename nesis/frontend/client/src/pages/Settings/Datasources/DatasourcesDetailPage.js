@@ -156,7 +156,10 @@ function DataSourceForm({
                   placeholder="Name"
                   name="name"
                   validate={required}
-                  disabled={initialValues?.id !== null}
+                  disabled={
+                    initialValues?.id !== null &&
+                    initialValues?.id !== undefined
+                  }
                 />
               </Column>
             </FormRow>
