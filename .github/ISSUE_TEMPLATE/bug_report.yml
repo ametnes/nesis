@@ -23,8 +23,6 @@ body:
       placeholder: |
         1. Go to '...'
         2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
   - type: textarea
     attributes:
       label: Expected behavior
@@ -32,8 +30,8 @@ body:
   - type: textarea
     attributes:
       label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
+      description: If applicable, add screenshots to help explain the bug.
   - type: textarea
     attributes:
       label: Additional context
-      description: Add any other context about the problem here.
+      description: Add any other context about the bug here.
