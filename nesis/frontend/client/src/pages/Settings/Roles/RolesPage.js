@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LightSquareButton,
   OutlinedSquareButton,
+  EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
 import styled from 'styled-components/macro';
 import { device } from '../../../utils/breakpoints';
@@ -200,18 +201,18 @@ const DocumentsGPTPage = () => {
           </MessageRow> */}
           <MobileList>
             {DocumentsLoading && <Spinner />}
-            {paginatedDocuments.map((Roles, index) => (
+            {paginatedDocuments.map((role, index) => (
               <MobileListItem
-                key={Roles.name}
+                key={role.name}
                 mainContent={
                   <DocumentsMobileHeader>
                     <DocumentsIndex>{index + 1}</DocumentsIndex>{' '}
                     <div>
                       <span>
-                        <StatusIcon status={Roles.enabled} />
-                        {Roles.enabled ? 'ONLINE' : 'OFFLINE'}
+                        <StatusIcon status={role.enabled} />
+                        {role.enabled ? 'ONLINE' : 'OFFLINE'}
                       </span>
-                      <DocumentsTitle>{Roles.name}</DocumentsTitle>
+                      <DocumentsTitle>{role.name}</DocumentsTitle>
                     </div>
                   </DocumentsMobileHeader>
                 }
@@ -220,8 +221,8 @@ const DocumentsGPTPage = () => {
                     <EditButton
                       onClick={() =>
                         history.push({
-                          pathname: `/settings/roles/${Roles.id}/edit`,
-                          state: Roles,
+                          pathname: `/settings/roles/${role.id}/edit`,
+                          state: role,
                         })
                       }
                     >
@@ -229,7 +230,7 @@ const DocumentsGPTPage = () => {
                     </EditButton>
                     <DeleteButton
                       onClick={() => {
-                        setCurrentItem(Roles.id);
+                        setCurrentItem(role.id);
                         showConfirmModal();
                       }}
                     >
@@ -286,7 +287,7 @@ const DocumentsGPTPage = () => {
                           showConfirmModal();
                         }}
                       />
-                      <OutlinedSquareButton
+                      <EditOutlinedSquareButton
                         onClick={() =>
                           history.push({
                             pathname: `/settings/roles/${Roles.id}/edit`,
@@ -295,7 +296,7 @@ const DocumentsGPTPage = () => {
                         }
                       >
                         Edit
-                      </OutlinedSquareButton>
+                      </EditOutlinedSquareButton>
                     </td>
                   </tr>
                 ))}

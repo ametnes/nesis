@@ -5,7 +5,7 @@ COPY nesis/rag/requirements-huggingface.txt /app/nesis/rag/requirements-huggingf
 
 RUN apt-get update \
     && python -m venv /app/.venv \
-    && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt -r /app/nesis/rag/requirements-huggingface.txt
+    && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt -r /app/nesis/rag/requirements-huggingface.txt --default-timeout=1200
 
 
 FROM python:3.11.6-slim-bookworm

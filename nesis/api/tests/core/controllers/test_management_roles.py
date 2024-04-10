@@ -117,7 +117,7 @@ def test_create_role_as_user(client):
     print(json.dumps(response.json))
 
 
-def test_access_permitted_resources_as_user(client):
+def test_read_permitted_resources_as_user(client):
     """
     This tests that a user given read access to a specific datasource, will only be able to
     list/read from that since datasource

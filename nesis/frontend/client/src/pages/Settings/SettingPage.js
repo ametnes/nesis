@@ -47,6 +47,11 @@ const SettingsPage = () => {
             path={`${match.path}/datasources`}
             component={DatasourcesPage}
           />
+          <Route
+            exact
+            path={`${match.path}/datasources/:id/edit`}
+            component={DatasourcesPage}
+          />
           <Route exact path={`${match.path}/users/new`} component={UsersPage} />
           <Route
             exact

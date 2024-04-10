@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LightSquareButton,
   OutlinedSquareButton,
+  EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
 import styled from 'styled-components/macro';
 import { device } from '../../../utils/breakpoints';
@@ -137,6 +138,7 @@ const DatasourcesPage = () => {
 
   const match = useRouteMatch();
   const isNew = match.url?.endsWith('/datasources/new');
+  const isEdit = match.url?.endsWith('/edit');
   const history = useHistory();
   const [searchText, setSearchText] = React.useState();
   const [currentSort, setCurrentSort] = React.useState(null);
@@ -177,7 +179,7 @@ const DatasourcesPage = () => {
     <>
       {confirmModal}
       <EditOrCreateModal
-        visible={!!isNew}
+        visible={!!isNew || !!isEdit}
         onSuccess={() => {
           setSearchText('');
           datasourcesActions.repeat();
@@ -222,8 +224,8 @@ const DatasourcesPage = () => {
                     <DatasourceIndex>{datasource.id}</DatasourceIndex>{' '}
                     <div>
                       <span>
-                        <StatusIcon status={datasource.enabled} />
-                        {datasource.enabled ? 'ONLINE' : 'OFFLINE'}
+                        <StatusIcon status={datasource.status} />
+                        {datasource.status}
                       </span>
                       <DatasourceTitle>{datasource.name}</DatasourceTitle>
                     </div>
@@ -313,10 +315,21 @@ const DatasourcesPage = () => {
                         datasource?.connection?.host}
                     </td>
                     <td>
-                      <StatusIcon status={datasource.enabled} />
-                      {datasource.enabled ? 'True' : 'False'}
+                      <StatusIcon status={datasource.status} />
+                      {datasource.status}
                     </td>
                     <td style={{ display: 'flex' }}>
+                      <EditOutlinedSquareButton
+                        onClick={() =>
+                          history.push({
+                            pathname: `/settings/datasources/${datasource.id}/edit`,
+                            state: datasource,
+                          })
+                        }
+                      >
+                        Edit
+                      </EditOutlinedSquareButton>
+
                       <DeleteItemButton
                         onClick={() => {
                           setCurrentItem(datasource.id);

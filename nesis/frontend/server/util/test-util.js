@@ -86,6 +86,8 @@ class Request {
         res = { body: this.data, status: 200 };
       } else if (this.url.includes('/predictions/')) {
         res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/datasources/')) {
+        res = { body: this.data, status: 200 };
       }
     } else if (this.method === 'GET') {
       if (this.url.endsWith('/rules')) {

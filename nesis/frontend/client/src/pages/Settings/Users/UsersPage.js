@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LightSquareButton,
   OutlinedSquareButton,
+  EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
 import styled from 'styled-components/macro';
 import { device } from '../../../utils/breakpoints';
@@ -303,7 +304,7 @@ const DocumentsGPTPage = () => {
                           showConfirmModal();
                         }}
                       />
-                      <OutlinedSquareButton
+                      <EditOutlinedSquareButton
                         onClick={() =>
                           history.push({
                             pathname: `/settings/users/${Documents.id}/edit`,
@@ -312,7 +313,7 @@ const DocumentsGPTPage = () => {
                         }
                       >
                         Edit
-                      </OutlinedSquareButton>
+                      </EditOutlinedSquareButton>
                     </td>
                   </tr>
                 ))}
