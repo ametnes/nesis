@@ -23,10 +23,12 @@ RUN mkdir -p /app/dist/client \
 RUN find /app/dist/client -name node_modules -o -name src -exec rm -rf {} \; || true
 
 FROM node:20
+ARG NESIS_VERSION
 ARG PROFILE
 ENV PUBLIC_URL ${PUBLIC_URL}
 ENV APP_HOME=/app/nesis/client
 ENV PROFILE ${PROFILE}
+ENV NESIS_VERSION=$NESIS_VERSION
 ENV UNAME=nesis
 
 # Create app directory

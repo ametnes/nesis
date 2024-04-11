@@ -1,5 +1,4 @@
 FROM python:3.11-buster as build
-ARG ENABLE_LOCAL_EMBEDDINGS
 COPY nesis/rag/requirements.txt /app/nesis/rag/requirements.txt
 COPY nesis/rag/requirements-huggingface.txt /app/nesis/rag/requirements-huggingface.txt
 
@@ -8,6 +7,8 @@ RUN apt-get update \
     && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt -r /app/nesis/rag/requirements-huggingface.txt --default-timeout=1200
 
 
+
+ARG NESIS_VERSION
 FROM python:3.11.6-slim-bookworm
 RUN apt-get update \
     && apt-get clean \
@@ -25,6 +26,7 @@ ARG PORT="8080"
 EXPOSE ${PORT}
 
 ENV PYTHONPATH="${PYTHONPATH}:/app/nesis"
+ENV NESIS_VERSION=$NESIS_VERSION
 USER nesis
 CMD python nesis/rag/core/main.py
 
