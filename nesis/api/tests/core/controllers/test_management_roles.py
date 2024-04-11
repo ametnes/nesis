@@ -130,7 +130,7 @@ def test_create_role_as_user(client):
         f"/v1/sessions", headers=tests.get_header(), data=json.dumps(user_data)
     ).json
 
-    # A role as a regular user
+    # Create a role as a regular user, fails due to permissions
     role = {
         "name": f"document-manager{random.randint(3, 19)}",
         "policy": {"items": [{"action": "create", "resource": "roles"}]},
@@ -142,6 +142,7 @@ def test_create_role_as_user(client):
     )
     assert 403 == response.status_code, response.json
 
+    # Admin creates the role
     roles_response = client.post(
         f"/v1/roles",
         headers=tests.get_header(token=admin_session["token"]),
@@ -149,12 +150,22 @@ def test_create_role_as_user(client):
     )
     assert 200 == roles_response.status_code, response.json
 
+    # And assigns it to the user
     response = client.post(
         f"/v1/users/{regular_user['id']}/roles",
         headers=tests.get_header(token=admin_session["token"]),
         data=json.dumps(roles_response.json),
     )
     assert 200 == response.status_code, response.json
+
+    # Getting that user's roles should return the created role
+    response = client.get(
+        f"/v1/users/{regular_user['id']}/roles",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(roles_response.json),
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
 
     role["name"] = (f"document-manager{random.randint(3, 19)}",)
     roles_response = client.post(
@@ -163,8 +174,6 @@ def test_create_role_as_user(client):
         data=json.dumps(role),
     )
     assert 200 == roles_response.status_code, response.json
-
-    print(json.dumps(response.json))
 
 
 def test_read_permitted_resources_as_user(client):

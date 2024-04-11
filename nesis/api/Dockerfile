@@ -8,7 +8,8 @@ RUN apt-get update \
     && pip install -r /app/nesis/api/requirements.txt \
     && pip install flask==3.0.0
 
-ARG UNAME=nesis
+ARG NESIS_VERSION
+ENV UNAME=nesis
 FROM python:3.11.6-slim-bookworm
 RUN apt-get update \
     && apt-get clean \
@@ -26,6 +27,7 @@ ARG PORT="8080"
 EXPOSE ${PORT}
 
 ENV PYTHONPATH="/app:${PYTHONPATH}"
+ENV NESIS_VERSION=$NESIS_VERSION
 USER nesis
 
 CMD /bin/bash /app/nesis/api/start.sh

@@ -3,27 +3,21 @@ name: Package Nesis
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch'
-        required: true
-        default: main
       tag:
         description: 'Tag'
         required: true
-        default: latest
 
 jobs:
   package_api:
-    name: API
+    name: Package API
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
+        uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -34,19 +28,22 @@ jobs:
           context: .
           push: true
           file: ./nesis/api/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api,ametnes/nesis:latest-api
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_frontend:
-    name: Frontend
+    name: Package Frontend
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -57,22 +54,24 @@ jobs:
           context: .
           push: true
           file: ./nesis/frontend/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend, ametnes/nesis:latest-frontend
           build-args: |
             PUBLIC_URL=/
             PROFILE=PROD
+            NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_rag:
-    name: RAG
+    name: Package RAG Engine
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -83,4 +82,6 @@ jobs:
           context: .
           push: true
           file: ./nesis/rag/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
