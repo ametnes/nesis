@@ -6,6 +6,9 @@ on:
       tag:
         description: 'Tag'
         required: true
+  push:
+    branches:
+      - main
 
 jobs:
   package_api:
