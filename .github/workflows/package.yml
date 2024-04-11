@@ -27,7 +27,7 @@ jobs:
           context: .
           push: true
           file: ./nesis/api/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api,ametnes/nesis:${{ github.event.inputs.tag }}-latest
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api,ametnes/nesis:latest-api
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
@@ -52,7 +52,7 @@ jobs:
           context: .
           push: true
           file: ./nesis/frontend/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend, ametnes/nesis:${{ github.event.inputs.tag }}-latest-frontend
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend, ametnes/nesis:latest-frontend
           build-args: |
             PUBLIC_URL=/
             PROFILE=PROD
@@ -79,6 +79,6 @@ jobs:
           context: .
           push: true
           file: ./nesis/rag/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:${{ github.event.inputs.tag }}-latest
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
