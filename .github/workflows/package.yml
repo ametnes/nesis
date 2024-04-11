@@ -10,6 +10,8 @@ on:
       tag:
         description: 'Tag'
         required: true
+env:
+  IMAGE: ametnes/nesis
 
 jobs:
   package_api:
@@ -22,7 +24,7 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -34,7 +36,7 @@ jobs:
           push: true
           file: ./nesis/api/Dockerfile
           image: ametnes/nesis
-          tags: ${{ github.event.inputs.tag }}-api,${{ github.event.inputs.tag }}-latest
+          tags: ${IMAGE}/${{ github.event.inputs.tag }}-api,${IMAGE}/${{ github.event.inputs.tag }}-latest
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
@@ -48,7 +50,7 @@ jobs:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -60,7 +62,7 @@ jobs:
           push: true
           file: ./nesis/frontend/Dockerfile
           image: ametnes/nesis
-          tags: ${{ github.event.inputs.tag }}-frontend, latest-frontend
+          tags: ${IMAGE}/${{ github.event.inputs.tag }}-frontend, ${IMAGE}/${{ github.event.inputs.tag }}-latest-frontend
           build-args: |
             PUBLIC_URL=/
             PROFILE=PROD
@@ -76,7 +78,7 @@ jobs:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -87,6 +89,6 @@ jobs:
           context: .
           push: true
           file: ./nesis/rag/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag
+          tags: ${IMAGE}/${{ github.event.inputs.tag }}-rag, ${IMAGE}/${{ github.event.inputs.tag }}-latest
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
