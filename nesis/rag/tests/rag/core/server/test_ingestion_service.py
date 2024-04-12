@@ -42,6 +42,7 @@ def settings() -> Settings:
         "website-traffic-dashboard.jpg",
         "website-traffic-dashboard.tiff",
         # "introduction-to-nesis.mp4",
+        # "introduction-to-nesis.mp4",
     ],
 )
 def test_ingestion_supported(injector, file_name):
