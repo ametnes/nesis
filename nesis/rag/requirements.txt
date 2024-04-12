@@ -32,3 +32,8 @@ boto3==1.34.75
 python-multipart==0.0.9
 python_pptx==0.6.23
 docx2txt==0.8
+openpyxl==3.1.2
+openai-whisper @ git+https://github.com/openai/whisper.git
+pydub==0.25.1
+ffprobe==0.5
+odfpy==1.4.1

@@ -27,9 +27,21 @@ def settings() -> Settings:
     "file_name",
     [
         "file-sample_150kB.pdf",
-        # "file-sample_100kB.doc",
         "file-sample_500kB.docx",
         "samplepptx.pptx",
+        "rfc791.txt",
+        "free-hugs.jpg",
+        "free-hugs.jpeg",
+        "free-hugs.png",
+        "sales_data_sample.json",
+        "website-traffic-dashboard.csv",
+        "website-traffic-dashboard.ods",
+        "website-traffic-dashboard.xlsx",
+        "website-traffic-dashboard.png",
+        "website-traffic-dashboard.pdf",
+        "website-traffic-dashboard.jpg",
+        "website-traffic-dashboard.tiff",
+        "introduction-to-nesis.mp4",
     ],
 )
 def test_ingestion_supported(injector, file_name):

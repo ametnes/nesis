@@ -20,6 +20,8 @@ from llama_index.readers.file import (
     VideoAudioReader,
 )  # pants: no-infer-dep
 
+from nesis.rag.core.components.ingest.readers import ExcelReader, TiffReader, OdsReader
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +44,10 @@ FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".mbox": MboxReader,
     ".ipynb": IPYNBReader,
     ".json": JSONReader,
-    ".xlsx": JSONReader,
+    ".xls": ExcelReader,
+    ".xlsx": ExcelReader,
+    ".ods": OdsReader,
+    ".tiff": TiffReader,
 }
 
 
