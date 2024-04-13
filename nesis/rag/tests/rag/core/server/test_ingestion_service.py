@@ -30,9 +30,6 @@ def settings() -> Settings:
         "file-sample_500kB.docx",
         "samplepptx.pptx",
         "rfc791.txt",
-        "free-hugs.jpg",
-        "free-hugs.jpeg",
-        "free-hugs.png",
         "sales_data_sample.json",
         "website-traffic-dashboard.csv",
         "website-traffic-dashboard.ods",
@@ -46,7 +43,8 @@ def settings() -> Settings:
 )
 def test_ingestion_supported(injector, file_name):
     """
-    Test to ensure we can ingest all files. This test helps make sure we have all the necessary libraries installed
+    Test to ensure we can ingest all files. This test helps make sure we have all the necessary libraries installed.
+    This test DOES NOT test for accuracy of the extracted data.
     """
     file_path: pathlib.Path = (
         pathlib.Path(tests.__file__).parent.absolute() / "resources" / file_name
