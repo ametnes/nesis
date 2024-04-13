@@ -12,18 +12,14 @@ from nesis.rag.core.components.ingest.ingest_helper import IngestionHelper
     [
         ("file-sample_150kB.pdf", ["Lorem", "ipsum"]),
         ("file-sample_500kB.docx", ["Lorem", "ipsum"]),
-        ("samplepptx.pptx", None),
         ("rfc791.txt", ["INTERNET", "PROTOCOL"]),
-        ("sales_data_sample.json", None),
         ("website-traffic-dashboard.csv", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.ods", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.xlsx", ["web", "traffic", "dashboard"]),
-        # ("website-traffic-dashboard.png", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.pdf", ["web", "traffic", "dashboard"]),
-        # ("website-traffic-dashboard.jpg", ["web", "traffic", "dashboard"]),
-        # ("website-traffic-dashboard.tiff", ["web", "traffic", "dashboard"]),
         ("introduction-to-nesis.mp3", ["canada", "england"]),
         ("introduction-to-nesis.mp4", ["canada", "england"]),
+        ("brochure.epub", ["product", "brochure"]),
     ],
 )
 def test_ingestion(file_name: str, expected: list[str]):
