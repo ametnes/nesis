@@ -82,7 +82,7 @@ Nesis is derived from the greek noun gnosis which means knowledge.
 💡If you'd like to see a specific feature implemented, feel free to open up a feature request ticket.
 If enough users support to have the feature, we will be sure to include it in our roadmap.
 
-🐞If you find any functionality not working as expected, please feel free to open an bug report.
+🐞If you find any functionality not working as expected, please feel free to open a bug report.
 
 🌟 If you think that this project has been useful to you, please give it a star.
 
