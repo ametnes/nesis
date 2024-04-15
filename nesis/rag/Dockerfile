@@ -16,7 +16,7 @@ FROM python:3.11.6-slim-bookworm
 RUN apt-get update \
     && apt-get clean \
     && adduser --system --home /app --shell /bin/bash nesis \
-    && apt install ffmpeg -y
+    && apt install ffmpeg tesseract-ocr -y
 
 WORKDIR /app
 

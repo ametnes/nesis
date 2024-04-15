@@ -1,16 +1,30 @@
+import copy
 import pathlib
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 import pandas as pd
 from PIL import Image, ImageSequence
 from fsspec import AbstractFileSystem
 from llama_index.core import Document
 from llama_index.core.readers.base import BaseReader
-from llama_index.readers.file import (
-    ImageReader,
-)  # pants: no-infer-dep
+from unstructured.partition.image import partition_image
+from unstructured.partition.xlsx import partition_xlsx
+
+
+def _clean_metadata(metadata: Dict, exclusion_list: List[str] = None) -> Dict:
+    """
+    We want to remove any unwanted metadata fields. This is particularly useful when readers introduce metadata from
+    intermediate steps, but we would rather not have that metadata in the vector store.
+    :param metadata: the metadata to clean
+    :param exclusion_list: the exclusion field list
+    :return: the cleaned metadata
+    """
+    metadata_copy = copy.deepcopy(metadata or {})
+    for exclusion_item in exclusion_list or []:
+        metadata_copy.pop(exclusion_item, None)
+    return metadata_copy
 
 
 class ExcelReader(BaseReader):
@@ -18,14 +32,36 @@ class ExcelReader(BaseReader):
     A simple MS Excel file reader. Uses pandas in the background
     """
 
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self._config = config or {}
+        self._metadata_exclusion_list = self._config.get("metadata_exclusion_list") or [
+            "file_directory",
+            "filename",
+        ]
+
     def load_data(
         self,
         file: Path,
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        data = pd.read_excel(file.absolute()).to_string()
-        return [Document(text=data, metadata=extra_info or {})]
+        elements = partition_xlsx(file.absolute())
+        documents: List[Document] = []
+
+        for element in elements:
+            element_dict = element.to_dict()
+            document = Document(
+                text=element_dict["text"],
+                metadata={
+                    **(extra_info or {}),
+                    **_clean_metadata(
+                        element_dict["metadata"],
+                        exclusion_list=self._metadata_exclusion_list,
+                    ),
+                },
+            )
+            documents.append(document)
+        return documents
 
 
 class OdsReader(BaseReader):
@@ -43,19 +79,62 @@ class OdsReader(BaseReader):
         return [Document(text=data, metadata=extra_info or {})]
 
 
+class ImageReader(BaseReader):
+    """
+    The llamaindex reader doesn't return any text so we use unstructured.io instead of llamaindex ImageReader.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self._config = config or {}
+        self._metadata_exclusion_list = self._config.get("metadata_exclusion_list") or [
+            "file_directory",
+            "filename",
+        ]
+
+    def load_data(
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
+    ) -> List[Document]:
+        elements = partition_image(file.absolute())
+        documents: List[Document] = []
+
+        for element in elements:
+            element_dict = element.to_dict()
+            document = Document(
+                text=element_dict["text"],
+                metadata={
+                    **(extra_info or {}),
+                    **_clean_metadata(
+                        element_dict["metadata"],
+                        exclusion_list=self._metadata_exclusion_list,
+                    ),
+                },
+            )
+            documents.append(document)
+        return documents
+
+
 class TiffReader(BaseReader):
     """
     A simple tiff file reader. Converts the pages into png and then uses an image reader to convert into llama-index
     documents
     """
 
-    @staticmethod
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self._config = config
+        self._image_reader = ImageReader(config=self._config)
+
     def _load_page_data(
+        self,
         file: Path,
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        return ImageReader().load_data(file.absolute(), extra_info=extra_info, fs=fs)
+        return self._image_reader.load_data(
+            file.absolute(), extra_info=extra_info, fs=fs
+        )
 
     def load_data(
         self,

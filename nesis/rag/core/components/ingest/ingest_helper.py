@@ -10,7 +10,6 @@ from llama_index.readers.file import (
     DocxReader,
     EpubReader,
     HWPReader,
-    ImageReader,
     IPYNBReader,
     MarkdownReader,
     MboxReader,
@@ -20,34 +19,39 @@ from llama_index.readers.file import (
     VideoAudioReader,
 )  # pants: no-infer-dep
 
-from nesis.rag.core.components.ingest.readers import ExcelReader, TiffReader, OdsReader
+from nesis.rag.core.components.ingest.readers import (
+    ExcelReader,
+    TiffReader,
+    OdsReader,
+    ImageReader,
+)
 
 logger = logging.getLogger(__name__)
 
 
-FILE_READER_CLS: Dict[str, BaseReader] = {
-    ".hwp": HWPReader(),
-    ".pdf": PDFReader(),
-    ".doc": DocxReader(),
-    ".docx": DocxReader(),
-    ".pptx": PptxReader(),
-    ".ppt": PptxReader(),
-    ".pptm": PptxReader(),
-    ".jpg": ImageReader(),
-    ".png": ImageReader(),
-    ".jpeg": ImageReader(),
-    ".mp3": VideoAudioReader(),
-    ".mp4": VideoAudioReader(),
-    ".csv": PandasCSVReader(),
-    ".epub": EpubReader(),
-    ".md": MarkdownReader(),
-    ".mbox": MboxReader(),
-    ".ipynb": IPYNBReader(),
-    ".json": JSONReader(),
-    ".xls": ExcelReader(),
-    ".xlsx": ExcelReader(),
-    ".ods": OdsReader(),
-    ".tiff": TiffReader(),
+FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
+    ".hwp": HWPReader,
+    ".pdf": PDFReader,
+    ".doc": DocxReader,
+    ".docx": DocxReader,
+    ".pptx": PptxReader,
+    ".ppt": PptxReader,
+    ".pptm": PptxReader,
+    ".jpg": ImageReader,
+    ".png": ImageReader,
+    ".jpeg": ImageReader,
+    ".mp3": VideoAudioReader,
+    ".mp4": VideoAudioReader,
+    ".csv": PandasCSVReader,
+    ".epub": EpubReader,
+    ".md": MarkdownReader,
+    ".mbox": MboxReader,
+    ".ipynb": IPYNBReader,
+    ".json": JSONReader,
+    ".xls": ExcelReader,
+    ".xlsx": ExcelReader,
+    ".ods": OdsReader,
+    ".tiff": TiffReader,
 }
 
 
@@ -73,8 +77,8 @@ class IngestionHelper:
     def _load_file_to_documents(file_name: str, file_data: Path) -> list[Document]:
         logger.debug("Transforming file_name=%s into documents", file_name)
         extension = Path(file_name).suffix
-        reader = FILE_READER_CLS.get(extension)
-        if reader is None:
+        reader_cls = FILE_READER_CLS.get(extension)
+        if reader_cls is None:
             logger.debug(
                 "No reader found for extension=%s, using default string reader",
                 extension,
@@ -84,7 +88,7 @@ class IngestionHelper:
             return string_reader.load_data([file_data.read_text()])
 
         logger.debug("Specific reader found for extension=%s", extension)
-        return reader.load_data(file_data)
+        return reader_cls().load_data(file_data)
 
     @staticmethod
     def _exclude_metadata(documents: list[Document]) -> None:
