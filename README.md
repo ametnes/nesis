@@ -14,9 +14,7 @@
 ---
 # 👋 What is Nesis❓
 
-Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasources, collecting
-
-
+Nesis is an open-source enterprise knowledge discovery solution that connects to multitudes of datasources, collecting 
 information and making it available in a conversation manner. Nesis leverages generative AI to aggregate document chunks
 collected from different documents in multiple formats such as pdf, docx, xlsx and turn them into meaning human-readable compositions. Allowing you to;
 

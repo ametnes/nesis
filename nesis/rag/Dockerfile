@@ -1,10 +1,13 @@
 FROM python:3.11-buster as build
 COPY nesis/rag/requirements.txt /app/nesis/rag/requirements.txt
 COPY nesis/rag/requirements-huggingface.txt /app/nesis/rag/requirements-huggingface.txt
+COPY nesis/rag/requirements-torch-cpu-x86.txt /app/nesis/rag/requirements-torch-cpu-x86.txt
 
 RUN apt-get update \
     && python -m venv /app/.venv \
-    && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt -r /app/nesis/rag/requirements-huggingface.txt --default-timeout=1200
+    && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt \
+      -r /app/nesis/rag/requirements-torch-cpu-x86.txt -r /app/nesis/rag/requirements-huggingface.txt \
+      --default-timeout=1200
 
 
 
@@ -12,7 +15,8 @@ ARG NESIS_VERSION
 FROM python:3.11.6-slim-bookworm
 RUN apt-get update \
     && apt-get clean \
-    && adduser --system --home /app --shell /bin/bash nesis
+    && adduser --system --home /app --shell /bin/bash nesis \
+    && apt install ffmpeg tesseract-ocr -y
 
 WORKDIR /app
 

@@ -10,7 +10,6 @@ from llama_index.readers.file import (
     DocxReader,
     EpubReader,
     HWPReader,
-    ImageReader,
     IPYNBReader,
     MarkdownReader,
     MboxReader,
@@ -19,6 +18,13 @@ from llama_index.readers.file import (
     PptxReader,
     VideoAudioReader,
 )  # pants: no-infer-dep
+
+from nesis.rag.core.components.ingest.readers import (
+    ExcelReader,
+    TiffReader,
+    OdsReader,
+    ImageReader,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +48,10 @@ FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".mbox": MboxReader,
     ".ipynb": IPYNBReader,
     ".json": JSONReader,
-    ".xlsx": JSONReader,
+    ".xls": ExcelReader,
+    ".xlsx": ExcelReader,
+    ".ods": OdsReader,
+    ".tiff": TiffReader,
 }
 
 

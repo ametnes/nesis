@@ -5,10 +5,10 @@ psycopg2-binary==2.9.9
 python-dateutil==2.8.2
 python-memcached==1.59
 pytz==2020.1
-PyYAML==6.0.0
+PyYAML==6.0.1
 requests==2.31.0
 simplejson==3.17.6
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.25
 StringGenerator==0.4.4
 urllib3~=2.2.0
 alembic==1.12.1

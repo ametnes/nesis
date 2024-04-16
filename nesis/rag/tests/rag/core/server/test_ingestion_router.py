@@ -51,7 +51,7 @@ def test_ingest_supported(injector, client):
             data={"metadata": json.dumps(metadata)},
         )
     # print(response.text)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.OK, response.text
     result = response.json()
     assert len(result["data"]) > 0
     for item in result["data"]:
