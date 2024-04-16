@@ -1,5 +1,7 @@
 import json
 import pathlib
+from typing import Dict, Any
+
 import pandas as pd
 from sqlalchemy import text
 import os
@@ -13,6 +15,7 @@ from nesis.api.core.models.entities import (
     User,
     Datasource,
     Document,
+    Task,
 )
 
 os.environ["PGPT_PROFILES"] = "test"
@@ -74,6 +77,7 @@ def clear_database(session):
     session.query(Role).delete()
     session.query(Datasource).delete()
     session.query(Document).delete()
+    session.query(Task).delete()
     session.commit()
 
 
@@ -92,7 +96,7 @@ def run_sql(engine, path):
             con.execute(query)
 
 
-def get_admin_session(app):
+def get_admin_session(app) -> Dict[str, Any]:
     admin_data = {
         "password": admin_password,
         "email": admin_email,
@@ -100,3 +104,32 @@ def get_admin_session(app):
     return app.post(
         f"/v1/sessions", headers=get_header(), data=json.dumps(admin_data)
     ).json
+
+
+def get_user_session(client, session, roles) -> Dict[str, Any]:
+    payload = {
+        "name": "The User",
+        "email": "the.user@domain.com",
+        "password": "password",
+        "roles": roles,
+    }
+
+    response = client.post(
+        f"/v1/users",
+        headers=get_header(token=session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+
+    return client.post(
+        f"/v1/sessions", headers=get_header(), data=json.dumps(payload)
+    ).json
+
+
+def create_role(client, session: dict, role: dict) -> Dict[str, Any]:
+
+    response = client.post(
+        f"/v1/roles", headers=get_header(token=session["token"]), data=json.dumps(role)
+    )
+    assert 200 == response.status_code, response.text
+    return response.json

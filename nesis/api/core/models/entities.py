@@ -2,7 +2,7 @@ import copy
 import uuid
 import enum
 import datetime as dt
-from typing import Optional
+from typing import Optional, Dict, Any
 import nesis.api.core.models.objects as objects
 
 from sqlalchemy.orm import relationship
@@ -446,3 +446,46 @@ class RoleAction(Base):
         }
 
         return dict_value
+
+
+class Task(Base):
+    """
+    This entity represents a background task to be run on schedule
+    """
+
+    __tablename__ = "task"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    type = Column(Enum(objects.TaskType, name="task_type"), nullable=False)
+    schedule = Column(Unicode(255), nullable=False)
+    definition = Column(JSONB, nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    update_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("type", "schedule", name="uq_task_type_schedule"),
+    )
+
+    def __init__(
+        self,
+        task_type: objects.TaskType,
+        schedule: str,
+        definition: Dict[str, Any],
+        create_date: dt.datetime = dt.datetime.utcnow(),
+    ):
+        self.uuid = str(uuid.uuid4())
+        self.type = task_type
+        self.schedule = schedule
+        self.definition = definition
+        self.create_date = create_date
+
+    def to_dict(self, **kwargs):
+        return {
+            "id": self.uuid,
+            "type": self.type.name,
+            "schedule": self.schedule,
+            "definition": self.definition,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+            "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }

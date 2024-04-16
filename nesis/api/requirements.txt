@@ -31,3 +31,5 @@ Office365-REST-Python-Client==2.5.5
 dropbox==11.36.2
 
 injector==0.21.0
+
+croniter==2.0.3

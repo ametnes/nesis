@@ -14,7 +14,7 @@ import nesis.api.core.document_loaders.samba as samba
 _LOG = logging.getLogger(__name__)
 
 
-def fetch_documents(**kwargs) -> None:
+def ingest_documents(**kwargs) -> None:
     try:
         config = kwargs["config"] or {}
         rag_endpoint = (config.get("rag") or {}).get("endpoint")

@@ -23,7 +23,7 @@ def start(config: dict, http_client: http.HttpClient) -> None:
 
     _LOG.info("Running manager...")
 
-    entry_point_lookup = {"fetch_documents": document_management.fetch_documents}
+    entry_point_lookup = {"fetch_documents": document_management.ingest_documents}
 
     scheduler: Scheduler = Scheduler()
     tasks = config.get("tasks") or {}

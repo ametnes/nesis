@@ -54,6 +54,7 @@ class ResourceType(Enum):
     ROLES = enum.auto()
     PREDICTIONS = enum.auto()
     SETTINGS = enum.auto()
+    TASKS = enum.auto()
 
 
 class UserSession:
@@ -64,3 +65,7 @@ class UserSession:
 
     def to_dict(self, **kwargs):
         return {"token": self.token, "expiry": self.expiry, "user": self.user.to_dict()}
+
+
+class TaskType(Enum):
+    INGEST_DATASOURCE = enum.auto()
