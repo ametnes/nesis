@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          sudo apt install ffmpeg tesseract -y
+          sudo apt install ffmpeg tesseract-ocr -y
           pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-test.txt -r nesis/rag/requirements-huggingface.txt
       - name: Run unit tests
         env:
