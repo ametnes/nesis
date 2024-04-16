@@ -145,7 +145,7 @@ class SettingsService(ServiceOperation):
                 )
 
                 if db_setting:
-                    db_setting.definition = setting["attributes"]
+                    db_setting.attributes = setting["attributes"]
                     session.commit()
                     return db_setting
             except Exception as e:
