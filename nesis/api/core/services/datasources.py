@@ -171,6 +171,18 @@ class DatasourceService(ServiceOperation):
             if session:
                 session.close()
 
+    @staticmethod
+    def get_datasource(datasource_id: str) -> Datasource:
+        session = DBSession()
+        try:
+            session.expire_on_commit = False
+            query = session.query(Datasource)
+            query = query.filter(Datasource.uuid == datasource_id)
+            return query.first()
+        finally:
+            if session:
+                session.close()
+
     def delete(self, **kwargs):
 
         datasource_id = kwargs["datasource_id"]

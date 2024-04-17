@@ -61,6 +61,7 @@ def init_services(config, http_client=None):
         config=config,
         session_service=user_session_service,
         datasource_service=datasource_service,
+        http_client=http_client,
     )
 
     # Initialize system

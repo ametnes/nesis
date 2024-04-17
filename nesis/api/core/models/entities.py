@@ -460,6 +460,7 @@ class Task(Base):
     schedule = Column(Unicode(255), nullable=False)
     definition = Column(JSONB, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
+    status = Column(Enum(objects.TaskStatus, name="task_status"), nullable=False)
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
     update_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
 
@@ -472,10 +473,12 @@ class Task(Base):
         task_type: objects.TaskType,
         schedule: str,
         definition: Dict[str, Any],
+        status: objects.TaskStatus = objects.TaskStatus.IDLE,
         create_date: dt.datetime = dt.datetime.utcnow(),
     ):
         self.uuid = str(uuid.uuid4())
         self.type = task_type
+        self.status = status
         self.schedule = schedule
         self.definition = definition
         self.create_date = create_date
@@ -485,6 +488,7 @@ class Task(Base):
             "id": self.uuid,
             "type": self.type.name,
             "schedule": self.schedule,
+            "status": self.status.name,
             "definition": self.definition,
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
             "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),

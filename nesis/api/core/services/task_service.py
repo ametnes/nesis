@@ -1,11 +1,21 @@
 import pytz
 import logging
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
+import apscheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.cron import CronTrigger, BaseTrigger
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.events import (
+    EVENT_JOB_ERROR,
+    EVENT_JOB_EXECUTED,
+    JobEvent,
+    JobSubmissionEvent,
+    JobExecutionEvent,
+    EVENT_JOB_SUBMITTED,
+)
 
 import nesis.api.core.services as services
 from nesis.api.core.models import DBSession, objects
@@ -15,14 +25,17 @@ from nesis.api.core.models.entities import (
     Datasource,
     Task,
 )
-from nesis.api.core.models.objects import TaskType
+from nesis.api.core.models.objects import TaskType, TaskStatus
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
     ConflictException,
     PermissionException,
 )
-from nesis.api.core.tasks.document_management import ingest_documents
+from nesis.api.core.tasks.document_management import ingest_datasource
+from nesis.api.core.util.http import HttpClient
+import nesis.api.core.util.dateutil as du
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -36,12 +49,14 @@ class TaskService(ServiceOperation):
     def __init__(
         self,
         config: dict,
+        http_client: HttpClient,
         session_service: ServiceOperation = None,
         datasource_service: ServiceOperation = None,
     ):
         self._resource_type = objects.ResourceType.TASKS
         self._session_service = session_service
         self._datasource_service = datasource_service
+        self._http_client = http_client
         self._config = config
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
@@ -56,8 +71,12 @@ class TaskService(ServiceOperation):
             )
         }
         executors = {
-            "default": ThreadPoolExecutor(50),
-            "processpool": ProcessPoolExecutor(8),
+            "default": ThreadPoolExecutor(
+                self._config["tasks"]["executors"]["default_size"]
+            ),
+            "processpool": ProcessPoolExecutor(
+                self._config["tasks"]["executors"]["pool_size"]
+            ),
         }
         self._scheduler = BackgroundScheduler(
             jobstores=job_stores,
@@ -111,11 +130,22 @@ class TaskService(ServiceOperation):
                 raise ValueError("Invalid task type")
 
     @staticmethod
-    def _validate_schedule(schedule) -> CronTrigger:
-        cron_job = CronTrigger.from_crontab(schedule)
-        if cron_job is None:
-            raise ValueError("Invalid schedule")
-        return cron_job
+    def _validate_schedule(schedule) -> BaseTrigger:
+        try:
+            # While apscheduler can make the conversion, we do it here to have full control of error behaviour
+            schedule_date = du.strptime(schedule)
+            trigger = DateTrigger(run_date=schedule_date)
+        except ValueError:
+            schedule_date: Optional[du.dt.datetime] = None
+            trigger: Optional[DateTrigger] = None
+
+        if all([schedule_date, trigger]):
+            if schedule_date < du.now():
+                raise ValueError("Schedule date has to be in the future")
+            else:
+                return trigger
+
+        return CronTrigger.from_crontab(schedule)
 
     def create(self, **kwargs):
         """
@@ -153,9 +183,9 @@ class TaskService(ServiceOperation):
                 raise ServiceException(ve)
 
             try:
-                cron_job = self._validate_schedule(schedule)
-            except ValueError as ve:
-                raise ServiceException("Invalid schedule")
+                trigger = self._validate_schedule(schedule)
+            except ValueError as e:
+                raise ServiceException(e)
 
             entity = Task(
                 schedule=schedule, task_type=task_type, definition=task_definition
@@ -166,7 +196,14 @@ class TaskService(ServiceOperation):
             session.refresh(entity)
 
             self._scheduler.add_job(
-                func=ingest_documents, trigger=cron_job, id=entity.uuid
+                func=ingest_datasource,
+                trigger=trigger,
+                id=entity.uuid,
+                kwargs={"params": task_definition, "config": self._config},
+            )
+            self._scheduler.add_listener(
+                self._setup_scheduler,
+                EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_SUBMITTED,
             )
 
             return entity
@@ -184,6 +221,33 @@ class TaskService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+    @staticmethod
+    def _scheduler_listener(event: JobEvent) -> None:
+        session = DBSession()
+        job_id = event.job_id
+
+        if hasattr(event, "exception"):
+            if event.exception is not None:
+                _LOG.warning(f"Task {job_id} failed with error {event.exception}")
+                return
+
+        task: Task = session.query(Task).filter(Task.uuid == job_id).first()
+        if task is None:
+            _LOG.warning(f"Task {job_id} not found. May have been deleted")
+            return
+
+        match event.code:
+            case apscheduler.events.EVENT_JOB_SUBMITTED:
+                task.status = TaskStatus.RUNNING
+            case apscheduler.events.EVENT_JOB_EXECUTED:
+                task.status = TaskStatus.IDLE
+
+        session.merge(task)
+        try:
+            session.commit()
+        except:
+            _LOG.warning(f"Error when saving task {job_id} status", exc_info=True)
 
     def get(self, **kwargs):
         task_id = kwargs.get("task_id")
@@ -294,6 +358,12 @@ class TaskService(ServiceOperation):
                 self._scheduler.reschedule_job(
                     job_id=task_record.uuid, trigger=cron_job
                 )
+
+            # If task is disabled, we pause the job
+            if not task_record.enabled:
+                self._scheduler.pause_job(task_record.uuid)
+            else:
+                self._scheduler.resume_job(task_record.uuid)
 
             return task_record
 

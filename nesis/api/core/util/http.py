@@ -13,7 +13,7 @@ class HttpClient(object):
     A simple http client wrapping the request library
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         self._config = config
         self._cache = memcache.Client(config["memcache"]["hosts"], debug=1)
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)

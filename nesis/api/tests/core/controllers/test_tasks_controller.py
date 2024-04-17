@@ -112,7 +112,7 @@ def test_create_task_invalid_input(client, tc):
         ),
     )
     assert 400 == response.status_code, response.text
-    assert "Invalid schedule" in response.text
+    assert "Wrong number of fields" in response.text
 
 
 def test_create_task(client, tc):

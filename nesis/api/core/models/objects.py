@@ -69,3 +69,9 @@ class UserSession:
 
 class TaskType(Enum):
     INGEST_DATASOURCE = enum.auto()
+
+
+class TaskStatus(enum.Enum):
+    RUNNING = enum.auto()
+    PAUSED = enum.auto()
+    IDLE = enum.auto()
