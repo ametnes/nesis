@@ -1,6 +1,7 @@
 import json
 import pathlib
 from typing import Dict, Any
+from tzlocal import get_localzone
 
 import pandas as pd
 from sqlalchemy import text
@@ -41,22 +42,31 @@ config = {
         "create": True,
     },
     "rag": {"endpoint": "http://localhost:8080"},
-    "datasource": {
-        "url": os.environ.get(
-            "POSTGRES_DS_DB_URL", "postgresql://admin:password@postgres11:5432/nesis"
-        ),
-        "host": os.environ.get("POSTGRES_DS_HOST", "postgres11"),
-        "port": os.environ.get("POSTGRES_DS_PORT", "5432"),
-        "user": "admin",
-        "password": "password",
-        "db": "nesis",
-    },
     "memcache": {
         "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
         "session": {"expiry": 0},
         "cache": {
             "timeout_default": 300,
         },
+    },
+    "tasks": {
+        "job": {
+            "stores": {
+                "url": os.environ.get(
+                    "NESIS_API_TASKS_JOB_STORES_URL",
+                    os.environ.get(
+                        "NESIS_API_DATABASE_URL",
+                        "postgresql://postgres:password@localhost:65432/nesis",
+                    ),
+                )
+            },
+            "defaults": {
+                "coalesce": True,
+                "max_instances": 3,
+                "misfire_grace_time": 60,
+            },
+        },
+        "timezone": os.environ.get("NESIS_API_TASKS_TIMEZONE", str(get_localzone())),
     },
 }
 

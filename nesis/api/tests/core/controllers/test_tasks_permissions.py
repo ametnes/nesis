@@ -170,7 +170,7 @@ def test_authorized(client, tc):
     response = client.put(
         f"/v1/tasks/{task['id']}",
         headers=tests.get_header(token=user_session["token"]),
-        data=json.dumps({**payload, "schedule": "0 0 * * 5#3,L5"}),
+        data=json.dumps({**payload, "schedule": "2 4 * * mon,sun"}),
     )
     assert 200 == response.status_code, response.text
     task = response.json

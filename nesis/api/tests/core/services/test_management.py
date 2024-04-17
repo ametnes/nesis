@@ -60,7 +60,7 @@ def create_datasource(token: str, name: str = None) -> Datasource:
 
 def test_datasource_permissions(http_client, tc):
     """
-    Test the prediction happy path
+    Test the datasource happy path
     """
 
     admin_user = create_user_session(

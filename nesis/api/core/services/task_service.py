@@ -1,30 +1,28 @@
-import json
-from typing import Optional, Dict, Any, Union, List
-from croniter import croniter
-import bcrypt
-import memcache
-from strgen import StringGenerator as SG
-
+import pytz
 import logging
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from typing import Dict, Any, List
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.triggers.cron import CronTrigger
+
 import nesis.api.core.services as services
 from nesis.api.core.models import DBSession, objects
-from nesis.api.core.models.objects import ResourceType, UserSession, TaskType
 from nesis.api.core.models.entities import (
-    User,
-    Role,
     RoleAction,
-    UserRole,
     Action,
     Datasource,
     Task,
 )
+from nesis.api.core.models.objects import TaskType
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
     ConflictException,
-    UnauthorizedAccess,
     PermissionException,
 )
+from nesis.api.core.tasks.document_management import ingest_documents
 
 _LOG = logging.getLogger(__name__)
 
@@ -48,6 +46,30 @@ class TaskService(ServiceOperation):
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
         self._LOG.info("Initializing service...")
+
+        self._setup_scheduler()
+
+    def _setup_scheduler(self):
+        job_stores = {
+            "default": SQLAlchemyJobStore(
+                url=self._config["tasks"]["job"]["stores"]["url"], tablename="task_job"
+            )
+        }
+        executors = {
+            "default": ThreadPoolExecutor(50),
+            "processpool": ProcessPoolExecutor(8),
+        }
+        self._scheduler = BackgroundScheduler(
+            jobstores=job_stores,
+            executors=executors,
+            job_defaults=self._config["tasks"]["job"]["defaults"],
+            timezone=pytz.timezone(self._config["tasks"]["timezone"]),
+        )
+        try:
+            self._scheduler.start()
+        except (KeyboardInterrupt, SystemExit):
+            self._scheduler.shutdown(wait=False)
+            _LOG.info(f"Terminating scheduler process")
 
     def _authorized(self, session, token, action):
         """
@@ -89,9 +111,11 @@ class TaskService(ServiceOperation):
                 raise ValueError("Invalid task type")
 
     @staticmethod
-    def _validate_schedule(schedule):
-        if not croniter.is_valid(schedule):
+    def _validate_schedule(schedule) -> CronTrigger:
+        cron_job = CronTrigger.from_crontab(schedule)
+        if cron_job is None:
             raise ValueError("Invalid schedule")
+        return cron_job
 
     def create(self, **kwargs):
         """
@@ -129,7 +153,7 @@ class TaskService(ServiceOperation):
                 raise ServiceException(ve)
 
             try:
-                self._validate_schedule(schedule)
+                cron_job = self._validate_schedule(schedule)
             except ValueError as ve:
                 raise ServiceException("Invalid schedule")
 
@@ -140,6 +164,11 @@ class TaskService(ServiceOperation):
             session.add(entity)
             session.commit()
             session.refresh(entity)
+
+            self._scheduler.add_job(
+                func=ingest_documents, trigger=cron_job, id=entity.uuid
+            )
+
             return entity
         except Exception as exc:
             session.rollback()
@@ -214,6 +243,9 @@ class TaskService(ServiceOperation):
 
                 session.delete(task)
                 session.commit()
+
+                self._scheduler.remove_job(job_id=task.uuid)
+
         except Exception as e:
             self._LOG.exception(f"Error when deleting setting")
             raise
@@ -245,12 +277,24 @@ class TaskService(ServiceOperation):
                 task_record.enabled = enabled
 
             schedule = task.get("schedule")
+            cron_job = None
             if schedule is not None:
-                self._validate_schedule(schedule=schedule)
+                try:
+                    cron_job = self._validate_schedule(schedule)
+                except ValueError as ve:
+                    raise ServiceException("Invalid schedule/cron expression")
+
                 task_record.schedule = schedule
 
             session.merge(task_record)
             session.commit()
+
+            # Update job only after updating the record
+            if cron_job is not None:
+                self._scheduler.reschedule_job(
+                    job_id=task_record.uuid, trigger=cron_job
+                )
+
             return task_record
 
         except Exception as e:

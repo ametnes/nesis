@@ -12,7 +12,6 @@ SQLAlchemy==2.0.25
 StringGenerator==0.4.4
 urllib3~=2.2.0
 alembic==1.12.1
-scheduler==0.8.4
 more-itertools==10.1.0
 onnxruntime>=1.14.1
 gevent==23.9.1
@@ -32,4 +31,4 @@ dropbox==11.36.2
 
 injector==0.21.0
 
-croniter==2.0.3
+apscheduler==3.10.4
