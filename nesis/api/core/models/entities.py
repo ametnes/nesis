@@ -464,7 +464,7 @@ class Task(Base):
     Having a parent id here helps us find all the tasks related to a parent. For example if a parent is deleted,
     all related tasks should be deleted.
     """
-    parent_uuid = Column(Unicode(255))
+    parent_id = Column(Unicode(255))
     definition = Column(JSONB, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     status = Column(Enum(objects.TaskStatus, name="task_status"), nullable=False)
@@ -474,7 +474,7 @@ class Task(Base):
     __table_args__ = (
         UniqueConstraint("type", "schedule", name="uq_task_type_schedule"),
         Index("idx_task_type", "type"),
-        Index("idx_task_parent", "parent_uuid"),
+        Index("idx_task_parent", "parent_id"),
     )
 
     def __init__(
@@ -484,7 +484,7 @@ class Task(Base):
         definition: Dict[str, Any],
         status: objects.TaskStatus = objects.TaskStatus.CREATED,
         create_date: dt.datetime = dt.datetime.utcnow(),
-        parent_uuid: Optional[str] = None,
+        parent_id: Optional[str] = None,
     ):
         self.uuid = str(uuid.uuid4())
         self.type = task_type
@@ -492,7 +492,7 @@ class Task(Base):
         self.schedule = schedule
         self.definition = definition
         self.create_date = create_date
-        self.parent_uuid = parent_uuid
+        self.parent_id = parent_id
 
     def to_dict(self, **kwargs):
         return {
@@ -501,7 +501,7 @@ class Task(Base):
             "schedule": self.schedule,
             "enabled": self.enabled,
             "status": self.status.name,
-            "parent_uuid": self.parent_uuid,
+            "parent_id": self.parent_id,
             "definition": self.definition,
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
             "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),

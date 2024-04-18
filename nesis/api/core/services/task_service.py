@@ -175,7 +175,7 @@ class TaskService(ServiceOperation):
                 raise ServiceException("Invalid task type")
 
             try:
-                task_definition, parent_uuid = self._validate_definition(
+                task_definition, parent_id = self._validate_definition(
                     token=kwargs.get("token"),
                     definition=definition,
                     task_type=task_type,
@@ -198,7 +198,7 @@ class TaskService(ServiceOperation):
                 schedule=schedule,
                 task_type=task_type,
                 definition=task_definition,
-                parent_uuid=parent_uuid,
+                parent_id=parent_id,
             )
 
             session.add(entity)
@@ -282,7 +282,7 @@ class TaskService(ServiceOperation):
             if task_id:
                 query = query.filter(Task.uuid == task_id)
             if parent_id:
-                query = query.filter(Task.parent_uuid == parent_id)
+                query = query.filter(Task.parent_id == parent_id)
 
             return query.all()
         except Exception as e:
