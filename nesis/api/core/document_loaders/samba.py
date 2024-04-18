@@ -27,17 +27,17 @@ _LOG = logging.getLogger(__name__)
 
 def fetch_documents(
     connection: Dict[str, str],
-    llm_endpoint: str,
+    rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: Dict[str, Any],
 ) -> None:
     try:
-        _sync_samba_documents(connection, llm_endpoint, http_client, metadata)
+        _sync_samba_documents(connection, rag_endpoint, http_client, metadata)
     except:
         _LOG.exception(f"Error syncing documents")
 
     try:
-        _unsync_samba_documents(connection, llm_endpoint, http_client)
+        _unsync_samba_documents(connection, rag_endpoint, http_client)
     except Exception as ex:
         _LOG.exception(f"Error unsyncing documents")
 

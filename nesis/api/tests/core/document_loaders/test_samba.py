@@ -81,7 +81,7 @@ def test_fetch_documents(shutil, stat, scandir, session: Session) -> None:
         connection=data["connection"],
         http_client=http_client,
         metadata={"datasource": "documents"},
-        llm_endpoint="http://localhost:8080",
+        rag_endpoint="http://localhost:8080",
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]
