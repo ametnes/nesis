@@ -1,10 +1,8 @@
-from typing import Optional
+import logging
 
 import nesis.api.core.models.objects as objects
-import logging
 from nesis.api.core import services
 from nesis.api.core.document_loaders import validators
-
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import (
     Action,
@@ -13,7 +11,6 @@ from nesis.api.core.models.entities import (
     DatasourceType,
     RoleAction,
 )
-
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
@@ -31,7 +28,7 @@ class DatasourceService(ServiceOperation):
     def __init__(
         self,
         config: dict,
-        session_service=None,
+        session_service: ServiceOperation,
     ):
         self._resource_type = objects.ResourceType.DATASOURCES
         self._session_service = session_service
@@ -207,7 +204,7 @@ class DatasourceService(ServiceOperation):
 
                 session.delete(datasource)
                 session.commit()
-        except Exception as e:
+        except:
             self._LOG.exception(f"Error when deleting setting")
             raise
         finally:

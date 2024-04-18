@@ -1,7 +1,7 @@
 import json
 import pathlib
 import uuid
-import boto3
+import memcache
 from typing import Dict, Any
 
 import minio
@@ -29,6 +29,7 @@ def fetch_documents(
     connection: Dict[str, str],
     rag_endpoint: str,
     http_client: http.HttpClient,
+    cache_client: memcache.Client,
     metadata: Dict[str, Any],
 ) -> None:
     try:
@@ -49,6 +50,7 @@ def fetch_documents(
             connection=connection,
             rag_endpoint=rag_endpoint,
             http_client=http_client,
+            cache_client=cache_client,
             metadata=metadata,
         )
         _unsync_s3_documents(
@@ -66,6 +68,7 @@ def _sync_s3_documents(
     connection: dict,
     rag_endpoint: str,
     http_client: http.HttpClient,
+    cache_client: memcache.Client,
     metadata: dict,
 ) -> None:
     #
@@ -90,21 +93,39 @@ def _sync_s3_documents(
                 _LOG.warn(f"Failed to list objects in bucket {bucket_name}")
                 continue
             for item in bucket_objects:
-                _sync_document(
-                    client=client,
-                    connection=connection,
-                    rag_endpoint=rag_endpoint,
-                    http_client=http_client,
-                    metadata=metadata,
-                    bucket_name=bucket_name,
-                    item=item,
-                    work_dir=work_dir,
-                )
+                endpoint = connection["endpoint"]
+                self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
+                _metadata = {
+                    **(metadata or {}),
+                    "file_name": f"{bucket_name}/{item.object_name}",
+                    "self_link": self_link,
+                }
+
+                """
+                We use memcache's add functionality to implement a shared lock to allow for multiple instances
+                operating 
+                """
+                if cache_client.add(key=self_link, val=self_link, time=30 * 60):
+                    try:
+                        _sync_document(
+                            client=client,
+                            connection=connection,
+                            rag_endpoint=rag_endpoint,
+                            http_client=http_client,
+                            metadata=_metadata,
+                            bucket_name=bucket_name,
+                            item=item,
+                            work_dir=work_dir,
+                        )
+                    finally:
+                        cache_client.delete(self_link)
+                else:
+                    raise UserWarning(f"File {cache_client} is already processing")
 
         _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
 
     except:
-        _LOG.warn("Error fetching and updating documents", exc_info=True)
+        _LOG.warning("Error fetching and updating documents", exc_info=True)
 
 
 def _sync_document(
@@ -118,11 +139,7 @@ def _sync_document(
     work_dir: str,
 ):
     endpoint = connection["endpoint"]
-    _metadata = {
-        **(metadata or {}),
-        "file_name": f"{bucket_name}/{item.object_name}",
-        "self_link": f"{endpoint}/{bucket_name}/{item.object_name}",
-    }
+    _metadata = metadata
     file_path = f"{work_dir}/{item.object_name}"
     try:
         _LOG.info(f"Starting syncing object {item.object_name} in bucket {bucket_name}")

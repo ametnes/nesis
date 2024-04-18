@@ -1,23 +1,23 @@
-import pytz
 import logging
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from typing import Dict, Any, List, Optional
 
 import apscheduler
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.triggers.cron import CronTrigger, BaseTrigger
-from apscheduler.triggers.date import DateTrigger
+import pytz
 from apscheduler.events import (
     EVENT_JOB_ERROR,
     EVENT_JOB_EXECUTED,
     JobEvent,
-    JobSubmissionEvent,
-    JobExecutionEvent,
     EVENT_JOB_SUBMITTED,
+    EVENT_JOB_ADDED,
 )
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger, BaseTrigger
+from apscheduler.triggers.date import DateTrigger
 
 import nesis.api.core.services as services
+import nesis.api.core.util.dateutil as du
 from nesis.api.core.models import DBSession, objects
 from nesis.api.core.models.entities import (
     RoleAction,
@@ -34,8 +34,6 @@ from nesis.api.core.services.util import (
 )
 from nesis.api.core.tasks.document_management import ingest_datasource
 from nesis.api.core.util.http import HttpClient
-import nesis.api.core.util.dateutil as du
-
 
 _LOG = logging.getLogger(__name__)
 
@@ -50,8 +48,8 @@ class TaskService(ServiceOperation):
         self,
         config: dict,
         http_client: HttpClient,
-        session_service: ServiceOperation = None,
-        datasource_service: ServiceOperation = None,
+        session_service: ServiceOperation,
+        datasource_service: ServiceOperation,
     ):
         self._resource_type = objects.ResourceType.TASKS
         self._session_service = session_service
@@ -108,7 +106,7 @@ class TaskService(ServiceOperation):
 
     def _validate_definition(
         self, token, task_type: TaskType, definition: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    ) -> tuple[Dict[str, Any], Any]:
         """
         Validates the task definition. For now, tasks are only available on Datasources but this can be easily.
         Returns a modified task definition with only the valid fields
@@ -125,7 +123,7 @@ class TaskService(ServiceOperation):
                 )
                 if len(datasource_records) == 0:
                     raise ValueError("Invalid datasource supplied")
-                return {"datasource": {"id": datasource["id"]}}
+                return {"datasource": {"id": datasource["id"]}}, datasource["id"]
             case _:
                 raise ValueError("Invalid task type")
 
@@ -133,14 +131,17 @@ class TaskService(ServiceOperation):
     def _validate_schedule(schedule) -> BaseTrigger:
         try:
             # While apscheduler can make the conversion, we do it here to have full control of error behaviour
-            schedule_date = du.strptime(schedule)
+            if schedule is None:
+                schedule_date = du.now()
+            else:
+                schedule_date = du.strptime(schedule)
             trigger = DateTrigger(run_date=schedule_date)
         except ValueError:
             schedule_date: Optional[du.dt.datetime] = None
             trigger: Optional[DateTrigger] = None
 
         if all([schedule_date, trigger]):
-            if schedule_date < du.now():
+            if schedule is not None and schedule_date < du.now():
                 raise ValueError("Schedule date has to be in the future")
             else:
                 return trigger
@@ -174,7 +175,7 @@ class TaskService(ServiceOperation):
                 raise ServiceException("Invalid task type")
 
             try:
-                task_definition = self._validate_definition(
+                task_definition, parent_uuid = self._validate_definition(
                     token=kwargs.get("token"),
                     definition=definition,
                     task_type=task_type,
@@ -184,11 +185,20 @@ class TaskService(ServiceOperation):
 
             try:
                 trigger = self._validate_schedule(schedule)
+
+                # If a date trigger, then we trim down the time to the second
+                if isinstance(trigger, DateTrigger):
+                    schedule = du.dt.datetime.strftime(
+                        trigger.run_date, du.YYYY_MM_DD_HH_MM_SS
+                    )
             except ValueError as e:
                 raise ServiceException(e)
 
             entity = Task(
-                schedule=schedule, task_type=task_type, definition=task_definition
+                schedule=schedule,
+                task_type=task_type,
+                definition=task_definition,
+                parent_uuid=parent_uuid,
             )
 
             session.add(entity)
@@ -202,8 +212,11 @@ class TaskService(ServiceOperation):
                 kwargs={"params": task_definition, "config": self._config},
             )
             self._scheduler.add_listener(
-                self._setup_scheduler,
-                EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_SUBMITTED,
+                self._scheduler_listener,
+                EVENT_JOB_EXECUTED
+                | EVENT_JOB_ERROR
+                | EVENT_JOB_SUBMITTED
+                | EVENT_JOB_ADDED,
             )
 
             return entity
@@ -224,24 +237,25 @@ class TaskService(ServiceOperation):
 
     @staticmethod
     def _scheduler_listener(event: JobEvent) -> None:
-        session = DBSession()
         job_id = event.job_id
 
-        if hasattr(event, "exception"):
-            if event.exception is not None:
-                _LOG.warning(f"Task {job_id} failed with error {event.exception}")
-                return
-
+        session = DBSession()
         task: Task = session.query(Task).filter(Task.uuid == job_id).first()
         if task is None:
-            _LOG.warning(f"Task {job_id} not found. May have been deleted")
-            return
+            raise ValueError(f"Task {job_id} not found. May have been deleted")
 
         match event.code:
+            case apscheduler.events.EVENT_JOB_ERROR:
+                if hasattr(event, "exception"):
+                    if event.exception is not None:
+                        _LOG.warning(
+                            f"Task {job_id} failed with error {event.exception}"
+                        )
+                task.status = TaskStatus.ERROR
             case apscheduler.events.EVENT_JOB_SUBMITTED:
                 task.status = TaskStatus.RUNNING
             case apscheduler.events.EVENT_JOB_EXECUTED:
-                task.status = TaskStatus.IDLE
+                task.status = TaskStatus.COMPLETED
 
         session.merge(task)
         try:
@@ -251,11 +265,14 @@ class TaskService(ServiceOperation):
 
     def get(self, **kwargs):
         task_id = kwargs.get("task_id")
+        parent_id = kwargs.get("parent_id")
 
         session = DBSession()
         try:
-
-            # Get tasks this user is authorized to access
+            """
+            Get tasks this user is authorized to access
+            TODO - This is risky if we have a very long list of tasks as we end up generating a big select...in(...) statement
+            """
             tasks = self._authorized_resources(
                 session=session, action=Action.READ, token=kwargs.get("token")
             )
@@ -264,6 +281,8 @@ class TaskService(ServiceOperation):
             query = session.query(Task).filter(Task.uuid.in_(tasks))
             if task_id:
                 query = query.filter(Task.uuid == task_id)
+            if parent_id:
+                query = query.filter(Task.parent_uuid == parent_id)
 
             return query.all()
         except Exception as e:
@@ -310,7 +329,8 @@ class TaskService(ServiceOperation):
 
                 self._scheduler.remove_job(job_id=task.uuid)
 
-        except Exception as e:
+        except Exception:
+            session.rollback()
             self._LOG.exception(f"Error when deleting setting")
             raise
         finally:

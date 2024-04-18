@@ -1,40 +1,27 @@
-import json
-import time
-import uuid
-import threading
-
-from apscheduler.triggers.cron import CronTrigger
-
 import unittest as ut
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.triggers.date import DateTrigger
+import uuid
 
 import pytest
-
-from sqlalchemy.orm.session import Session
-import nesis.api.tests as tests
-import nesis.api.core.services as services
-from nesis.api.core.models import initialize_engine, DBSession
-from nesis.api.core.models.entities import Datasource, Task
-from nesis.api.core.models.objects import TaskType, TaskStatus
-from nesis.api.core.services import PermissionException, TaskService
-from nesis.api.core.services.util import ServiceException
-from nesis.api.core.util import http
-from nesis.api.tests.core.services import (
-    create_user_session,
-    create_role,
-    assign_role,
-)
 from apscheduler.events import (
     EVENT_JOB_ERROR,
     EVENT_JOB_EXECUTED,
     JobEvent,
-    JobSubmissionEvent,
-    JobExecutionEvent,
     EVENT_JOB_SUBMITTED,
 )
+from apscheduler.triggers.cron import CronTrigger
+from sqlalchemy.orm.session import Session
+
+import nesis.api.core.services as services
 import nesis.api.core.util.dateutil as du
+import nesis.api.tests as tests
+from nesis.api.core.models import initialize_engine, DBSession
+from nesis.api.core.models.entities import Datasource, Task
+from nesis.api.core.models.objects import TaskType, TaskStatus
+from nesis.api.core.services.util import ServiceException
+from nesis.api.core.util import http
+from nesis.api.tests.core.services import (
+    create_user_session,
+)
 
 
 @pytest.fixture
@@ -180,46 +167,39 @@ def test_task_date_scheduler(tc):
     ) == du.dt.datetime.strftime(job_list[0].trigger.run_date, du.YYYY_MM_DD_HH_MM_SS)
 
 
-def _test_task_listener(tc):
-
-    start_event = threading.Event()
-    finish_event = threading.Event()
-
-    def job():
-        start_event.set()
-        while not finish_event.is_set():
-            time.sleep(2)
+@pytest.mark.parametrize(
+    "event_code, expected",
+    [
+        (EVENT_JOB_SUBMITTED, TaskStatus.RUNNING),
+        (EVENT_JOB_EXECUTED, TaskStatus.COMPLETED),
+        (EVENT_JOB_ERROR, TaskStatus.ERROR),
+    ],
+)
+def test_task_listener(tc, event_code, expected):
 
     task = Task(
         task_type=TaskType.INGEST_DATASOURCE, schedule=str(du.now()), definition={}
     )
     session: Session = DBSession()
-
     session.add(task)
     session.commit()
 
-    scheduler = BackgroundScheduler(
-        executors={
-            "default": ThreadPoolExecutor(2),
-            "processpool": ProcessPoolExecutor(2),
-        }
-    )
-    scheduler.start()
+    # Submitted event
+    submit_event: JobEvent = JobEvent(code=event_code, job_id=task.uuid, jobstore=None)
 
-    scheduler.add_listener(
-        TaskService._scheduler_listener,
-        EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_SUBMITTED,
-    )
+    services.task_service._scheduler_listener(event=submit_event)
 
-    scheduler.add_job(func=job, trigger=DateTrigger(), id=task.uuid)
-
-    while not start_event.is_set():
-        time.sleep(5)
     task = session.query(Task).filter(Task.uuid == task.uuid).first()
-    assert task.status == TaskStatus.RUNNING
+    assert task.status == expected
 
-    finish_event.set()
 
-    assert task.status == TaskStatus.IDLE
-    scheduler.remove_all_jobs()
-    # scheduler.shutdown()
+def test_task_listener_invalid_job(tc):
+
+    # Fail with ValueError if job_id is invalid
+    submit_event: JobEvent = JobEvent(
+        code=EVENT_JOB_EXECUTED, job_id=str(uuid.uuid4()), jobstore=None
+    )
+
+    with pytest.raises(ValueError) as ex_info:
+        services.task_service._scheduler_listener(event=submit_event)
+        assert "not found" in str(ex_info)

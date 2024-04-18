@@ -43,8 +43,8 @@ def run_cloud(app, args, services):
     try:
         _LOG.info("Initializing database engine...")
         initialize_engine(config)
-    except Exception as ex:
-        _LOG.error(f"Error initializing application engine - {ex}")
+    except:
+        _LOG.exception(f"Error initializing application engine")
         sys.exit(1)
 
     # Initialize services
@@ -54,8 +54,8 @@ def run_cloud(app, args, services):
         _LOG.info("Initializing services...")
         services(config, http_client=http_client)
         _LOG.info("Done initializing services...")
-    except Exception as ex:
-        _LOG.error(f"Error initializing services - {ex}")
+    except:
+        _LOG.exception(f"Error initializing services")
         sys.exit(1)
 
     # Start the application

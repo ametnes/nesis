@@ -24,6 +24,11 @@ def session() -> None:
     return DBSession()
 
 
+@pytest.fixture
+def cache() -> mock.MagicMock:
+    return mock.MagicMock()
+
+
 @pytest.fixture(autouse=True)
 def configure() -> None:
     os.environ["OPENAI_API_BASE"] = "http://localhost:8080/v1"
@@ -40,7 +45,9 @@ def configure() -> None:
 @mock.patch("nesis.api.core.document_loaders.samba.scandir")
 @mock.patch("nesis.api.core.document_loaders.samba.stat")
 @mock.patch("nesis.api.core.document_loaders.samba.shutil")
-def test_fetch_documents(shutil, stat, scandir, session: Session) -> None:
+def test_fetch_documents(
+    shutil, stat, scandir, cache: mock.MagicMock, session: Session
+) -> None:
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -81,7 +88,8 @@ def test_fetch_documents(shutil, stat, scandir, session: Session) -> None:
         connection=data["connection"],
         http_client=http_client,
         metadata={"datasource": "documents"},
-        llm_endpoint="http://localhost:8080",
+        rag_endpoint="http://localhost:8080",
+        cache_client=cache,
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]

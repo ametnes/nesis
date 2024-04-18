@@ -74,4 +74,6 @@ class TaskType(Enum):
 class TaskStatus(enum.Enum):
     RUNNING = enum.auto()
     PAUSED = enum.auto()
-    IDLE = enum.auto()
+    COMPLETED = enum.auto()
+    ERROR = enum.auto()
+    CREATED = enum.auto()

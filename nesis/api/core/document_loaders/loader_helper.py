@@ -8,13 +8,13 @@ from nesis.api.core.services.util import get_document, delete_document
 _LOG = logging.getLogger(__name__)
 
 
-def upload_document_to_llm(upload_document, file_metadata, llm_endpoint, http_client):
+def upload_document_to_llm(upload_document, file_metadata, rag_endpoint, http_client):
     return _upload_document_to_pgpt(
-        upload_document, file_metadata, llm_endpoint, http_client
+        upload_document, file_metadata, rag_endpoint, http_client
     )
 
 
-def _upload_document_to_pgpt(upload_document, file_metadata, llm_endpoint, http_client):
+def _upload_document_to_pgpt(upload_document, file_metadata, rag_endpoint, http_client):
     document_id = file_metadata["unique_id"]
     file_name = file_metadata["name"]
 
@@ -36,7 +36,7 @@ def _upload_document_to_pgpt(upload_document, file_metadata, llm_endpoint, http_
             for document_data in rag_metadata.get("data") or []:
                 try:
                     http_client.delete(
-                        url=f"{llm_endpoint}/v1/ingest/{document_data['doc_id']}"
+                        url=f"{rag_endpoint}/v1/ingest/{document_data['doc_id']}"
                     )
                 except:
                     _LOG.warn(f"Failed to delete document {document_data['doc_id']}")
@@ -49,5 +49,5 @@ def _upload_document_to_pgpt(upload_document, file_metadata, llm_endpoint, http_
                 )
 
     request_object = {"file_name": file_name, "text": upload_document.page_content}
-    response = http_client.post(url=f"{llm_endpoint}/v1/ingest", payload=request_object)
+    response = http_client.post(url=f"{rag_endpoint}/v1/ingest", payload=request_object)
     return json.loads(response)

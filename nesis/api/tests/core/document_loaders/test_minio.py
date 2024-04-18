@@ -27,6 +27,11 @@ def session() -> None:
     return DBSession()
 
 
+@pytest.fixture
+def cache() -> mock.MagicMock:
+    return mock.MagicMock()
+
+
 @pytest.fixture(autouse=True)
 def configure() -> None:
     os.environ["OPENAI_API_BASE"] = "http://localhost:8080/v1"
@@ -42,7 +47,9 @@ def configure() -> None:
 
 
 @mock.patch("nesis.api.core.document_loaders.minio.Minio")
-def test_fetch_documents(minio_instance: mock.MagicMock, session: Session) -> None:
+def test_fetch_documents(
+    minio_instance: mock.MagicMock, cache: mock.MagicMock, session: Session
+) -> None:
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -84,6 +91,7 @@ def test_fetch_documents(minio_instance: mock.MagicMock, session: Session) -> No
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",
+        cache_client=cache,
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]

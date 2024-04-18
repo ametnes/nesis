@@ -12,11 +12,11 @@ from nesis.api.core.services.settings import SettingsService
 _LOG = logging.getLogger(__name__)
 
 
-def fetch_documents(settings, llm_endpoint, http_client) -> None:
+def fetch_documents(settings, rag_endpoint, http_client) -> None:
     try:
         settings = _get_dropbox_oauth_refresh_token(settings)
-        _sync_dropbox_documents(settings, llm_endpoint, http_client)
-        _unsync_dropbox_documents(settings, llm_endpoint, http_client)
+        _sync_dropbox_documents(settings, rag_endpoint, http_client)
+        _unsync_dropbox_documents(settings, rag_endpoint, http_client)
     except Exception as ex:
         _LOG.exception(f"Error fetching sharepoint documents - {ex}")
         raise
@@ -55,13 +55,13 @@ def _get_dropbox_oauth_refresh_token(settings):
     return settings
 
 
-def _sync_dropbox_documents(settings, llm_endpoint, http_client):
+def _sync_dropbox_documents(settings, rag_endpoint, http_client):
     dropbox_access_token = settings["access_token"]
     dropbox_folders = settings["dropbox_folders"]
 
     folder_names = dropbox_folders.split(",")
 
-    _LOG.info(f"Initializing dropbox syncing to endpoint {llm_endpoint}")
+    _LOG.info(f"Initializing dropbox syncing to endpoint {rag_endpoint}")
 
     for folder in folder_names:
         try:
@@ -95,7 +95,7 @@ def _sync_dropbox_documents(settings, llm_endpoint, http_client):
                     upload_document=document,
                     file_metadata=file_metadata,
                     http_client=http_client,
-                    llm_endpoint=llm_endpoint,
+                    rag_endpoint=rag_endpoint,
                 )
 
                 # If the document has been successfully uploaded to LLM we save details in document database
@@ -116,9 +116,9 @@ def _sync_dropbox_documents(settings, llm_endpoint, http_client):
                     f"Error when getting and ingesting file {document['metadata']['title']} - {ex}"
                 )
 
-    _LOG.info(f"Completed syncing to endpoint {llm_endpoint}")
+    _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
 
 
-def _unsync_dropbox_documents(settings, llm_endpoint, http_client):
+def _unsync_dropbox_documents(settings, rag_endpoint, http_client):
     settings = settings
     # TODO implement unsync of documents from dropbox
