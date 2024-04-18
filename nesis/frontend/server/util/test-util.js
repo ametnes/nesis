@@ -17,6 +17,8 @@ class Request {
     this.predictionsByModel = [];
     this.models = [];
     this.dataobjects = [];
+    this.tasks = [];
+    this.taskById = {};
     this.targets = {};
   }
   set(header, value) {
@@ -80,6 +82,12 @@ class Request {
           status: 200,
         };
         this.models.push(res.body);
+      } else if (this.url.endsWith('/tasks')) {
+        res = {
+          body: Object.assign({}, this.data, { id: util.guid() }),
+          status: 200,
+        };
+        this.tasks.push(res.body);
       }
     } else if (this.method === 'PUT') {
       if (this.url.includes('/rules/')) {
@@ -87,6 +95,8 @@ class Request {
       } else if (this.url.includes('/predictions/')) {
         res = { body: this.data, status: 200 };
       } else if (this.url.includes('/datasources/')) {
+        res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/tasks/')) {
         res = { body: this.data, status: 200 };
       }
     } else if (this.method === 'GET') {
@@ -100,6 +110,10 @@ class Request {
         res = { body: this.datasources, status: 200 };
       } else if (this.url.includes('/datasources/')) {
         res = { body: this.datasourceByName, status: 200 };
+      } else if (this.url.endsWith('/tasks')) {
+        res = { body: this.tasks, status: 200 };
+      } else if (this.url.includes('/tasks/')) {
+        res = { body: this.taskById, status: 200 };
       }
     } else if (this.method === 'DELETE') {
       res = { body: 'Deleted', status: 200 };
