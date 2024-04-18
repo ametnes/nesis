@@ -164,7 +164,7 @@ def test_create_datasource(client, tc):
     assert 404 == response.status_code, response.json
 
 
-def test_update_datasources(client, tc):
+def test_update_datasource(client, tc):
     # Create a datasource
     payload = {
         "type": "minio",
@@ -231,3 +231,104 @@ def test_update_datasources(client, tc):
         response.json["connection"],
         {k: v for k, v in datasource["connection"].items() if k != "password"},
     )
+
+
+def test_create_datasource_schedule(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "host": "localhost",
+            "port": "5432",
+            "database": "initdb",
+        },
+        "schedule": "Some invalid schedule",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 400 == response.status_code, response.json
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])
+
+    payload["schedule"] = "*/5 * * * *"
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+
+def test_update_datasource_schedule(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "host": "localhost",
+            "port": "5432",
+            "database": "initdb",
+        },
+        "schedule": "*/5 * * * *",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.json
+
+    # We update the schedule
+    datasource = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    ).json["items"][0]
+
+    datasource["schedule"] = "*/10 * * * *"
+
+    response = client.put(
+        f"/v1/datasources/{datasource['id']}",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(datasource),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+    assert response.json["items"][0]["schedule"] == datasource["schedule"]

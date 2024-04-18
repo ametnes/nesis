@@ -17,6 +17,8 @@ from apscheduler.triggers.cron import CronTrigger, BaseTrigger
 from apscheduler.triggers.date import DateTrigger
 
 import nesis.api.core.services as services
+
+from nesis.api.core.services.util import validate_schedule
 import nesis.api.core.util.dateutil as du
 from nesis.api.core.models import DBSession, objects
 from nesis.api.core.models.entities import (
@@ -24,6 +26,7 @@ from nesis.api.core.models.entities import (
     Action,
     Datasource,
     Task,
+    DatasourceStatus,
 )
 from nesis.api.core.models.objects import TaskType, TaskStatus
 from nesis.api.core.services.util import (
@@ -127,27 +130,6 @@ class TaskService(ServiceOperation):
             case _:
                 raise ValueError("Invalid task type")
 
-    @staticmethod
-    def _validate_schedule(schedule) -> BaseTrigger:
-        try:
-            # While apscheduler can make the conversion, we do it here to have full control of error behaviour
-            if schedule is None:
-                schedule_date = du.now()
-            else:
-                schedule_date = du.strptime(schedule)
-            trigger = DateTrigger(run_date=schedule_date)
-        except ValueError:
-            schedule_date: Optional[du.dt.datetime] = None
-            trigger: Optional[DateTrigger] = None
-
-        if all([schedule_date, trigger]):
-            if schedule is not None and schedule_date < du.now():
-                raise ValueError("Schedule date has to be in the future")
-            else:
-                return trigger
-
-        return CronTrigger.from_crontab(schedule)
-
     def create(self, **kwargs):
         """
         Create a task. Must have Task.CREATE permissions
@@ -184,7 +166,7 @@ class TaskService(ServiceOperation):
                 raise ServiceException(ve)
 
             try:
-                trigger = self._validate_schedule(schedule)
+                trigger = validate_schedule(schedule)
 
                 # If a date trigger, then we trim down the time to the second
                 if isinstance(trigger, DateTrigger):
@@ -243,6 +225,13 @@ class TaskService(ServiceOperation):
         task: Task = session.query(Task).filter(Task.uuid == job_id).first()
         if task is None:
             raise ValueError(f"Task {job_id} not found. May have been deleted")
+        datasource: Optional[Datasource] = None
+        if task.type == TaskType.INGEST_DATASOURCE:
+            datasource: Datasource = (
+                session.query(Datasource)
+                .filter(Datasource.uuid == task.parent_id)
+                .first()
+            )
 
         match event.code:
             case apscheduler.events.EVENT_JOB_ERROR:
@@ -252,12 +241,20 @@ class TaskService(ServiceOperation):
                             f"Task {job_id} failed with error {event.exception}"
                         )
                 task.status = TaskStatus.ERROR
+                if datasource is not None:
+                    datasource.status = DatasourceStatus.ONLINE
             case apscheduler.events.EVENT_JOB_SUBMITTED:
                 task.status = TaskStatus.RUNNING
+                if datasource is not None:
+                    datasource.status = DatasourceStatus.INGESTING
             case apscheduler.events.EVENT_JOB_EXECUTED:
                 task.status = TaskStatus.COMPLETED
+                if datasource is not None:
+                    datasource.status = DatasourceStatus.ONLINE
 
         session.merge(task)
+        if datasource is not None:
+            session.merge(datasource)
         try:
             session.commit()
         except:
@@ -266,6 +263,7 @@ class TaskService(ServiceOperation):
     def get(self, **kwargs):
         task_id = kwargs.get("task_id")
         parent_id = kwargs.get("parent_id")
+        schedule = kwargs.get("schedule")
 
         session = DBSession()
         try:
@@ -283,6 +281,8 @@ class TaskService(ServiceOperation):
                 query = query.filter(Task.uuid == task_id)
             if parent_id:
                 query = query.filter(Task.parent_id == parent_id)
+            if schedule:
+                query = query.filter(Task.schedule == schedule)
 
             return query.all()
         except Exception as e:
@@ -364,7 +364,7 @@ class TaskService(ServiceOperation):
             cron_job = None
             if schedule is not None:
                 try:
-                    cron_job = self._validate_schedule(schedule)
+                    cron_job = validate_schedule(schedule)
                 except ValueError as ve:
                     raise ServiceException("Invalid schedule/cron expression")
 

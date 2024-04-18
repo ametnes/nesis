@@ -19,7 +19,7 @@ from nesis.api.core.services.util import (
     ValidationException,
     ingest_file,
 )
-from nesis.api.core.util import http
+from nesis.api.core.util import http, clean_control
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT, DEFAULT_SAMBA_PORT
 from nesis.api.core.util.dateutil import strptime
 
@@ -120,7 +120,7 @@ def _sync_samba_documents(
             continue
         try:
             self_link = file_share.path
-            _lock_key = f"{__name__}/locks/{self_link}"
+            _lock_key = clean_control(f"{__name__}/locks/{self_link}")
 
             if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
                 _metadata = {

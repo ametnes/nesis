@@ -15,7 +15,7 @@ import nesis.api.core.services as services
 import nesis.api.core.util.dateutil as du
 import nesis.api.tests as tests
 from nesis.api.core.models import initialize_engine, DBSession
-from nesis.api.core.models.entities import Datasource, Task
+from nesis.api.core.models.entities import Datasource, Task, DatasourceStatus
 from nesis.api.core.models.objects import TaskType, TaskStatus
 from nesis.api.core.services.util import ServiceException
 from nesis.api.core.util import http
@@ -168,17 +168,30 @@ def test_task_date_scheduler(tc):
 
 
 @pytest.mark.parametrize(
-    "event_code, expected",
+    "event_code, task_expected, datasource_expected",
     [
-        (EVENT_JOB_SUBMITTED, TaskStatus.RUNNING),
-        (EVENT_JOB_EXECUTED, TaskStatus.COMPLETED),
-        (EVENT_JOB_ERROR, TaskStatus.ERROR),
+        (EVENT_JOB_SUBMITTED, TaskStatus.RUNNING, DatasourceStatus.INGESTING),
+        (EVENT_JOB_EXECUTED, TaskStatus.COMPLETED, DatasourceStatus.ONLINE),
+        (EVENT_JOB_ERROR, TaskStatus.ERROR, DatasourceStatus.ONLINE),
     ],
 )
-def test_task_listener(tc, event_code, expected):
+def test_task_listener(tc, event_code, task_expected, datasource_expected):
+    """
+    Test the task listener updates the task and datasource during ingestion.
+    """
+
+    admin_user = create_user_session(
+        service=services.user_session_service,
+        email=tests.admin_email,
+        password=tests.admin_password,
+    )
+    datasource: Datasource = create_datasource(token=admin_user.token)
 
     task = Task(
-        task_type=TaskType.INGEST_DATASOURCE, schedule=str(du.now()), definition={}
+        task_type=TaskType.INGEST_DATASOURCE,
+        schedule=str(du.now()),
+        definition={},
+        parent_id=datasource.uuid,
     )
     session: Session = DBSession()
     session.add(task)
@@ -190,7 +203,11 @@ def test_task_listener(tc, event_code, expected):
     services.task_service._scheduler_listener(event=submit_event)
 
     task = session.query(Task).filter(Task.uuid == task.uuid).first()
-    assert task.status == expected
+    datasource = (
+        session.query(Datasource).filter(Datasource.uuid == task.parent_id).first()
+    )
+    assert task.status == task_expected
+    assert datasource.status == datasource_expected
 
 
 def test_task_listener_invalid_job(tc):

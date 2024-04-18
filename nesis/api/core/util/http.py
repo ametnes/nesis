@@ -7,6 +7,8 @@ import memcache
 import requests as req
 import logging
 
+from nesis.api.core.util import clean_control
+
 
 class HttpClient(object):
     """
@@ -93,7 +95,7 @@ class HttpClient(object):
         Here we use memcached add function to simulate locking. This ensure that if multiple instances of this application
         are running, there will not be a conflict on which instance processed the file
         """
-        _lock_key = f"{__name__}/locks/{self_link}"
+        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
         if self._cache.add(key=_lock_key, val=_lock_key, time=30 * 60):
             try:
                 with open(filepath, "rb") as file_handle:

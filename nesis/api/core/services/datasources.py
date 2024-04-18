@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, List
 
 import nesis.api.core.models.objects as objects
 from nesis.api.core import services
@@ -10,6 +11,7 @@ from nesis.api.core.models.entities import (
     DatasourceStatus,
     DatasourceType,
     RoleAction,
+    Task,
 )
 from nesis.api.core.services.util import (
     ServiceOperation,
@@ -18,6 +20,7 @@ from nesis.api.core.services.util import (
     has_valid_keys,
     PermissionException,
     ConflictException,
+    validate_schedule,
 )
 
 _LOG = logging.getLogger(__name__)
@@ -33,9 +36,18 @@ class DatasourceService(ServiceOperation):
         self._resource_type = objects.ResourceType.DATASOURCES
         self._session_service = session_service
         self._config = config
+        self._task_service: Optional[ServiceOperation] = None
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
         self._LOG.info("Initializing service...")
+
+    @property
+    def task_service(self) -> ServiceOperation:
+        return self._task_service
+
+    @task_service.setter
+    def task_service(self, service: ServiceOperation):
+        self._task_service = service
 
     def _authorized(self, session, token, action):
         """
@@ -71,6 +83,7 @@ class DatasourceService(ServiceOperation):
             session.expire_on_commit = False
 
             name = datasource.get("name")
+            schedule = datasource.get("schedule")
             source_type: str = datasource.get("type")
 
             try:
@@ -96,9 +109,22 @@ class DatasourceService(ServiceOperation):
                 source_type=datasource_type,
             )
 
+            # We validate the schedule (if supplied), before we create the datasource
+            self._validate_schedule(datasource)
+
             session.add(entity)
             session.commit()
             session.refresh(entity)
+
+            if all([schedule, self._task_service]):
+                task = {
+                    "schedule": schedule,
+                    "parent_id": entity.uuid,
+                    "type": objects.TaskType.INGEST_DATASOURCE.name,
+                    "definition": {"datasource": {"id": entity.uuid}},
+                }
+                self._task_service.create(token=kwargs["token"], task=task)
+
             return entity
         except Exception as exc:
             session.rollback()
@@ -261,8 +287,36 @@ class DatasourceService(ServiceOperation):
                 if not has_valid_keys(connection):
                     raise ServiceException("Missing connection details")
 
+            # We validate the schedule (if supplied), before we create the datasource
+            self._validate_schedule(datasource)
+
             session.merge(datasource_record)
             session.commit()
+
+            # if we do have a schedule on this datasource, we update it
+            schedule = datasource.get("schedule")
+            if all([schedule, self._task_service]):
+                task = {
+                    "schedule": schedule,
+                }
+                task_records: List[Task] = self._task_service.get(
+                    token=kwargs["token"], parent_id=datasource_id
+                )
+                if (
+                    len(
+                        [
+                            task_record
+                            for task_record in task_records
+                            if task_record.enabled
+                            and task_record.type == objects.TaskType.INGEST_DATASOURCE
+                        ]
+                    )
+                    == 1
+                ):
+                    self._task_service.update(
+                        token=kwargs["token"], task=task, task_id=task_records[0].uuid
+                    )
+
             return datasource_record
         except Exception as e:
             session.rollback()
@@ -271,3 +325,11 @@ class DatasourceService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+    def _validate_schedule(self, datasource):
+        schedule = datasource.get("schedule")
+        if schedule is not None:
+            try:
+                validate_schedule(schedule)
+            except Exception as e:
+                raise ServiceException(e)

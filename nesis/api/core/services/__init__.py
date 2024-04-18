@@ -64,6 +64,8 @@ def init_services(config, http_client=None):
         http_client=http_client,
     )
 
+    datasource_service.task_service = task_service
+
     # Initialize system
     init_system(config=config)
 

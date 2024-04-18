@@ -196,6 +196,7 @@ class DatasourceType(enum.Enum):
 class DatasourceStatus(enum.Enum):
     ONLINE = enum.auto()
     OFFLINE = enum.auto()
+    INGESTING = enum.auto()
 
 
 class Datasource(Base):

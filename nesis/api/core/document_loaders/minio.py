@@ -19,6 +19,7 @@ from nesis.api.core.services.util import (
     get_documents,
     ingest_file,
 )
+from nesis.api.core.util import clean_control
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 from nesis.api.core.util.dateutil import strptime
 
@@ -105,7 +106,7 @@ def _sync_s3_documents(
                 We use memcache's add functionality to implement a shared lock to allow for multiple instances
                 operating 
                 """
-                _lock_key = f"{__name__}/locks/{self_link}"
+                _lock_key = clean_control(f"{__name__}/locks/{self_link}")
                 if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
                     try:
                         _sync_document(
