@@ -39,14 +39,14 @@ def fetch_documents(**kwargs) -> None:
             if datasource.type == DatasourceType.GOOGLE_DRIVE:
                 google_drive.fetch_documents(
                     connection=datasource.connection,
-                    llm_endpoint=rag_endpoint,
+                    rag_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata={"datasource": datasource.name},
                 )
             if datasource.type == DatasourceType.WINDOWS_SHARE:
                 samba.fetch_documents(
                     connection=datasource.connection,
-                    llm_endpoint=rag_endpoint,
+                    rag_endpoint=rag_endpoint,
                     http_client=http_client,
                     metadata={"datasource": datasource.name},
                 )
