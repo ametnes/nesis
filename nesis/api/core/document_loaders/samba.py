@@ -120,8 +120,9 @@ def _sync_samba_documents(
             continue
         try:
             self_link = file_share.path
+            _lock_key = f"{__name__}/locks/{self_link}"
 
-            if cache_client.add(key=self_link, val=self_link, time=30 * 60):
+            if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
                 _metadata = {
                     **(metadata or {}),
                     "file_name": file_share.path,
@@ -137,7 +138,9 @@ def _sync_samba_documents(
                         metadata=_metadata,
                     )
                 finally:
-                    cache_client.delete(self_link)
+                    cache_client.delete(_lock_key)
+            else:
+                _LOG.info(f"Document {self_link} is already processing")
         except:
             _LOG.warn(
                 f"Error fetching and updating documents from shared_file share {file_share.path} - ",

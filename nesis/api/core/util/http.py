@@ -93,7 +93,8 @@ class HttpClient(object):
         Here we use memcached add function to simulate locking. This ensure that if multiple instances of this application
         are running, there will not be a conflict on which instance processed the file
         """
-        if self._cache.add(key=self_link, val=self_link, time=30 * 60):
+        _lock_key = f"{__name__}/locks/{self_link}"
+        if self._cache.add(key=_lock_key, val=_lock_key, time=30 * 60):
             try:
                 with open(filepath, "rb") as file_handle:
                     file_name = pathlib.Path(filepath).name
@@ -113,6 +114,6 @@ class HttpClient(object):
                             response.raise_for_status()
                     return response.text
             finally:
-                self._cache.delete(self_link)
+                self._cache.delete(_lock_key)
         else:
             raise UserWarning(f"File {filepath} is already processing")

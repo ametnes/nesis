@@ -105,7 +105,8 @@ def _sync_s3_documents(
                 We use memcache's add functionality to implement a shared lock to allow for multiple instances
                 operating 
                 """
-                if cache_client.add(key=self_link, val=self_link, time=30 * 60):
+                _lock_key = f"{__name__}/locks/{self_link}"
+                if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
                     try:
                         _sync_document(
                             client=client,
@@ -118,9 +119,9 @@ def _sync_s3_documents(
                             work_dir=work_dir,
                         )
                     finally:
-                        cache_client.delete(self_link)
+                        cache_client.delete(_lock_key)
                 else:
-                    raise UserWarning(f"File {cache_client} is already processing")
+                    _LOG.info(f"Document {self_link} is already processing")
 
         _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
 
