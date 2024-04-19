@@ -332,3 +332,65 @@ def test_update_datasource_schedule(client, tc):
     assert 200 == response.status_code, response.json
     assert 1 == len(response.json["items"])
     assert response.json["items"][0]["schedule"] == datasource["schedule"]
+
+
+def test_delete_datasource_schedule(client, tc):
+    # This test focuses on the delete functionality. We want to ensure that when a datasource is deleted, all
+    # corresponding tasks are delete too
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "host": "localhost",
+            "port": "5432",
+            "database": "initdb",
+        },
+        "schedule": "*/5 * * * *",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+    datasource = response.json
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    #
+    # Delete the datasource
+    response = client.delete(
+        f"/v1/datasources/{datasource['id']}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])

@@ -128,7 +128,7 @@ def authorized_resources(
         return session.query(Datasource).filter(Datasource.enabled.is_(True)).all()
 
     def get_enabled_tasks():
-        return session.query(Task).filter(Datasource.enabled.is_(True)).all()
+        return session.query(Task).filter(Task.enabled.is_(True)).all()
 
     if session_user.get("root") or False:
         match resource_type:

@@ -230,6 +230,18 @@ class DatasourceService(ServiceOperation):
 
                 session.delete(datasource)
                 session.commit()
+
+                tasks = self._task_service.get(
+                    token=kwargs["token"], parent_id=datasource_id
+                )
+                for task in tasks:
+                    try:
+                        self._task_service.delete(
+                            token=kwargs["token"], task_id=task.uuid
+                        )
+                    except:
+                        self._LOG.exception(f"Failed to delete task {task.uuid}")
+
         except:
             self._LOG.exception(f"Error when deleting setting")
             raise
