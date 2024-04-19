@@ -13,12 +13,9 @@ from apscheduler.events import (
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger, BaseTrigger
 from apscheduler.triggers.date import DateTrigger
 
 import nesis.api.core.services as services
-
-from nesis.api.core.services.util import validate_schedule
 import nesis.api.core.util.dateutil as du
 from nesis.api.core.models import DBSession, objects
 from nesis.api.core.models.entities import (
@@ -35,6 +32,7 @@ from nesis.api.core.services.util import (
     ConflictException,
     PermissionException,
 )
+from nesis.api.core.services.util import validate_schedule
 from nesis.api.core.tasks.document_management import ingest_datasource
 from nesis.api.core.util.http import HttpClient
 

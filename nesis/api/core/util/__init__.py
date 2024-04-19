@@ -25,7 +25,7 @@ def merge(source, destination):
 
 
 def clean_control(value: str) -> str:
-    return re.sub(r"[ \\/,:.]+", "-", value)
+    return re.sub(r"[ \\/,:.]+", "", value)
 
 
 def uid(value: str) -> str:
