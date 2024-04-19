@@ -2,7 +2,7 @@ import copy
 import uuid
 import enum
 import datetime as dt
-from typing import Optional
+from typing import Optional, Dict, Any
 import nesis.api.core.models.objects as objects
 
 from sqlalchemy.orm import relationship
@@ -196,6 +196,7 @@ class DatasourceType(enum.Enum):
 class DatasourceStatus(enum.Enum):
     ONLINE = enum.auto()
     OFFLINE = enum.auto()
+    INGESTING = enum.auto()
 
 
 class Datasource(Base):
@@ -446,3 +447,63 @@ class RoleAction(Base):
         }
 
         return dict_value
+
+
+class Task(Base):
+    """
+    This entity represents a background task to be run on schedule
+    """
+
+    __tablename__ = "task"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    type = Column(Enum(objects.TaskType, name="task_type"), nullable=False)
+    schedule = Column(Unicode(255), nullable=False)
+    """
+    This basically the entity that this task operates on if any. For example a datasource.
+    We cannot put a foreign on this field since the parent could be of different entity/object types.
+    Having a parent id here helps us find all the tasks related to a parent. For example if a parent is deleted,
+    all related tasks should be deleted.
+    """
+    parent_id = Column(Unicode(255))
+    definition = Column(JSONB, nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    status = Column(Enum(objects.TaskStatus, name="task_status"), nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    update_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("type", "schedule", name="uq_task_type_schedule"),
+        Index("idx_task_type", "type"),
+        Index("idx_task_parent", "parent_id"),
+    )
+
+    def __init__(
+        self,
+        task_type: objects.TaskType,
+        schedule: str,
+        definition: Dict[str, Any],
+        status: objects.TaskStatus = objects.TaskStatus.CREATED,
+        create_date: dt.datetime = dt.datetime.utcnow(),
+        parent_id: Optional[str] = None,
+    ):
+        self.uuid = str(uuid.uuid4())
+        self.type = task_type
+        self.status = status
+        self.schedule = schedule
+        self.definition = definition
+        self.create_date = create_date
+        self.parent_id = parent_id
+
+    def to_dict(self, **kwargs):
+        return {
+            "id": self.uuid,
+            "type": self.type.name,
+            "schedule": self.schedule,
+            "enabled": self.enabled,
+            "status": self.status.name,
+            "parent_id": self.parent_id,
+            "definition": self.definition,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+            "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }

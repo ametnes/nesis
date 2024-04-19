@@ -5,4 +5,4 @@ PUT: str = "PUT"
 
 from .api import app
 
-from . import datasources, predictions, settings, management
+from . import datasources, predictions, settings, management, tasks_controller

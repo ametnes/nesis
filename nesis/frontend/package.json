@@ -1,5 +1,5 @@
 {
-  "name": "nosis",
+  "name": "nesis",
   "version": "0.0.1",
   "description": "Nesis",
   "main": "main.js",
@@ -16,13 +16,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@https://github.com/ametnes/nosis.git"
+    "url": "git+ssh://git@https://github.com/ametnes/nesis.git"
   },
   "author": "Nesis Contributors",
   "license": "ISC",
-  "homepage": "https://https://github.com/ametnes/nosis#readme",
+  "homepage": "https://github.com/ametnes/nesis#readme",
   "bugs": {
-    "url": "https://https://github.com/ametnes/nosis/issues"
+    "url": "https://github.com/ametnes/nesis/issues"
   },
   "dependencies": {
     "app-root-path": "^3.1.0",

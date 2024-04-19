@@ -172,12 +172,30 @@ const DatasourcesPage = () => {
         content: 'Operation is successful',
       });
     },
-    'All related documents will be deleted. Are you sure you want to continue?',
   );
+
+  const [confirmIngest, showConfirmIngest, setCurrentIngestItem] =
+    useConfirmationModal(async (id) => {
+      await client.post('tasks', {
+        parent_id: id,
+        type: 'ingest_datasource',
+        definition: {
+          datasource: {
+            id: id,
+          },
+        },
+      });
+      datasourcesActions.repeat();
+      addToast({
+        title: `Datasource ingestion created`,
+        content: 'Operation successful',
+      });
+    }, 'Do you want to run start the ingestion process?');
 
   return (
     <>
       {confirmModal}
+      {confirmIngest}
       <EditOrCreateModal
         visible={!!isNew || !!isEdit}
         onSuccess={() => {
@@ -247,6 +265,14 @@ const DatasourcesPage = () => {
                       }
                     >
                       Edit
+                    </EditButton>
+                    <EditButton
+                      onClick={() => {
+                        setCurrentIngestItem(datasource.id);
+                        showConfirmIngest();
+                      }}
+                    >
+                      Ingest
                     </EditButton>
                     <DeleteButton
                       onClick={() => {
@@ -328,6 +354,14 @@ const DatasourcesPage = () => {
                         }
                       >
                         Edit
+                      </EditOutlinedSquareButton>
+                      <EditOutlinedSquareButton
+                        onClick={() => {
+                          setCurrentIngestItem(datasource.id);
+                          showConfirmIngest();
+                        }}
+                      >
+                        Ingest
                       </EditOutlinedSquareButton>
 
                       <DeleteItemButton

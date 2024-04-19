@@ -239,6 +239,17 @@ function DataSourceForm({
                     />
                   </td>
                 </tr>
+                <tr>
+                  <td>Schedule</td>
+                  <td>
+                    <TextField
+                      type="text"
+                      id="schedule"
+                      placeholder="Valid cron schedule"
+                      name="schedule"
+                    />
+                  </td>
+                </tr>
               </tbody>
             </StyledTable>
 

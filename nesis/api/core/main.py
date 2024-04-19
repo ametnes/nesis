@@ -4,22 +4,16 @@ import argparse
 import json
 import os
 import sys
-import signal
-from concurrent.futures import Future
-
-from gevent.pywsgi import WSGIServer
 
 import yaml
-
+from gevent.pywsgi import WSGIServer
 
 working_dir = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(working_dir)
 
 from nesis.api.core.controllers import api as cloud_ctrl
-import nesis.api.core.util.concurrency as concurrency
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.services import init_services as cloud_services
-from nesis.api.core.tasks import manager as task_manager
 from nesis.api.core.util.http import HttpClient
 import logging
 import nesis.api.core.util as util
@@ -49,8 +43,8 @@ def run_cloud(app, args, services):
     try:
         _LOG.info("Initializing database engine...")
         initialize_engine(config)
-    except Exception as ex:
-        _LOG.error(f"Error initializing application engine - {ex}")
+    except:
+        _LOG.exception(f"Error initializing application engine")
         sys.exit(1)
 
     # Initialize services
@@ -60,16 +54,9 @@ def run_cloud(app, args, services):
         _LOG.info("Initializing services...")
         services(config, http_client=http_client)
         _LOG.info("Done initializing services...")
-    except Exception as ex:
-        _LOG.error(f"Error initializing services - {ex}")
+    except:
+        _LOG.exception(f"Error initializing services")
         sys.exit(1)
-
-    _LOG.info("Initializing task manager...")
-    concurrency.IOBoundPool.submit(
-        task_manager.start, config=config, http_client=http_client
-    )
-    signal.signal(signal.SIGHUP, task_manager.stop)
-    signal.signal(signal.SIGTERM, task_manager.stop)
 
     # Start the application
     port = service_config.get("port", os.environ.get("NESIS_API_PORT")) or "6000"
@@ -78,11 +65,7 @@ def run_cloud(app, args, services):
     http_server = WSGIServer((host, int(port)), cloud_ctrl.app)
 
     _LOG.info("Starting server...")
-    try:
-        http_server.serve_forever()
-    except (KeyboardInterrupt, SystemExit):
-        task_manager.stop(None, None)
-        _LOG.info(f"Terminating {__name__} process")
+    http_server.serve_forever()
 
 
 if __name__ == "__main__":

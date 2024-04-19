@@ -1,4 +1,5 @@
 import os
+from tzlocal import get_localzone
 
 default = {
     "database": {
@@ -6,7 +7,18 @@ default = {
         "debug": False,
         "create": False,
     },
-    "tasks": {"fetch_documents": {"schedule": 5, "enabled": True}},
+    "tasks": {
+        "job": {
+            "stores": {"url": os.environ.get("NESIS_API_TASKS_JOB_STORES_URL")},
+            "defaults": {
+                "coalesce": True,
+                "max_instances": 3,
+                "misfire_grace_time": 60,
+            },
+        },
+        "timezone": os.environ.get("NESIS_API_TASKS_TIMEZONE", str(get_localzone())),
+        "executors": {"default_size": 30, "pool_size": 3},
+    },
     "rag": {
         "endpoint": os.environ.get("NESIS_API_RAG_ENDPOINT", "http://localhost:8080")
     },

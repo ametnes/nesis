@@ -1,4 +1,5 @@
 import hashlib
+import re
 
 from sqlalchemy import text
 
@@ -21,6 +22,10 @@ def merge(source, destination):
             destination[key] = value
 
     return destination
+
+
+def clean_control(value: str) -> str:
+    return re.sub(r"[ \\/,:.]+", "", value)
 
 
 def uid(value: str) -> str:

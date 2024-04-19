@@ -1,6 +1,7 @@
 import uuid
 import pathlib
 import json
+import memcache
 from datetime import datetime
 from typing import Dict, Any
 
@@ -18,7 +19,7 @@ from nesis.api.core.services.util import (
     ValidationException,
     ingest_file,
 )
-from nesis.api.core.util import http
+from nesis.api.core.util import http, clean_control
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT, DEFAULT_SAMBA_PORT
 from nesis.api.core.util.dateutil import strptime
 
@@ -29,10 +30,17 @@ def fetch_documents(
     connection: Dict[str, str],
     rag_endpoint: str,
     http_client: http.HttpClient,
+    cache_client: memcache.Client,
     metadata: Dict[str, Any],
 ) -> None:
     try:
-        _sync_samba_documents(connection, rag_endpoint, http_client, metadata)
+        _sync_samba_documents(
+            connection=connection,
+            rag_endpoint=rag_endpoint,
+            http_client=http_client,
+            metadata=metadata,
+            cache_client=cache_client,
+        )
     except:
         _LOG.exception(f"Error syncing documents")
 
@@ -81,7 +89,9 @@ def _connect_samba_server(connection):
         raise
 
 
-def _sync_samba_documents(connection, rag_endpoint, http_client, metadata):
+def _sync_samba_documents(
+    connection, rag_endpoint, http_client, metadata, cache_client
+):
 
     username = connection["user"]
     password = connection["password"]
@@ -109,14 +119,34 @@ def _sync_samba_documents(connection, rag_endpoint, http_client, metadata):
         ):
             continue
         try:
-            _process_file(
-                connection, file_share, work_dir, http_client, rag_endpoint, metadata
-            )
+            self_link = file_share.path
+            _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+
+            if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+                _metadata = {
+                    **(metadata or {}),
+                    "file_name": file_share.path,
+                    "self_link": self_link,
+                }
+                try:
+                    _process_file(
+                        connection=connection,
+                        file_share=file_share,
+                        work_dir=work_dir,
+                        http_client=http_client,
+                        rag_endpoint=rag_endpoint,
+                        metadata=_metadata,
+                    )
+                finally:
+                    cache_client.delete(_lock_key)
+            else:
+                _LOG.info(f"Document {self_link} is already processing")
         except:
             _LOG.warn(
                 f"Error fetching and updating documents from shared_file share {file_share.path} - ",
                 exc_info=True,
             )
+
     _LOG.info(
         f"Completed syncing files from samba server {endpoint} "
         f"to endpoint {rag_endpoint}"
@@ -138,7 +168,12 @@ def _process_file(
             )
             for dir_file in dir_files:
                 _process_file(
-                    connection, dir_file, work_dir, http_client, rag_endpoint, metadata
+                    connection=connection,
+                    file_share=dir_file,
+                    work_dir=work_dir,
+                    http_client=http_client,
+                    rag_endpoint=rag_endpoint,
+                    metadata=metadata,
                 )
         return
 
@@ -149,12 +184,6 @@ def _process_file(
     try:
         file_path = f"{work_dir}/{file_share.name}"
         file_unique_id = f"{uuid.uuid5(uuid.NAMESPACE_DNS, file_share.path)}"
-
-        _metadata = {
-            **(metadata or {}),
-            "file_name": file_share.path,
-            "self_link": file_share.path,
-        }
 
         _LOG.info(
             f"Starting syncing shared_file {file_name} in shared directory share {file_share.path}"
@@ -224,7 +253,7 @@ def _process_file(
             response = ingest_file(
                 http_client=http_client,
                 endpoint=rag_endpoint,
-                metadata=_metadata,
+                metadata=metadata,
                 file_path=file_path,
             )
         except UserWarning:

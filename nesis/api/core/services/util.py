@@ -1,10 +1,15 @@
 import re
 import abc
-from typing import List, Union
+from typing import List, Union, Optional
 
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import Document
 from nesis.api.core.util.http import HttpClient
+
+from apscheduler.triggers.cron import CronTrigger, BaseTrigger
+from apscheduler.triggers.date import DateTrigger
+
+import nesis.api.core.util.dateutil as du
 
 
 class ServiceOperation(abc.ABC):
@@ -168,3 +173,24 @@ def ingest_file(
 
 def un_ingest_file(http_client: HttpClient, endpoint: str, doc_id: str) -> None:
     http_client.delete(url=f"{endpoint}/v1/ingest/documents/{doc_id}")
+
+
+def validate_schedule(schedule) -> BaseTrigger:
+    try:
+        # While apscheduler can make the conversion, we do it here to have full control of error behaviour
+        if schedule is None:
+            schedule_date = du.now()
+        else:
+            schedule_date = du.strptime(schedule)
+        trigger = DateTrigger(run_date=schedule_date)
+    except ValueError:
+        schedule_date: Optional[du.dt.datetime] = None
+        trigger: Optional[DateTrigger] = None
+
+    if all([schedule_date, trigger]):
+        if schedule is not None and schedule_date < du.now():
+            raise ValueError("Schedule date has to be in the future")
+        else:
+            return trigger
+
+    return CronTrigger.from_crontab(schedule)
