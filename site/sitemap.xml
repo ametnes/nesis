@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://ametnes.github.io/nesis/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://ametnes.github.io/nesis/deployment/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://ametnes.github.io/nesis/quick-start/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://ametnes.github.io/nesis/dev-guide/architecture/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://ametnes.github.io/nesis/dev-guide/contributing/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://ametnes.github.io/nesis/dev-guide/local/</loc>
+         <lastmod>2024-04-20</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+</urlset>
