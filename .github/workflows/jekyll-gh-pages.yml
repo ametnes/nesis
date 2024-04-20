@@ -40,9 +40,8 @@ jobs:
           pip install -r requirements-docs.txt
       - name: Build with MkDocs
         run: |
-          cd docs
-          mkdocs build --clean
-          mv docs/site ./_site
+          mkdocs build --clean --config-file docs/mkdocs.yml --site-dir ../_site
+
 #      - name: Build with Jekyll
 #        uses: actions/jekyll-build-pages@v1
 #        with:
