@@ -60,7 +60,7 @@ To get started with Nesis
 3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
       - *username* = `YOUR_USERNAME`
       - *password* = `YOUR_PASSWORD`
-      - Note: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
+      - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
 
 4. Upload some documents into your minio `documents` bucket.
