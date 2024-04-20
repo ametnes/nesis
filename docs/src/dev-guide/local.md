@@ -87,6 +87,12 @@ export OPENAI_API_KEY=<your-openai-api-key>
 python nesis/rag/core/main.py
 ```
 
+!!! warning "Huggingface vs OpenAI's Embeddings"
+
+    Huggingface embeddings use a dimension of 384 while OpenAI's default embeddings size varies.
+    The env variable `NESIS_RAG_EMBEDDING_DIMENSIONS` can be used to alter the dimention of embeddings
+    to suit your needs.
+
 #### Start API Service
 Install dependencies
 ```bash

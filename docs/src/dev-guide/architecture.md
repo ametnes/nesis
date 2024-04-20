@@ -11,3 +11,15 @@ The Nessus project is divided into three components.
 6. RAG Engine - This is response for
        7. Converting documents into embeddings
        8. Interfacing with any OpenAI compatible endpoints
+
+## RAG Engine
+### Vector Database
+### Local Embeddings
+### OpenAI Embeddings
+### LLM
+
+## Backend API
+TODO
+
+## Frontend
+TODO

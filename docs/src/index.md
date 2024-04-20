@@ -24,4 +24,4 @@ collected from different documents in multiple formats such as pdf, docx, xlsx a
 
 # Demo
 
-<iframe width="728" height="409" src="https://www.youtube.com/embed/TckJLflTVnk?si=MDHdOWPC51O3jaRr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="946" height="531" src="https://www.youtube.com/embed/TckJLflTVnk?si=MDHdOWPC51O3jaRr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

@@ -23,6 +23,11 @@ theme:
   features:
     - content.code.copy
 
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
 nav:
   - Home: 'index.md'
   - 'Quick Start': 'quick-start.md'
