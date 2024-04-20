@@ -42,7 +42,7 @@ jobs:
         run: |
           cd docs
           mkdocs build --clean
-          mv -rf docs/site ./_site
+          mv docs/site ./_site
 #      - name: Build with Jekyll
 #        uses: actions/jekyll-build-pages@v1
 #        with:
