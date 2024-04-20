@@ -1,0 +1,36 @@
+site_name: Nesis
+site_description: Your AI Powered Enterprise Knowledge Partner
+site_url: https://ametnes.github.io/nesis/
+repo_url: https://github.com/ametnes/nesis/
+docs_dir: 'src'
+theme:
+  name: material
+  logo: 'images/NesisIcon.png'
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+
+nav:
+  - Home: 'index.md'
+  - 'Quick Start': 'quick-start.md'
+  - 'Development Guide':
+      - 'Local Development': 'dev-guide/local.md'
+      - 'Architecture': 'dev-guide/architecture.md'
+      - 'Contributing': 'dev-guide/contributing.md'
+extra_css:
+    - css/extra.css
+extra_javascript:
+  - scripts/menus.js

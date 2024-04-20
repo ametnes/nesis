@@ -1,0 +1,137 @@
+# Local Development Guide
+
+This guide walks you through how to start developing Nesis on your local workstation. You can
+get an overview of the components that make up Nesis and its architecture [here](./architecture.md).
+
+## Prerequisites
+1. We use docker and docker-compose to support our development process. If you don't have docker installed
+   locally, please for the [Install Docker Engine](https://docs.docker.com/engine/install/) link for instructions on how
+   install docker on your local workstation.
+2. If you rather not install docker, you will need to have access to a Postgres and Memcached instance.
+3. _Optional:_ The RAG Engine needs access to an LLM endpoint such as an OpenAI's endpoint or a private LLM endpoint 
+in order to start querying your documents. You will need to set the `OPENAI_API_KEY` and the `OPENAI_API_BASE`environment variables.
+4. You need to have python 3.11 for the API and RAG Engine microservices.
+5. You also need to have node and npm installed.
+
+## Quick Start
+### Using Docker
+
+For a quick start,
+
+#### Checkout the repository.
+
+```bash
+git checkout https://github.com/ametnes/nesis.git
+cd nesis
+```
+
+#### Build all the docker images locally.
+
+```bash
+{
+    docker build --build-arg PUBLIC_URL=/ --build-arg PROFILE=PROD -t ametnes/nesis:latest-frontend . -f nesis/frontend/Dockerfile
+    docker build -t ametnes/nesis:latest-api . -f nesis/api/Dockerfile
+    docker build -t ametnes/nesis:latest-rag . -f nesis/rag/Dockerfile
+}
+```
+
+#### Use the docker compose file to run the services locally. In your terminal, run
+
+```bash
+docker-compose up
+```
+
+#### Access the frontend locally.
+
+1. Point your browser to [http://localhost:58000/](http://localhost:58000/)
+2. Login with
+
+      1. Email: `some.email@domain.com`
+      2. Password: `password`
+
+### Using your IDE
+
+#### Start supporting services
+Supporting services include
+1. Postgres (for the backend database as well as the vector database).
+2. Memcached for caching and locking services.
+3. _Optional_ Minio for document storage.
+4. _Optional_ Samba for document storage.
+
+To start the supporting service, in a separate terminal, run
+```bash
+ docker-compose -f compose-dev.yml up
+```
+
+Set up your python virtualenv
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+If you do not have `source`, you can activate the virtualenv with
+```bash
+. .venv/bin/activate
+```
+
+#### Start the RAG Engine
+Install dependencies
+```bash
+pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-torch-cpu-x86.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
+```
+
+Start the service
+```bash
+export NESIS_RAG_EMBEDDING_DIMENSIONS=384 
+export OPENAI_API_KEY=<your-openai-api-key>
+python nesis/rag/core/main.py
+```
+
+#### Start API Service
+Install dependencies
+```bash
+pip install -r nesis/api/requirements.txt
+```
+
+Running the database migration
+```bash
+alembic -x "url=postgresql://postgres:password@127.0.0.1:65432/nesis" --config nesis/api/alembic.ini upgrade head
+```
+
+Start the service
+```bash
+export NESIS_ADMIN_EMAIL="some.email@domain.com"
+export NESIS_ADMIN_PASSWORD="password"
+python nesis/rag/api/main.py
+```
+
+#### Start the frontend
+Install dependencies
+```bash
+cd nesis/frontend
+npm install --legacy-peer-deps --prefix client
+npm install --legacy-peer-deps
+```
+
+Start the frontend-backend service with
+```bash
+npm run start:server:local
+```
+
+In a separate terminal, start the frontend with
+```bash
+cd nesis/frontend
+npm run start:client
+```
+
+#### Access the frontend locally.
+
+1. Point your browser to [http://localhost:3000/](http://localhost:3000/)
+2. Login with
+
+      1. Email: `some.email@domain.com`
+      2. Password: `password`
+
+
+## All done
+You should now be ready to start developing Nesis
