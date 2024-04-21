@@ -60,7 +60,6 @@ To get started with Nesis
 3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
       - *username* = `YOUR_USERNAME`
       - *password* = `YOUR_PASSWORD`
-      - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
 
 4. Upload some documents into your minio `documents` bucket.
@@ -72,10 +71,13 @@ To get started with Nesis
       1. Type: **S3 Compatible**
       4. Name: **documents**
       5. Host: **http://minio:9000/**
-      6. Username: **your_username**
-      7. Password: **your_password**
+      6. Username: `YOUR_USERNAME`
+      7. Password: `YOUR_PASSWORD`
       8. Click **Create**
-      9. After about 5 minutes, the background process will start indexing your documents and then you should be able to converse with your documents.
+      9. Then, run an adhoc ingestion by clicking **Ingest** of the datasource.
+
+   - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
+
 
 ### Deploy with Kubernetes
 To deploy Nesis into your kubernetes cluster, run
