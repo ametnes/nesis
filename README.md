@@ -44,16 +44,26 @@ Enterprise ready knowledge discovery solution that empowers users to
 To get started with Nesis
 
 ### Deploy with Docker Compose
-1. Obtain your **OPENAI_API_KEY** and update the compose.yml file entry.
+1. Obtain your **OPENAI_API_KEY** from https://platform.openai.com/api-keys:
+      - and update the `compose.yml` file entry.
+
 2. Start all services locally with the provided docker compose file.
 
    ```commandline
    docker-compose -f compose.yml up
    ```
 
-2. Then connect to your instance via http://localhost:58000 and login with `email/password` = `some.email@domain.com/password`
-3. Connect to your minio instance via http://localhost:59001/ and login with `username/password` = `your_username/your_password`
+2. Then connect to your instance via http://localhost:58000 with the following login credentials:
+      - *email* = `some.email@domain.com`
+      - *password* = `password`
+
+3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
+      - *username* = `YOUR_USERNAME`
+      - *password* = `YOUR_PASSWORD`
+
+
 4. Upload some documents into your minio `documents` bucket.
+
 5. Back on your Nesis page, register the minio datasource with
    1. Navigate to **Settings** -> **Datasource** -> **Add**
    2. Enter the details;
@@ -61,10 +71,13 @@ To get started with Nesis
       1. Type: **S3 Compatible**
       4. Name: **documents**
       5. Host: **http://minio:9000/**
-      6. Username: **your_username**
-      7. Password: **your_password**
+      6. Username: `YOUR_USERNAME`
+      7. Password: `YOUR_PASSWORD`
       8. Click **Create**
-9. After about 5 minutes, the background process will start indexing documents and then you should be able to query your documents.
+      9. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
+
+- *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
+
 
 ### Deploy with Kubernetes
 To deploy Nesis into your kubernetes cluster, run
