@@ -33,6 +33,9 @@ services:
     networks:
       - nesis
     depends_on:
+      database:
+        condition: service_healthy
+    links:
       - database
       - memcached
       - nesis_rag
@@ -101,6 +104,11 @@ services:
     volumes:
       - database_data:/var/lib/postgresql/data
     restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - nesis
 volumes:
