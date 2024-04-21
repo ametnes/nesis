@@ -1,0 +1,18 @@
+/* Maximum space for text block */
+.md-grid {
+  max-width: 90%;
+}
+
+/*https://github.com/squidfunk/mkdocs-material/issues/175#issuecomment-616694465*/
+.md-typeset__table {
+   min-width: 100%;
+}
+.md-typeset table:not([class]) {
+    display: table;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  color: #04A9F4;
+}
