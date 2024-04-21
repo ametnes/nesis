@@ -69,10 +69,10 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_rag_cpu:
-    name: Package RAG Engine
+    name: Package ${{ github.event.inputs.tag}} RAG Engine
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
-    if: "${{ github.event.inputs.tag == 'cpu' }}"
+    if: "${{ github.event.inputs.core == 'cpu' }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -96,10 +96,10 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_rag_cuda:
-    name: Package RAG Engine
+    name: Package ${{ github.event.inputs.tag}} RAG Engine
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
-    if: "${{ github.event.inputs.tag == 'cuda' }}"
+    if: "${{ github.event.inputs.core == 'cuda' }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
