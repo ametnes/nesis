@@ -10,6 +10,7 @@ on:
         description: 'Core'
         required: true
         default: cpu
+        type: choice
         options:
           - cpu
           - cuda
