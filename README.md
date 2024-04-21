@@ -74,7 +74,7 @@ To get started with Nesis
       6. Username: `YOUR_USERNAME`
       7. Password: `YOUR_PASSWORD`
       8. Click **Create**
-      9. Then, run an adhoc ingestion by clicking **Ingest** of the datasource.
+      9. Then, run an adhoc ingestion by clicking the `Ingest button` of the datasource.
 
 - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
