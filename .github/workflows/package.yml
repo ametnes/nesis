@@ -17,7 +17,7 @@ on:
 
 jobs:
   package_api:
-    name: Package API
+    name: Package ${{ github.event.inputs.tag }} API
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
     steps:
@@ -41,7 +41,7 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_frontend:
-    name: Package Frontend
+    name: Package ${{ github.event.inputs.tag }} frontend
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
     steps:
@@ -69,7 +69,7 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_rag_cpu:
-    name: Package ${{ github.event.inputs.tag}} RAG Engine
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
     if: "${{ github.event.inputs.core == 'cpu' }}"
@@ -96,7 +96,7 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_rag_cuda:
-    name: Package ${{ github.event.inputs.tag}} RAG Engine
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
     if: "${{ github.event.inputs.core == 'cuda' }}"
