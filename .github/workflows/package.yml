@@ -67,10 +67,11 @@ jobs:
             PROFILE=PROD
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
-  package_rag:
+  package_rag_cpu:
     name: Package RAG Engine
     runs-on: ubuntu-latest
 #    if: github.ref == 'refs/heads/main'
+    if: "${{ github.event.inputs.tag == 'cpu' }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -92,6 +93,23 @@ jobs:
           tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
+
+  package_rag_cuda:
+    name: Package RAG Engine
+    runs-on: ubuntu-latest
+#    if: github.ref == 'refs/heads/main'
+    if: "${{ github.event.inputs.tag == 'cuda' }}"
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.dockerfile_branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and push core tagged RAG docker image
         uses: docker/build-push-action@v5
