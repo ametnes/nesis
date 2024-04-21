@@ -76,7 +76,7 @@ To get started with Nesis
       8. Click **Create**
       9. Then, run an adhoc ingestion by clicking **Ingest** of the datasource.
 
-   - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
+- *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
 
 ### Deploy with Kubernetes
