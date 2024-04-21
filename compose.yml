@@ -68,18 +68,18 @@ services:
       - "11211:11211"
     networks:
       - nesis
-#  samba:
-#    image: andyzhangx/samba:win-fix
-#    command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
-#    ports:
-#      - '2445:445'
-#    networks:
-#      - nesis
-#    volumes:
-#      - 'samba_data2:/smbshare'
-#    environment:
-#      - USERNAME=username
-#      - PASSWORD=password
+  samba:
+    image: andyzhangx/samba:win-fix
+    command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
+    ports:
+      - '2445:445'
+    networks:
+      - nesis
+    volumes:
+      - 'samba_data2:/smbshare'
+    environment:
+      - USERNAME=username
+      - PASSWORD=password
   minio:
       image: docker.io/bitnami/minio:2022
       ports:
