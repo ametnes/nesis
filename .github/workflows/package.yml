@@ -19,7 +19,7 @@ jobs:
   package_api:
     name: Package ${{ github.event.inputs.tag }} API
     runs-on: ubuntu-latest
-#    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
   package_frontend:
     name: Package ${{ github.event.inputs.tag }} frontend
     runs-on: ubuntu-latest
-#    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -71,8 +71,7 @@ jobs:
   package_rag_cpu:
     name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
-#    if: github.ref == 'refs/heads/main'
-    if: "${{ github.event.inputs.core == 'cpu' }}"
+    if: github.ref == 'refs/heads/22-parameterise-cuda-cpu-rag-images' && "${{ github.event.inputs.core == 'cpu' }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -98,8 +97,7 @@ jobs:
   package_rag_cuda:
     name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
-#    if: github.ref == 'refs/heads/main'
-    if: "${{ github.event.inputs.core == 'cuda' }}"
+    if: github.ref == 'refs/heads/22-parameterise-cuda-cpu-rag-images' && "${{ github.event.inputs.core == 'cuda' }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
