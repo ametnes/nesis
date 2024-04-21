@@ -1,14 +1,24 @@
 FROM python:3.11-buster as build
+# Options are cpu and cuda
+ARG CORE=cpu
 COPY nesis/rag/requirements.txt /app/nesis/rag/requirements.txt
 COPY nesis/rag/requirements-huggingface.txt /app/nesis/rag/requirements-huggingface.txt
 COPY nesis/rag/requirements-torch-cpu-x86.txt /app/nesis/rag/requirements-torch-cpu-x86.txt
 
-RUN apt-get update \
-    && python -m venv /app/.venv \
-    && /app/.venv/bin/pip install -r /app/nesis/rag/requirements.txt \
-      -r /app/nesis/rag/requirements-torch-cpu-x86.txt -r /app/nesis/rag/requirements-huggingface.txt \
-      --default-timeout=1200
-
+RUN python -m venv /app/.venv
+RUN if [ "$CORE" = "cpu" ] ; \
+    then /app/.venv/bin/pip install \
+    -r /app/nesis/rag/requirements.txt \
+    -r /app/nesis/rag/requirements-torch-cpu-x86.txt \
+    -r /app/nesis/rag/requirements-huggingface.txt \
+    --default-timeout=1200 ; \
+    fi
+RUN if [ "$CORE" = "cuda" ] ; \
+    then /app/.venv/bin/pip install \
+    -r /app/nesis/rag/requirements.txt \
+    -r /app/nesis/rag/requirements-huggingface.txt \
+    --default-timeout=1200 ; \
+    fi
 
 
 ARG NESIS_VERSION

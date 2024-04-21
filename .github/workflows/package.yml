@@ -6,12 +6,16 @@ on:
       tag:
         description: 'Tag'
         required: true
+      core:
+        description: 'Core'
+        required: true
+        default: cpu
 
 jobs:
   package_api:
     name: Package API
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -35,7 +39,7 @@ jobs:
   package_frontend:
     name: Package Frontend
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -63,7 +67,7 @@ jobs:
   package_rag:
     name: Package RAG Engine
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -85,3 +89,14 @@ jobs:
           tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
+
+      - name: Build and push core tagged RAG docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          file: ./nesis/rag/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag-${{ github.event.inputs.core }}, ametnes/nesis:latest-rag-${{ github.event.inputs.core }}
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
+            CORE=${{ github.event.inputs.core }}
