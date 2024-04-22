@@ -1,4 +1,4 @@
-"""migrations-0.0.3.1
+"""migrations-0.0.3-rc1
 
 Revision ID: 64a6f5fbfc82
 Revises: 953b4d309aaa
