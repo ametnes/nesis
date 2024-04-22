@@ -6,10 +6,18 @@ on:
       tag:
         description: 'Tag'
         required: true
+      core:
+        description: 'Core'
+        required: true
+        default: cpu
+        type: choice
+        options:
+          - cpu
+          - cuda
 
 jobs:
   package_api:
-    name: Package API
+    name: Package ${{ github.event.inputs.tag }} API
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -33,7 +41,7 @@ jobs:
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_frontend:
-    name: Package Frontend
+    name: Package ${{ github.event.inputs.tag }} frontend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -60,10 +68,10 @@ jobs:
             PROFILE=PROD
             NESIS_VERSION=${{ github.event.inputs.tag }}
 
-  package_rag:
-    name: Package RAG Engine
+  package_rag_cpu:
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event.inputs.core == 'cpu'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -85,3 +93,30 @@ jobs:
           tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
           build-args: |
             NESIS_VERSION=${{ github.event.inputs.tag }}
+
+  package_rag_cuda:
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event.inputs.core == 'cuda'
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.dockerfile_branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push core tagged RAG docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          file: ./nesis/rag/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag-${{ github.event.inputs.core }}, ametnes/nesis:latest-rag-${{ github.event.inputs.core }}
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
+            CORE=${{ github.event.inputs.core }}
