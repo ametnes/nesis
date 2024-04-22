@@ -95,10 +95,14 @@ def test_ingest_datasource_minio(
     )
 
 
-@mock.patch("nesis.api.core.tasks.document_management.samba")
-@mock.patch("nesis.api.core.document_loaders.samba.scandir")
+@mock.patch("nesis.api.core.tasks.document_management.samba._unsync_samba_documents")
+@mock.patch("nesis.api.core.tasks.document_management.samba._sync_samba_documents")
 def test_ingest_datasource_samba(
-    scandir, samba: mock.MagicMock, tc, cache_client, http_client
+    _sync_samba_documents: mock.MagicMock,
+    _unsync_samba_documents: mock.MagicMock,
+    tc,
+    cache_client,
+    http_client,
 ):
     """
     Test the ingestion happy path
@@ -120,11 +124,21 @@ def test_ingest_datasource_samba(
         params={"datasource": {"id": datasource.uuid}},
     )
 
-    _, kwargs_fetch_documents = samba.fetch_documents.call_args_list[0]
-    assert kwargs_fetch_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    tc.assertDictEqual(kwargs_fetch_documents["connection"], datasource.connection)
+    _, kwargs_sync_samba_documents = _sync_samba_documents.call_args_list[0]
+    assert (
+        kwargs_sync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
+    )
+    tc.assertDictEqual(kwargs_sync_samba_documents["connection"], datasource.connection)
     tc.assertDictEqual(
-        kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
+        kwargs_sync_samba_documents["metadata"], {"datasource": datasource.name}
+    )
+
+    _, kwargs_unsync_samba_documents = _unsync_samba_documents.call_args_list[0]
+    assert (
+        kwargs_unsync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
+    )
+    tc.assertDictEqual(
+        kwargs_unsync_samba_documents["connection"], datasource.connection
     )
 
 
@@ -143,3 +157,52 @@ def test_ingest_datasource_invalid_datasource(
             params={"datasource": {"id": str(uuid.uuid4())}},
         )
         assert "Invalid datasource" in str(ex_info)
+
+
+@mock.patch("nesis.api.core.document_loaders.s3.boto3.client")
+@mock.patch("nesis.api.core.tasks.document_management.s3._unsync_documents")
+@mock.patch("nesis.api.core.tasks.document_management.s3._sync_documents")
+def test_ingest_datasource_s3(
+    _sync_documents: mock.MagicMock,
+    _unsync_documents: mock.MagicMock,
+    client: mock.MagicMock(),
+    tc,
+    cache_client,
+    http_client,
+):
+    """
+    Test the ingestion happy path
+    """
+
+    admin_user = create_user_session(
+        service=services.user_session_service,
+        email=tests.admin_email,
+        password=tests.admin_password,
+    )
+    datasource: Datasource = create_datasource(
+        token=admin_user.token, datasource_type="s3"
+    )
+
+    ingest_datasource(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache_client,
+        params={"datasource": {"id": datasource.uuid}},
+    )
+
+    _, kwargs_sync_samba_documents = _sync_documents.call_args_list[0]
+    assert (
+        kwargs_sync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
+    )
+    tc.assertDictEqual(kwargs_sync_samba_documents["connection"], datasource.connection)
+    tc.assertDictEqual(
+        kwargs_sync_samba_documents["metadata"], {"datasource": datasource.name}
+    )
+
+    _, kwargs_unsync_samba_documents = _unsync_documents.call_args_list[0]
+    assert (
+        kwargs_unsync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
+    )
+    tc.assertDictEqual(
+        kwargs_unsync_samba_documents["connection"], datasource.connection
+    )

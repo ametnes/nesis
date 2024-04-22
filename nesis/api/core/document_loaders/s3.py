@@ -59,7 +59,7 @@ def fetch_documents(
             else:
                 s3_client = boto3.client("s3", region_name=region)
 
-        _sync_s3_documents(
+        _sync_documents(
             client=s3_client,
             connection=connection,
             rag_endpoint=rag_endpoint,
@@ -67,7 +67,7 @@ def fetch_documents(
             cache_client=cache_client,
             metadata=metadata,
         )
-        _unsync_s3_documents(
+        _unsync_documents(
             client=s3_client,
             connection=connection,
             rag_endpoint=rag_endpoint,
@@ -77,7 +77,7 @@ def fetch_documents(
         _LOG.exception(f"Error fetching s3 documents - {ex}")
 
 
-def _sync_s3_documents(
+def _sync_documents(
     client,
     connection: dict,
     rag_endpoint: str,
@@ -253,7 +253,7 @@ def _sync_document(
             )
 
 
-def _unsync_s3_documents(
+def _unsync_documents(
     client, connection: dict, rag_endpoint: str, http_client: http.HttpClient
 ) -> None:
 

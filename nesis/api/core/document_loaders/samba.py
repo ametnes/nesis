@@ -45,7 +45,9 @@ def fetch_documents(
         _LOG.exception(f"Error syncing documents")
 
     try:
-        _unsync_samba_documents(connection, rag_endpoint, http_client)
+        _unsync_samba_documents(
+            connection=connection, rag_endpoint=rag_endpoint, http_client=http_client
+        )
     except Exception as ex:
         _LOG.exception(f"Error unsyncing documents")
 
