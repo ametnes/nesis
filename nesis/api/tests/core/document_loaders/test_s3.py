@@ -52,6 +52,10 @@ def configure() -> None:
 def test_sync_documents(
     client: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
+    """
+    Test ingestion of documents from an s3 bucket
+    """
+
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -133,6 +137,10 @@ def test_sync_documents(
 def test_update_sync_documents(
     client: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
+    """
+    Test updating documents if they have been updated at the s3 bucket end.
+    """
+
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -230,6 +238,9 @@ def test_update_sync_documents(
 def test_unsync_s3_documents(
     client: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
+    """
+    Test deleting of s3 documents from the rag engine if they have been deleted from the s3 bucket
+    """
     data = {
         "name": "s3 documents",
         "engine": "s3",
