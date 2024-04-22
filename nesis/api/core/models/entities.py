@@ -191,6 +191,7 @@ class DatasourceType(enum.Enum):
     SHAREPOINT = enum.auto()
     MYSQL = enum.auto()
     DROPBOX = enum.auto()
+    S3 = enum.auto()
 
 
 class DatasourceStatus(enum.Enum):
