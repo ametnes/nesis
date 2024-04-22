@@ -13,6 +13,7 @@ import FormRow, { Column } from '../../../components/layout/FormRow';
 import Table, { DeleteItemButton } from '../../../components/Table';
 import styled from 'styled-components/macro';
 import { device } from '../../../utils/breakpoints';
+import { func } from 'prop-types';
 
 const TypeOptions = [
   { label: 'MinIO', value: 'minio' },
@@ -109,6 +110,7 @@ function DataSourceForm({
       password: '',
       endpoint: datasource?.connection?.endpoint,
       port: datasource?.connection?.port,
+      region: datasource?.connection?.region,
       dataobjects: datasource?.connection?.dataobjects,
     },
   },
@@ -164,95 +166,97 @@ function DataSourceForm({
                 />
               </Column>
             </FormRow>
-
-            <StyledTable>
-              <thead>
-                <tr>
-                  <th>Attribute</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Host</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="host"
-                      placeholder="Endpoint"
-                      name="connection.endpoint"
-                      validate={required}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>Port</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="port"
-                      placeholder="Port"
-                      name="connection.port"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>Database</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="database"
-                      placeholder="Database"
-                      name="connection.database"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>User</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="user"
-                      placeholder="User"
-                      name="connection.user"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>Password</td>
-                  <td>
-                    <TextField
-                      type="password"
-                      id="password"
-                      placeholder="password"
-                      name="connection.password"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>Dataobjects</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="dataobjects"
-                      placeholder="Dataobjects (comma separated)"
-                      name="connection.dataobjects"
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>Schedule</td>
-                  <td>
-                    <TextField
-                      type="text"
-                      id="schedule"
-                      placeholder="Valid cron schedule"
-                      name="schedule"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </StyledTable>
+            {values?.type == 's3' && s3Connection()}
+            {!['s3'].includes(values?.type) && (
+              <StyledTable>
+                <thead>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Host</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="host"
+                        placeholder="Endpoint"
+                        name="connection.endpoint"
+                        validate={required}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Port</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="port"
+                        placeholder="Port"
+                        name="connection.port"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Database</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="database"
+                        placeholder="Database"
+                        name="connection.database"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>User</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="user"
+                        placeholder="User"
+                        name="connection.user"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Password</td>
+                    <td>
+                      <TextField
+                        type="password"
+                        id="password"
+                        placeholder="password"
+                        name="connection.password"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Dataobjects</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="dataobjects"
+                        placeholder="Dataobjects (comma separated)"
+                        name="connection.dataobjects"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Schedule</td>
+                    <td>
+                      <TextField
+                        type="text"
+                        id="schedule"
+                        placeholder="Valid cron schedule"
+                        name="schedule"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </StyledTable>
+            )}
 
             <FormControls
               centered
@@ -267,5 +271,87 @@ function DataSourceForm({
         )}
       </Formik>
     </div>
+  );
+}
+
+function s3Connection() {
+  return (
+    <StyledTable>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Host</td>
+          <td>
+            <TextField
+              type="text"
+              id="host"
+              placeholder="Endpoint"
+              name="connection.endpoint"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Access Key</td>
+          <td>
+            <TextField
+              type="text"
+              id="user"
+              placeholder="User"
+              name="connection.user"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Access Secret</td>
+          <td>
+            <TextField
+              type="password"
+              id="password"
+              placeholder="password"
+              name="connection.password"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Region</td>
+          <td>
+            <TextField
+              type="text"
+              id="region"
+              placeholder="Region"
+              name="connection.region"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Buckets</td>
+          <td>
+            <TextField
+              type="text"
+              id="dataobjects"
+              placeholder="Buckets (comma separated) e.g. bucket1/key2,bucket2/key2"
+              name="connection.dataobjects"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Schedule</td>
+          <td>
+            <TextField
+              type="text"
+              id="schedule"
+              placeholder="Valid cron schedule"
+              name="schedule"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </StyledTable>
   );
 }
