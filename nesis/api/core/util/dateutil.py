@@ -13,12 +13,21 @@ def strptime(date_string: str) -> dt.datetime:
         "%Y-%m-%d %H:%M:%S",
         "%Y%m%d%H%M%S",
         "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%SZ",
+        # 2024-04-22 08:30:28+00:00
     ]
     for fmt in formats:
         try:
             return dt.datetime.strptime(date_string, fmt)
         except ValueError:
-            continue
+            pass
+        try:
+            return dt.datetime.fromisoformat(date_string)
+        except ValueError:
+            pass
+
     raise ValueError(
         "Date string %s does not match any of the formats %s" % (date_string, formats)
     )

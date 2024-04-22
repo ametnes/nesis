@@ -257,7 +257,7 @@ def test_unsync_s3_documents(
     s3_client = mock.MagicMock()
 
     client.return_value = s3_client
-    s3_client.head_object.side_effect = Exception("ClientError not found")
+    s3_client.head_object.side_effect = Exception("HeadObject Not Found")
 
     documents = session.query(Document).all()
     assert len(documents) == 1

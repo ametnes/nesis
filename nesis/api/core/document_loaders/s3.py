@@ -269,8 +269,8 @@ def _unsync_documents(
             try:
                 client.head_object(Bucket=bucket_name, Key=object_name)
             except Exception as ex:
-                str_ex = str(ex)
-                if not ("ClientError" in str_ex and "not found" in str_ex.lower()):
+                str_ex = str(ex).lower()
+                if not ("object" in str_ex and "not found" in str_ex):
                     raise
                 for document_data in rag_metadata.get("data") or []:
                     try:
