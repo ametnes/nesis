@@ -27,7 +27,7 @@ collected from different documents in multiple formats such as pdf, docx, xlsx a
 https://github.com/ametnes/nesis/assets/86433807/64ea0ad8-5615-4111-8f6e-61ce7d3ad2fc
 
 ## 📜 Documentation
-Read the Nesis documentation [here](./docs/README.md)
+Read the Nesis documentation [here](https://ametnes.github.io/nesis)
 
 ## 🎰 Main features
 Nesis is built to handle large amounts of data at scale. Enabling connectivity to multitudes of datasources, 
