@@ -4,7 +4,7 @@ from tzlocal import get_localzone
 default = {
     "server": {
         "port": os.environ.get("NESIS_API_SERVER_PORT", "6000"),
-        "host": os.environ.get("NESIS_API_SERVER_HOST", "0.0.0.0"),
+        "address": os.environ.get("NESIS_API_SERVER_ADDRESS", "0.0.0.0"),
     },
     "database": {
         "url": os.environ.get("NESIS_API_DATABASE_URL"),
