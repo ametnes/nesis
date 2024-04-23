@@ -54,7 +54,7 @@ Nesis allows the administrator to control who can perform certain actions within
 
 A role is defined by a policy defined in JSON and attached to the role. For example
 
-```json
+```json title="policy.json" linenums="1"
 {
   "items": [
     {
@@ -70,13 +70,14 @@ A role is defined by a policy defined in JSON and attached to the role. For exam
 ```
 
 The above policy allows the role to
+
 1. Read from all datasources.
 2. Create a prediction (all chats are predictions).
 
 For more precise control over who can access a given datasource, Nesis allows you to specify which datasources a given policy is allowed to access. Here is an example policy,
 
 
-```json
+```json title="policy.json" linenums="1"
 {
   "items": [
     {
