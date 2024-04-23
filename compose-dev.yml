@@ -80,9 +80,25 @@ services:
       - 18000:8000
     networks:
       - ametnes
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - START_WEB=0
+      - LAMBDA_REMOTE_DOCKER=0
+      - DATA_DIR=/localstack/data
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - local_stack:/localstack/data
+
 volumes:
   minio_data:
   samba_data2:
   postgres16_data:
   qdrant_data:
   chroma-data:
+  local_stack:

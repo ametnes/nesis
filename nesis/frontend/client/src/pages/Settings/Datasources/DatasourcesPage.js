@@ -39,6 +39,7 @@ const TypeOptions = {
   windows_share: 'Windows Share',
   sharepoint: 'Sharepoint',
   google_drive: 'Google Drive',
+  s3: 'S3 Bucket',
 };
 
 const ActionButton = styled(LightSquareButton)`

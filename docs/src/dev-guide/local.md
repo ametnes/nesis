@@ -5,7 +5,7 @@ get an overview of the components that make up Nesis and its architecture [here]
 
 ## Prerequisites
 1. We use docker and docker-compose to support our development process. If you don't have docker installed
-   locally, please for the [Install Docker Engine](https://docs.docker.com/engine/install/) link for instructions on how
+   locally, please for the [Install Docker Engine](https://docs.docker.com/engine/install/){target="_blank"} link for instructions on how
    install docker on your local workstation.
 2. If you rather not install docker, you will need to have access to a Postgres and Memcached instance.
 3. _Optional:_ The RAG Engine needs access to an LLM endpoint such as an OpenAI's endpoint or a private LLM endpoint 
@@ -13,17 +13,25 @@ in order to start querying your documents. You will need to set the `OPENAI_API_
 4. You need to have python 3.11 for the API and RAG Engine microservices.
 5. You also need to have node and npm installed.
 
+
+!!! note "A word on vector databases"
+
+    Nesis' RAG Engine requires a vector database to store vector embeddings. In order to contain the number of
+    dependant services, we use pgvector packaged into an extended Bitnami Postgres docker image `ametnes/postgresql:16-debian-12` 
+    [here](https://github.com/ametnes/postgresql){target="_blank"}. You are however free to use other vector databases.
+    Curently, we support `chromadb` and `qdrant`.
+
+
 ## Quick Start
-### Using Docker
 
-For a quick start,
-
-#### Checkout the repository.
+Start by checking out the repository.
 
 ```bash
 git checkout https://github.com/ametnes/nesis.git
 cd nesis
 ```
+
+### Using Docker
 
 #### Build all the docker images locally.
 
@@ -52,7 +60,9 @@ docker-compose up
 ### Using your IDE
 
 #### Start supporting services
+
 Supporting services include
+
 1. Postgres (for the backend database as well as the vector database).
 2. Memcached for caching and locking services.
 3. _Optional_ Minio for document storage.
