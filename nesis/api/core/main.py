@@ -59,8 +59,8 @@ def run_cloud(app, args, services):
         sys.exit(1)
 
     # Start the application
-    port = service_config.get("port", os.environ.get("NESIS_API_PORT")) or "6000"
-    host = service_config.get("host") or "0.0.0.0"
+    port = service_config["server"]["port"]
+    host = service_config["server"]["host"]
 
     http_server = WSGIServer((host, int(port)), cloud_ctrl.app)
 
