@@ -37,7 +37,7 @@ def run_cloud(app, args, services):
         config = {}
 
     config = util.merge(config, settings.default)
-    service_config = config.get("service") or {}
+    service_config = config.get("server") or {}
 
     # Initialize database
     try:
@@ -59,10 +59,10 @@ def run_cloud(app, args, services):
         sys.exit(1)
 
     # Start the application
-    port = service_config.get("port", os.environ.get("NESIS_API_PORT")) or "6000"
-    host = service_config.get("host") or "0.0.0.0"
+    port = service_config["port"]
+    address = service_config["address"]
 
-    http_server = WSGIServer((host, int(port)), cloud_ctrl.app)
+    http_server = WSGIServer((address, int(port)), cloud_ctrl.app)
 
     _LOG.info("Starting server...")
     http_server.serve_forever()
