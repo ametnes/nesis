@@ -83,3 +83,8 @@ The Nesis helm chart allows you to override the following components;
 3. Vector database
 
 ## Ametnes Platform
+
+The Ametnes Platform helps orchestrate your business applications wherever you host them. This can be in your private
+data-center, in AWS, GCP or Azure.
+
+Nesis is available on the Ametnes Platform and can be deployed with minimal technical expertise.

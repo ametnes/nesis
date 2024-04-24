@@ -2,9 +2,12 @@
 
 Nesis leverages the power of Generative AI to help enterprises search and discover information held in multiple repositories including; 
 
-1. MinIO Object Store
-2. Windows Shares for your On-premise repositories.
-3. And many more
+1. Sharepoint
+2. AWS' s3 Buckets
+3. MinIO Object Store
+4. Windows Shares for your on-premise repositories.
+5. Google Drive
+6. And many more
 
 Through the meticulous compilation and examination of your enterprise's data, Nesis harnesses the capabilities of Generative AI to create 
 conversational engagement with the enterprise user. This allows the enterprise user to search through tons of documents in different formats 
