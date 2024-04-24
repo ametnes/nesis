@@ -1,6 +1,5 @@
 # Deploying Nesis
-Nesis has been built around cloud native container deployment.
-You have multiple deployment options for Nesis however they all 
+Nesis is built cloud native container from ground up. You have multiple deployment options for Nesis;
 
 ## Docker Compose
 For your quick local test, a <a href="https://github.com/ametnes/nesis/blob/main/compose.yml" target="_blank">docker compose</a> file is provided which you can
@@ -57,6 +56,16 @@ Lastly, install Nesis into your kubernetes cluster with
 helm upgrade --install nesis ametnes/nesis -f /path/to/overrides.yml
 ```
 
+Shortly after, you should see all services running as shown using `kubectl get po` below
+```commandline
+NAME                               READY   STATUS    RESTARTS   AGE
+nesis-api-664679c8f9-9vzhb         1/1     Running   0          45s
+nesis-frontend-5f69fcb4d5-cpnd7    1/1     Running   0          45s
+nesis-memcached-7d7855657d-zxd82   1/1     Running   0          45s
+nesis-postgresql-0                 1/1     Running   0          45s
+nesis-rag-757584f46c-9kqtf         1/1     Running   0          45s
+```
+
 ???+ note "RAG Configuration"
 
     1. You need to set the `OPENAI_API_KEY` and `OPENAI_API_BASE` environment variables before you can start chatting
@@ -65,6 +74,12 @@ helm upgrade --install nesis ametnes/nesis -f /path/to/overrides.yml
     encounter 401s during embeddings generation, you need to obtain a Huggingface token and populate the `HF_TOKEN` environment
     variable.
 
+### Overriding Key Dependencies
 
+The Nesis helm chart allows you to override the following components;
+
+1. Postgres database that backs the API component.
+2. Memcached caching service.
+3. Vector database
 
 ## Ametnes Platform
