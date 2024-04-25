@@ -10,14 +10,15 @@ get an overview of the components that make up Nesis and its architecture [here]
 2. If you rather not install docker, you will need to have access to a Postgres and Memcached instance.
 3. _Optional:_ The RAG Engine needs access to an LLM endpoint such as an OpenAI's endpoint or a private LLM endpoint 
 in order to start querying your documents. You will need to set the `OPENAI_API_KEY` and the `OPENAI_API_BASE`environment variables.
-4. You need to have python 3.11 for the API and RAG Engine microservices.
-5. You also need to have node and npm installed.
+4. Recently, Huggingface requires a `HF_TOKEN` to download embedding models. You may need to obtain and set your `HF_TOKEN`.
+5. You need to have python 3.11 for the API and RAG Engine microservices.
+6. You also need to have node and npm installed.
 
 
 !!! note "A word on vector databases"
 
     Nesis' RAG Engine requires a vector database to store vector embeddings. In order to contain the number of
-    dependant services, we use pgvector packaged into an extended Bitnami Postgres docker image `ametnes/postgresql:16-debian-12` 
+    components, we use pgvector packaged into an extended Bitnami Postgres docker image `ametnes/postgresql:16-debian-12` 
     [here](https://github.com/ametnes/postgresql){target="_blank"}. You are however free to use other vector databases.
     Curently, we support `chromadb` and `qdrant`.
 
