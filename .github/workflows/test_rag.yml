@@ -29,6 +29,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Test RAG API
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
     services:
       postgres:
         image: ametnes/postgresql:16-debian-12

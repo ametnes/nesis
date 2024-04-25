@@ -49,5 +49,5 @@ unstructured.pytesseract==0.3.12
 unstructured-inference==0.7.25
 pillow_heif==0.16.0
 
-# This causes conflicts from onnxruntime so we attempt to install it last. Do not pin to a version so pip resolves it
+# This causes conflicts from onnxruntime, so we attempt to install it last. Do not pin to a version so pip resolves it
 llama-index-embeddings-fastembed

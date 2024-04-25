@@ -5,12 +5,12 @@ on:
     paths:
       - "nesis/api/core/**"
       - "nesis/api/tests/**"
-      - "nesis/api/core/requirements*"
+      - "nesis/api/requirements*"
   pull_request:
     paths:
       - "nesis/api/core/**"
       - "nesis/api/tests/**"
-      - "nesis/api/core/requirements*"
+      - "nesis/api/requirements*"
 
 jobs:
   linter:
