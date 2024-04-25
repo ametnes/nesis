@@ -57,23 +57,24 @@ To get started with Nesis
       - *password* = `password`
 
 3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
-      - *username* = `YOUR_USERNAME`
-      - *password* = `YOUR_PASSWORD`
+      - *username* = `your_username`
+      - *password* = `your_password`
 
 
 4. Upload some documents into your minio `documents` bucket.
 
 5. Back on your Nesis page, register the minio datasource with
-   1. Navigate to **Settings** -> **Datasource** -> **Add**
+   1. Navigate to **Settings** -> **Datasource** -> **New**
    2. Enter the details;
    
-      1. Type: **S3 Compatible**
+      1. Type: **MinIO**
       4. Name: **documents**
       5. Host: **http://minio:9000/**
       6. Username: `YOUR_USERNAME`
       7. Password: `YOUR_PASSWORD`
-      8. Click **Create**
-      9. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
+      8. Dataobjects: **documents**
+      9. Click **Create**
+      10. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
 
 - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
