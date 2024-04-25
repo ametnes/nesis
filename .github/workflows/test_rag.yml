@@ -5,12 +5,14 @@ on:
     paths:
       - "nesis/rag/core/**"
       - "nesis/rag/tests/**"
-      - "nesis/rag/core/requirements*"
+      - "nesis/rag/requirements*"
+      - "nesis/rag/settings.yaml"
   pull_request:
     paths:
       - "nesis/rag/core/**"
       - "nesis/rag/tests/**"
-      - "nesis/rag/core/requirements*"
+      - "nesis/rag/requirements*"
+      - "nesis/rag/settings.yaml"
 
 jobs:
   linter:
