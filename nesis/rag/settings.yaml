@@ -8,7 +8,7 @@ data:
   local_data_folder: ${NESIS_RAG_DATA_LOCAL_DATA_FOLDER:local_data/rag}
 
 llm:
-  mode: openai
+  mode: ${NESIS_RAG_LLM_MODE:openai}
   # Should be matching the selected model
   max_new_tokens: 512
   context_window: 3900
