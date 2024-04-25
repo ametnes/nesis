@@ -26,7 +26,7 @@ sequenceDiagram
 ```
 
 
-### Authorization Sequence
+### Authorization
 This sequence assumes a role has been created. As a use case, suppose the user is adding a datasource. The authentication
 sequence above would need to have been passed.
 
@@ -56,14 +56,14 @@ sequenceDiagram
 ## Roles in Nesis
 
 ### Overview
-A role is a named construct that combines a set of policies and attached to a user. The policy of the role
+A role is a named construct that combines a set of policies and is attached to a user. The policy of the role
 indicates what actions that bearer (user) of that role is allowed to perform. A tabular description of the actors is below;
 
-| Actor  | Description                                                                                       |
-|--------|---------------------------------------------------------------------------------------------------|
-| User   | The system user and bearer of the role                                                            |
-| Policy | A set of rules that indicate that actions are permitted. By default all actions are not permitted |
-| Role   | A named object with a policy attached. A role is then assigned to a user.                         |
+| Actor  | Description                                                                                        |
+|--------|----------------------------------------------------------------------------------------------------|
+| User   | The system user and bearer of the role.                                                            |
+| Policy | A set of rules that indicate what actions are permitted. By default all actions are not permitted. |
+| Role   | A named object with a policy attached. A role is then assigned to a user.                          |
 
 !!! note 
 
@@ -78,18 +78,18 @@ For a user to perform any of these actions to any object within Nesis, they must
 
 The objects in Nesis that require policies to operate include.
 
-| Object     | Description                                                                   |
-|------------|-------------------------------------------------------------------------------|
-| User       | The system user                                                               |
-| Role       | A role created on the system and containing policies.                         |
-| Datasource | A datasource that Nesis sources data from.                                    |
-| Task       | A scheduled job that runs in the background such as datasource ingestion jobs |
-| Prediction | Any user interaction with the rag engine is a prediction.                     |
+| Object     | Description                                                                    |
+|------------|--------------------------------------------------------------------------------|
+| User       | The system user.                                                               |
+| Role       | A role created on the system and containing policies.                          |
+| Datasource | A datasource that Nesis sources data from.                                     |
+| Task       | A scheduled job that runs in the background such as datasource ingestion jobs. |
+| Prediction | Any user interaction with the rag engine is a prediction.                      |
 
-Some actions require more than policy rule. For example to add a datasource that has a cron schedule,
-the user role must permit CREATE:/datasource and CREATE:/tasks.
+Some actions require more than one policy rule. For example to add a datasource that has a cron schedule,
+the user role must permit `CREATE:/datasource` and `CREATE:/tasks`.
 
-This fine-grained control enables you to be flexible in your role based access control.
+This fine-grained control allows for greater flexibility when assigning permissions to users.
 
 A policy is simply a JSON document that is in the format
 
@@ -115,9 +115,8 @@ Where `<object>` can be one of the objects in the table above.
 A role must be created first before it can be attached to a user. When a role is created, policy
 rules must be assigned to the role.
 
-You can attach a role to a user during creation of the user or after. Role policy enforcement is done
-in real time and on every request to the API backend so any changes to the policy will be effective immediately
-on the next request to the backend.
+You can attach a role to a user during creation of the user or after. Role policies apply immediately and the next time
+a request to the API backend is made, the policy will be enforced.
 
 #### Examples
 Here is a list of examples showing how roles can be applied within Nesis.
