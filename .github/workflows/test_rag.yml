@@ -5,12 +5,14 @@ on:
     paths:
       - "nesis/rag/core/**"
       - "nesis/rag/tests/**"
-      - "nesis/rag/core/requirements*"
+      - "nesis/rag/requirements*"
+      - "nesis/rag/settings.yaml"
   pull_request:
     paths:
       - "nesis/rag/core/**"
       - "nesis/rag/tests/**"
-      - "nesis/rag/core/requirements*"
+      - "nesis/rag/requirements*"
+      - "nesis/rag/settings.yaml"
 
 jobs:
   linter:
@@ -27,6 +29,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Test RAG API
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
     services:
       postgres:
         image: ametnes/postgresql:16-debian-12

@@ -35,7 +35,10 @@ markdown_extensions:
 nav:
   - Home: 'index.md'
   - 'Quick Start': 'quick-start.md'
-  - 'Deployment': 'deployment.md'
+  - 'Installing':
+      - 'installing/compose.md'
+      - 'installing/helm.md'
+      - 'installing/ametnes.md'
   - 'Access Control': 'rbac.md'
   - 'Development Guide':
       - 'Local Development': 'dev-guide/local.md'

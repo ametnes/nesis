@@ -21,11 +21,16 @@ RUN if [ "$CORE" = "cuda" ] ; \
     fi
 
 
-ARG NESIS_VERSION
+
 FROM python:3.11.6-slim-bookworm
+ARG NESIS_VERSION
+ARG UID=1001
+ARG GID=1002
+ARG UNAME=nesis
 RUN apt-get update \
     && apt-get clean \
-    && adduser --system --home /app --shell /bin/bash nesis \
+    && addgroup --system --gid $GID $UNAME \
+    && adduser --system --uid $UID --gid $GID --home /app --shell /bin/bash $UNAME \
     && apt install ffmpeg tesseract-ocr -y
 
 WORKDIR /app
@@ -35,13 +40,14 @@ COPY --chown=nesis nesis/rag nesis/rag
 COPY --chown=nesis nesis/__init__.py nesis/__init__.py
 
 ENV PATH="/app/.venv/bin/:$PATH"
+ENV HOME=/app
 
 ARG PORT="8080"
 EXPOSE ${PORT}
 
 ENV PYTHONPATH="${PYTHONPATH}:/app/nesis"
 ENV NESIS_VERSION=$NESIS_VERSION
-USER nesis
+USER 1001
 CMD python nesis/rag/core/main.py
 
 # Remember to set LLAMA_INDEX_CACHE_DIR
