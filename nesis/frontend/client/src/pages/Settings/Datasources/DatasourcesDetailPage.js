@@ -19,7 +19,6 @@ const TypeOptions = [
   { label: 'MinIO', value: 'minio' },
   { label: 'Windows Share', value: 'windows_share' },
   { label: 'Sharepoint', value: 'sharepoint' },
-  // { label: 'Google Drive', value: 'google_drive' },
   { label: 'S3 Bucket', value: 's3' },
 ];
 
