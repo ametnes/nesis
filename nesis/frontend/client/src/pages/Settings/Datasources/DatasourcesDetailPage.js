@@ -310,7 +310,6 @@ function s3Connection() {
               id="user"
               placeholder="User"
               name="connection.user"
-              validate={required}
             />
           </td>
         </tr>
@@ -324,7 +323,6 @@ function s3Connection() {
               id="password"
               placeholder="password"
               name="connection.password"
-              validate={required}
             />
           </td>
         </tr>
