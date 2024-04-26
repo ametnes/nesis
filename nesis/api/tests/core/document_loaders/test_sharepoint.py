@@ -50,14 +50,16 @@ def test_fetch_documents(
     session.commit()
 
     sp_client_context = mock.MagicMock()
-    document_library = mock.MagicMock()
-    item = mock.MagicMock()
+    root_folder = mock.MagicMock()
+
     file_mock = mock.MagicMock()
-    _items = mock.MagicMock()
+    _folders = mock.MagicMock()
 
     client_context().with_client_certificate.return_value = sp_client_context
 
-    sp_client_context.web.default_document_library.return_value = document_library
+    sp_client_context.web.default_document_library.return_value.root_folder = (
+        root_folder
+    )
 
     type(file_mock).name = mock.PropertyMock(return_value="some_file.pdf")
     type(file_mock).serverRelativeUrl = mock.PropertyMock(
@@ -70,13 +72,8 @@ def test_fetch_documents(
     type(file_mock).length = mock.PropertyMock(return_value=1023)
     type(file_mock).author = mock.PropertyMock(return_value="file author")
 
-    type(item).file_system_object_type = mock.PropertyMock(return_value=0)
-    type(item).file = mock.PropertyMock(return_value=file_mock)
-    document_library.items = _items
-
-    document_library.items.select.return_value.expand.return_value.get_all.return_value.execute_query.return_value = [
-        item
-    ]
+    root_folder.folders.get_by_path.return_value = _folders
+    _folders.get_files.return_value.execute_query.return_value = [file_mock]
 
     file_download = mock.MagicMock()
     file_mock.download.return_value.execute_query.return_value = file_download
@@ -106,7 +103,7 @@ def test_fetch_documents(
         {
             "datasource": "documents",
             "file_name": "some_file.pdf",
-            "self_link": r"/sites/nesit-test/Shared Documents/some_file.pdf",
+            "self_link": r"https://ametnes.sharepoint.com/sites/nesit-test/Shared Documents/some_file.pdf",
         },
     )
 
