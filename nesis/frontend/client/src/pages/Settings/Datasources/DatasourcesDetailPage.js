@@ -2,7 +2,7 @@ import React from 'react';
 import { useHistory, useRouteMatch, useLocation } from 'react-router-dom';
 import useClient from '../../../utils/useClient';
 import parseApiErrorMessage from '../../../utils/parseApiErrorMessage';
-import { Formik, Form as FormikForm, FieldArray } from 'formik';
+import { Formik, Form as FormikForm, FieldArray, Field } from 'formik';
 import { Select, TextField } from '../../../components/form';
 import { required } from '../../../components/form/validators';
 import FormControls from '../../../components/FormControls';
@@ -19,7 +19,7 @@ const TypeOptions = [
   { label: 'MinIO', value: 'minio' },
   { label: 'Windows Share', value: 'windows_share' },
   { label: 'Sharepoint', value: 'sharepoint' },
-  { label: 'Google Drive', value: 'google_drive' },
+  // { label: 'Google Drive', value: 'google_drive' },
   { label: 'S3 Bucket', value: 's3' },
 ];
 
@@ -107,6 +107,7 @@ function DataSourceForm({
     type: datasource?.type,
     connection: {
       user: datasource?.connection?.user,
+      client_id: datasource?.connection?.client_id,
       password: '',
       endpoint: datasource?.connection?.endpoint,
       port: datasource?.connection?.port,
@@ -155,7 +156,7 @@ function DataSourceForm({
                 <TextField
                   type="text"
                   id="name"
-                  label="Name"
+                  label="Name*"
                   placeholder="Name"
                   name="name"
                   validate={required}
@@ -167,7 +168,12 @@ function DataSourceForm({
               </Column>
             </FormRow>
             {values?.type == 's3' && s3Connection()}
-            {!['s3'].includes(values?.type) && (
+            {values?.type == 'minio' && minioConnection()}
+            {values?.type == 'windows_share' && sambaConnection()}
+            {values?.type == 'sharepoint' && sharepointConnection()}
+            {!['s3', 'minio', 'windows_share', 'sharepoint'].includes(
+              values?.type,
+            ) && (
               <StyledTable>
                 <thead>
                   <tr>
@@ -177,7 +183,7 @@ function DataSourceForm({
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Host</td>
+                    <td>Host *</td>
                     <td>
                       <TextField
                         type="text"
@@ -292,45 +298,51 @@ function s3Connection() {
               id="host"
               placeholder="Endpoint"
               name="connection.endpoint"
-              validate={required}
             />
           </td>
         </tr>
         <tr>
-          <td>Access Key</td>
+          <td>
+            Access Key <RequiredIndicator />
+          </td>
           <td>
             <TextField
               type="text"
               id="user"
               placeholder="User"
               name="connection.user"
+              validate={required}
             />
           </td>
         </tr>
         <tr>
-          <td>Access Secret</td>
+          <td>Access Secret*</td>
           <td>
             <TextField
               type="password"
               id="password"
               placeholder="password"
               name="connection.password"
+              validate={required}
             />
           </td>
         </tr>
         <tr>
-          <td>Region</td>
+          <td>Region*</td>
           <td>
             <TextField
               type="text"
               id="region"
               placeholder="Region"
               name="connection.region"
+              validate={required}
             />
           </td>
         </tr>
         <tr>
-          <td>Buckets</td>
+          <td>
+            Buckets <RequiredIndicator />
+          </td>
           <td>
             <TextField
               type="text"
@@ -354,4 +366,258 @@ function s3Connection() {
       </tbody>
     </StyledTable>
   );
+}
+
+function minioConnection() {
+  return (
+    <StyledTable>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            Host <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="host"
+              placeholder="Endpoint"
+              name="connection.endpoint"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Access Key <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="user"
+              placeholder="User"
+              name="connection.user"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Access Secret <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="password"
+              id="password"
+              placeholder="password"
+              name="connection.password"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Buckets <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="dataobjects"
+              placeholder="Buckets (comma separated) e.g. bucket1/key2,bucket2/key2"
+              name="connection.dataobjects"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Schedule</td>
+          <td>
+            <TextField
+              type="text"
+              id="schedule"
+              placeholder="Valid cron schedule"
+              name="schedule"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </StyledTable>
+  );
+}
+
+function sambaConnection() {
+  return (
+    <StyledTable>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            Share path <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="host"
+              placeholder="For example \\host\share"
+              name="connection.endpoint"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Username</td>
+          <td>
+            <TextField
+              type="text"
+              id="user"
+              placeholder="User"
+              name="connection.user"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Password</td>
+          <td>
+            <TextField
+              type="password"
+              id="password"
+              placeholder="password"
+              name="connection.password"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Folders</td>
+          <td>
+            <TextField
+              type="text"
+              id="dataobjects"
+              placeholder="Comma separated folder names"
+              name="connection.dataobjects"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Schedule</td>
+          <td>
+            <TextField
+              type="text"
+              id="schedule"
+              placeholder="Valid cron schedule"
+              name="schedule"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </StyledTable>
+  );
+}
+
+function sharepointConnection() {
+  return (
+    <StyledTable>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            Site URL <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="host"
+              placeholder="For example https://zolos.sharepoint.com/"
+              name="connection.endpoint"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Client ID <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="clientId"
+              placeholder="Client ID"
+              name="connection.client_id"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Thumbprint <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="password"
+              id="thumbprint"
+              placeholder="Thumbprint"
+              name="connection.thumbprint"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td style={{ verticalAlign: 'top' }}>
+            Certificate <RequiredIndicator />
+          </td>
+          <td>
+            <Field
+              component="textarea"
+              validate={required}
+              id="certificate"
+              label="Private key"
+              placeholder="Certificate Private Key"
+              rows="5"
+              cols="70"
+              name="connection.certificate"
+            ></Field>
+          </td>
+        </tr>
+        <tr>
+          <td>Folders</td>
+          <td>
+            <TextField
+              type="text"
+              id="dataobjects"
+              placeholder="Comma separated folder names"
+              name="connection.dataobjects"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>Schedule</td>
+          <td>
+            <TextField
+              type="text"
+              id="schedule"
+              placeholder="Valid cron schedule"
+              name="schedule"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </StyledTable>
+  );
+}
+
+function RequiredIndicator() {
+  return <span style={{ color: 'red' }}>*</span>;
 }

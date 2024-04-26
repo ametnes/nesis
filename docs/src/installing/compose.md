@@ -142,8 +142,8 @@ volumes:
       - *password* = `password`
 
 3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
-      - *username* = `YOUR_USERNAME`
-      - *password* = `YOUR_PASSWORD`
+      - *username* = `your_username`
+      - *password* = `your_password`
 
 
 4. Upload some documents into your minio `documents` bucket.
@@ -153,12 +153,11 @@ volumes:
    2. Enter the details;
    
       1. Type: **S3 Compatible**
-      4. Name: **documents**
-      5. Host: **http://minio:9000/**
-      6. Username: `YOUR_USERNAME`
-      7. Password: `YOUR_PASSWORD`
-      8. Click **Create**
-      9. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
-
-- *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
+      2. Name: **documents**
+      3. Host: **http://minio:9000/**
+      4. Access Key: `your_username`
+      5. Access Secret: `your_password`
+      6. Buckets: **documents**
+      7. Click **Create**
+      8. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
 

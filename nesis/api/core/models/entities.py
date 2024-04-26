@@ -227,7 +227,9 @@ class Datasource(Base):
 
     def to_dict(self, **kwargs) -> dict:
         connection = copy.deepcopy(self.connection or {})
-        connection.pop("password", None)
+        secret_keys = ["password", "certificate", "thumbprint"]
+        for secret_key in secret_keys:
+            connection.pop(secret_key, None)
         dict_value = {
             "id": self.uuid,
             "name": self.name,

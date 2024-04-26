@@ -68,13 +68,13 @@ To get started with Nesis
    2. Enter the details;
    
       1. Type: **MinIO**
-      4. Name: **documents**
-      5. Host: **http://minio:9000/**
-      6. Username: `YOUR_USERNAME`
-      7. Password: `YOUR_PASSWORD`
-      8. Dataobjects: **documents**
-      9. Click **Create**
-      10. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
+      2. Name: **documents**
+      3. Host: **http://minio:9000/**
+      4. Access Key: `your_username`
+      5. Access Secret: `your_password`
+      6. Buckets: **documents**
+      7. Click **Create**
+      8. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
 
 - *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
 
@@ -95,7 +95,8 @@ If enough users support to have the feature, we will be sure to include it in ou
 
 🐞If you find any functionality not working as expected, please feel free to open a bug report.
 
-🌟 If you think that this project has been useful to you, please give it a star.
+## Stars let us know you visited
+Please give us a star to let us know you visited this page. You are already awesome.
 
 ## Origins
 This project has been inspired by other open-source projects. Here is a list of some of them;
