@@ -301,9 +301,7 @@ function s3Connection() {
           </td>
         </tr>
         <tr>
-          <td>
-            Key <RequiredIndicator />
-          </td>
+          <td>Key</td>
           <td>
             <TextField
               type="text"
@@ -314,9 +312,7 @@ function s3Connection() {
           </td>
         </tr>
         <tr>
-          <td>
-            Secret <RequiredIndicator />
-          </td>
+          <td>Secret</td>
           <td>
             <TextField
               type="password"
@@ -394,9 +390,7 @@ function minioConnection() {
           </td>
         </tr>
         <tr>
-          <td>
-            Key <RequiredIndicator />
-          </td>
+          <td>Key</td>
           <td>
             <TextField
               type="text"
@@ -408,9 +402,7 @@ function minioConnection() {
           </td>
         </tr>
         <tr>
-          <td>
-            Secret <RequiredIndicator />
-          </td>
+          <td>Secret</td>
           <td>
             <TextField
               type="password"
