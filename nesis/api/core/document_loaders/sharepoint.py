@@ -30,11 +30,11 @@ _sharepoint_context = None
 
 
 def fetch_documents(
-        connection: Dict[str, str],
-        rag_endpoint: str,
-        http_client: http.HttpClient,
-        metadata: Dict[str, Any],
-        cache_client: memcache.Client,
+    connection: Dict[str, str],
+    rag_endpoint: str,
+    http_client: http.HttpClient,
+    metadata: Dict[str, Any],
+    cache_client: memcache.Client,
 ) -> None:
     global _sharepoint_context
     try:
@@ -72,13 +72,15 @@ def fetch_documents(
 
 
 def _sync_sharepoint_documents(
-        sp_context, connection, rag_endpoint, http_client, metadata, cache_client
+    sp_context, connection, rag_endpoint, http_client, metadata, cache_client
 ):
     try:
         _LOG.info(f"Initializing sharepoint syncing to endpoint {rag_endpoint}")
 
         if sp_context is None:
-            raise Exception("Sharepoint context is null, cannot proceed with document processing.")
+            raise Exception(
+                "Sharepoint context is null, cannot proceed with document processing."
+            )
 
         # Data objects allow us to specify folder names
         sharepoint_folders = connection.get("data_objects")
@@ -94,7 +96,8 @@ def _sync_sharepoint_documents(
 
             if sharepoint_folder is None:
                 _LOG.warning(
-                    f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders")
+                    f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders"
+                )
                 continue
 
             _process_folder_files(
@@ -107,7 +110,9 @@ def _sync_sharepoint_documents(
             )
 
             # Recursively get all the child folders
-            _child_folders_recursive = sharepoint_folder.get_folders(True).execute_query()
+            _child_folders_recursive = sharepoint_folder.get_folders(
+                True
+            ).execute_query()
             for _child_folder in _child_folders_recursive:
                 _process_folder_files(
                     _child_folder,
@@ -128,7 +133,7 @@ def _sync_sharepoint_documents(
 def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_client):
     site_url = connection.get("site_url")
     parsed_site_url = urlparse(site_url)
-    site_root_url = '{uri.scheme}://{uri.netloc}'.format(uri=parsed_site_url)
+    site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
     self_link = f"{site_root_url}{file.serverRelativeUrl}"
     _metadata = {
         **(metadata or {}),
@@ -157,7 +162,7 @@ def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_c
 
 
 def _process_folder_files(
-        folder, connection, rag_endpoint, http_client, metadata, cache_client
+    folder, connection, rag_endpoint, http_client, metadata, cache_client
 ):
     # process files in folder
     _files = folder.get_files(False).execute_query()
@@ -173,17 +178,17 @@ def _process_folder_files(
 
 
 def _sync_document(
-        connection: dict,
-        rag_endpoint: str,
-        http_client: http.HttpClient,
-        metadata: dict,
-        file,
+    connection: dict,
+    rag_endpoint: str,
+    http_client: http.HttpClient,
+    metadata: dict,
+    file,
 ):
     site_url = connection["site_url"]
     _metadata = metadata
 
     with tempfile.NamedTemporaryFile(
-            dir=tempfile.gettempdir(),
+        dir=tempfile.gettempdir(),
     ) as tmp:
         key_parts = file.serverRelativeUrl.split("/")
 
@@ -205,7 +210,7 @@ def _sync_document(
                 if store_metadata and store_metadata.get("last_modified"):
                     last_modified = store_metadata["last_modified"]
                     if not strptime(date_string=last_modified).replace(
-                            tzinfo=None
+                        tzinfo=None
                     ) < file.last_time_last_modified.replace(tzinfo=None).replace(
                         microsecond=0
                     ):
@@ -279,7 +284,9 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
         site_url = connection.get("site_url")
 
         if sp_context is None:
-            raise Exception("Sharepoint context is null, cannot proceed with document processing.")
+            raise Exception(
+                "Sharepoint context is null, cannot proceed with document processing."
+            )
 
         documents = get_documents(base_uri=site_url)
         for document in documents:
