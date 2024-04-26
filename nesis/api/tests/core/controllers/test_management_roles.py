@@ -194,9 +194,8 @@ def test_read_permitted_resources_as_user(client):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 

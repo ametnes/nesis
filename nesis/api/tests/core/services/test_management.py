@@ -48,10 +48,9 @@ def create_datasource(token: str, name: str = None) -> Datasource:
         "name": name or "finance6",
         "connection": {
             "user": "caikuodda",
-            "password": "password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 

@@ -47,9 +47,8 @@ def test_read_permissions(client):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -137,9 +136,8 @@ def test_delete_permissions(client):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -247,9 +245,8 @@ def test_update_permissions(client):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 

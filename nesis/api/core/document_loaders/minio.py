@@ -19,7 +19,7 @@ from nesis.api.core.services.util import (
     get_documents,
     ingest_file,
 )
-from nesis.api.core.util import clean_control
+from nesis.api.core.util import clean_control, isblank
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 from nesis.api.core.util.dateutil import strptime
 
@@ -261,3 +261,12 @@ def _unsync_s3_documents(
 
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)
+
+
+def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
+    _valid_keys = ["endpoint", "user", "password", "dataobjects"]
+    assert not isblank(connection.get("endpoint")), "An endpoint must be supplied"
+    assert not isblank(
+        connection.get("dataobjects")
+    ), "One or more buckets must be supplied"
+    return {key: val for key, val in connection.items() if key in _valid_keys}

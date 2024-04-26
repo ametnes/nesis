@@ -290,19 +290,19 @@ function s3Connection() {
       </thead>
       <tbody>
         <tr>
-          <td>Host</td>
+          <td>Endpoint</td>
           <td>
             <TextField
               type="text"
               id="host"
-              placeholder="Endpoint"
+              placeholder="Leave blank to use default"
               name="connection.endpoint"
             />
           </td>
         </tr>
         <tr>
           <td>
-            Access Key <RequiredIndicator />
+            Key <RequiredIndicator />
           </td>
           <td>
             <TextField
@@ -315,7 +315,9 @@ function s3Connection() {
           </td>
         </tr>
         <tr>
-          <td>Access Secret*</td>
+          <td>
+            Secret <RequiredIndicator />
+          </td>
           <td>
             <TextField
               type="password"
@@ -327,7 +329,9 @@ function s3Connection() {
           </td>
         </tr>
         <tr>
-          <td>Region*</td>
+          <td>
+            Region <RequiredIndicator />
+          </td>
           <td>
             <TextField
               type="text"
@@ -346,7 +350,7 @@ function s3Connection() {
             <TextField
               type="text"
               id="dataobjects"
-              placeholder="Buckets (comma separated) e.g. bucket1/key2,bucket2/key2"
+              placeholder="Comma separated buckets e.g. bucket1,bucket2"
               name="connection.dataobjects"
             />
           </td>
@@ -393,7 +397,7 @@ function minioConnection() {
         </tr>
         <tr>
           <td>
-            Access Key <RequiredIndicator />
+            Key <RequiredIndicator />
           </td>
           <td>
             <TextField
@@ -407,7 +411,7 @@ function minioConnection() {
         </tr>
         <tr>
           <td>
-            Access Secret <RequiredIndicator />
+            Secret <RequiredIndicator />
           </td>
           <td>
             <TextField
@@ -427,7 +431,7 @@ function minioConnection() {
             <TextField
               type="text"
               id="dataobjects"
-              placeholder="Buckets (comma separated) e.g. bucket1/key2,bucket2/key2"
+              placeholder="Comma separated buckets e.g. bucket1,bucket2"
               name="connection.dataobjects"
             />
           </td>

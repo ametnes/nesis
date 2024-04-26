@@ -39,3 +39,7 @@ def run_sql(engine, path):
         with open(path) as file:
             query = text(file.read())
             con.execute(query)
+
+
+def isblank(item: str) -> bool:
+    return item is None or item == "" or item.isspace()

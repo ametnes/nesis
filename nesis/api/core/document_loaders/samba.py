@@ -19,7 +19,7 @@ from nesis.api.core.services.util import (
     ValidationException,
     ingest_file,
 )
-from nesis.api.core.util import http, clean_control
+from nesis.api.core.util import http, clean_control, isblank
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT, DEFAULT_SAMBA_PORT
 from nesis.api.core.util.dateutil import strptime
 
@@ -52,21 +52,19 @@ def fetch_documents(
         _LOG.exception(f"Error unsyncing documents")
 
 
-def validate_connection_info(connection):
+def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
     port = connection.get("port")
+    _valid_keys = ["port", "endpoint", "user", "password", "dataobjects"]
     if port is None or not port:
         connection["port"] = DEFAULT_SAMBA_PORT
     elif not port.isnumeric():
         raise ValidationException("Port value cannot be non numeric")
 
-    if connection.get("endpoint") is None or not connection.get("endpoint"):
-        raise ValidationException("Endpoint value cannot be null or empty")
-
-    if connection.get("user") is None or not connection.get("user"):
-        raise ValidationException("Username value cannot be null or empty")
-
-    if connection.get("password") is None or not connection.get("password"):
-        raise ValidationException("Password value cannot be null or empty")
+    assert not isblank(
+        connection.get("endpoint")
+    ), "A valid share address must be supplied"
+    assert not isblank(connection.get("user")), "A valid user"
+    assert not isblank(connection.get("password")), "A valid password"
 
     try:
         _connect_samba_server(connection)
@@ -76,7 +74,7 @@ def validate_connection_info(connection):
             stack_info=True,
         )
         raise
-    return connection
+    return {key: val for key, val in connection.items() if key in _valid_keys}
 
 
 def _connect_samba_server(connection):

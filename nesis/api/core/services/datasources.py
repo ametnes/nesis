@@ -88,15 +88,14 @@ class DatasourceService(ServiceOperation):
 
             try:
                 connection = validators.validate_datasource_connection(datasource)
-            except ValueError as ve:
+            except (ValueError, AssertionError) as ve:
                 raise ServiceException(ve)
 
             if not is_valid_resource_name(name):
                 raise ServiceException(
                     "Invalid resource name. Must be least five in length and only include [a-z0-9_-]"
                 )
-            if not has_valid_keys(connection):
-                raise ServiceException("Missing connection details")
+
             try:
                 datasource_type = DatasourceType[source_type.upper()]
             except Exception:
@@ -293,11 +292,8 @@ class DatasourceService(ServiceOperation):
                 try:
                     connection = validators.validate_datasource_connection(datasource)
                     datasource_record.connection = connection
-                except ValueError as ve:
+                except (ValueError, AssertionError) as ve:
                     raise ServiceException(ve)
-
-                if not has_valid_keys(connection):
-                    raise ServiceException("Missing connection details")
 
             # We validate the schedule (if supplied), before we create the datasource
             self._validate_schedule(datasource)
