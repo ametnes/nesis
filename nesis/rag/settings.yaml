@@ -8,7 +8,7 @@ data:
   local_data_folder: ${NESIS_RAG_DATA_LOCAL_DATA_FOLDER:local_data/rag}
 
 llm:
-  mode: openai
+  mode: ${NESIS_RAG_LLM_MODE:openai}
   # Should be matching the selected model
   max_new_tokens: 512
   context_window: 3900
@@ -17,7 +17,7 @@ llm:
 embedding:
   # Should be matching the value above in most cases
   mode: ${NESIS_RAG_EMBEDDING_MODE:local}
-  ingest_mode: simple
+  ingest_mode: ${NESIS_RAG_EMBEDDING_INGEST_MODE:simple }
 
 vectorstore:
   database: pgvector
