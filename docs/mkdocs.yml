@@ -2,6 +2,8 @@ site_name: Nesis - Your AI Powered Enterprise Knowledge Partner
 site_description: Your AI Powered Enterprise Knowledge Partner
 site_url: https://ametnes.github.io/nesis/
 repo_url: https://github.com/ametnes/nesis/
+repo_name: ametnes/nesis
+edit_uri: edit/main/docs/src/
 docs_dir: 'src'
 theme:
   name: material
@@ -22,6 +24,8 @@ theme:
         name: Switch to light mode
   features:
     - content.code.copy
+    - content.action.edit
+    - content.action.view
 
 markdown_extensions:
   - attr_list

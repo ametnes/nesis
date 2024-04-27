@@ -50,9 +50,8 @@ def test_create_datasource_invalid_input(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -108,9 +107,8 @@ def test_create_datasource(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -172,9 +170,8 @@ def test_update_datasource(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -209,9 +206,8 @@ def test_update_datasource(client, tc):
     datasource["connection"] = {
         "user": "root",
         "password": "some.password",
-        "host": "some.other.host.tld",
-        "port": "3360",
-        "database": "initdb",
+        "endpoint": "some.other.host.tld",
+        "dataobjects": "initdb",
     }
 
     response = client.put(
@@ -241,9 +237,8 @@ def test_create_datasource_schedule(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
         "schedule": "Some invalid schedule",
     }
@@ -295,9 +290,8 @@ def test_update_datasource_schedule(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
         "schedule": "*/5 * * * *",
     }
@@ -343,9 +337,8 @@ def test_delete_datasource_schedule(client, tc):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
         "schedule": "*/5 * * * *",
     }

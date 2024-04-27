@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import uuid
+from typing import Dict, Any
 
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.client_request_exception import ClientRequestException
@@ -15,6 +16,7 @@ from nesis.api.core.services.util import (
     delete_document,
     get_documents,
 )
+from nesis.api.core.util import isblank
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 from nesis.api.core.util.dateutil import strptime
 
@@ -203,4 +205,19 @@ def _unsync_sharepoint_documents(**kwargs):
                     delete_document(document_id=document.id)
 
     except:
-        _LOG.warn("Error fetching and updating documents", exc_info=True)
+        _LOG.warning("Error fetching and updating documents", exc_info=True)
+
+
+def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
+    _valid_keys = ["endpoint", "client_id", "thumbprint", "certificate", "dataobjects"]
+    assert not isblank(connection.get("endpoint")), "A site url must be supplied"
+    assert not isblank(connection.get("client_id")), "A client_id must be supplied"
+    assert not isblank(connection.get("thumbprint")), "A thumbprint must be supplied"
+    assert not isblank(
+        connection.get("certificate")
+    ), "A valid certificate must be supplied"
+    return {
+        key: val
+        for key, val in connection.items()
+        if key in _valid_keys and not isblank(connection[key])
+    }

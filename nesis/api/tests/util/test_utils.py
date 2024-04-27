@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from nesis.api.core.util import clean_control
+from nesis.api.core.util import clean_control, isblank
 from nesis.api.core.util import dateutil as du
 
 
@@ -27,3 +27,32 @@ def test_upload(value, expected) -> None:
 def test_strptime() -> None:
     dt = du.strptime("2024-04-22 08:30:28+00:00")
     assert isinstance(dt, datetime)
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (
+            "",
+            True,
+        ),
+        (
+            None,
+            True,
+        ),
+        (
+            " ",
+            True,
+        ),
+        (
+            "asdfasf",
+            False,
+        ),
+        (
+            " asdfasf ",
+            False,
+        ),
+    ],
+)
+def test_isblank(value, expected):
+    assert isblank(value) == expected

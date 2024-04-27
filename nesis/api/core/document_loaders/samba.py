@@ -19,7 +19,7 @@ from nesis.api.core.services.util import (
     ValidationException,
     ingest_file,
 )
-from nesis.api.core.util import http, clean_control
+from nesis.api.core.util import http, clean_control, isblank
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT, DEFAULT_SAMBA_PORT
 from nesis.api.core.util.dateutil import strptime
 
@@ -52,43 +52,37 @@ def fetch_documents(
         _LOG.exception(f"Error unsyncing documents")
 
 
-def validate_connection_info(connection):
-    port = connection.get("port")
-    if port is None or not port:
-        connection["port"] = DEFAULT_SAMBA_PORT
-    elif not port.isnumeric():
-        raise ValidationException("Port value cannot be non numeric")
+def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
+    port = connection.get("port") or DEFAULT_SAMBA_PORT
+    _valid_keys = ["port", "endpoint", "user", "password", "dataobjects"]
+    if not str(port).isnumeric():
+        raise ValueError("Port value cannot be non numeric")
 
-    if connection.get("endpoint") is None or not connection.get("endpoint"):
-        raise ValidationException("Endpoint value cannot be null or empty")
-
-    if connection.get("user") is None or not connection.get("user"):
-        raise ValidationException("Username value cannot be null or empty")
-
-    if connection.get("password") is None or not connection.get("password"):
-        raise ValidationException("Password value cannot be null or empty")
+    assert not isblank(
+        connection.get("endpoint")
+    ), "A valid share address must be supplied"
 
     try:
         _connect_samba_server(connection)
-    except ValidationException as sb:
+    except Exception as ex:
         _LOG.exception(
             f"Failed to connect to samba server at {connection['endpoint']}",
-            stack_info=True,
         )
-        raise
-    return connection
+        raise ValueError(ex)
+    connection["port"] = port
+    return {
+        key: val
+        for key, val in connection.items()
+        if key in _valid_keys and not isblank(connection[key])
+    }
 
 
 def _connect_samba_server(connection):
-    username = connection["user"]
-    password = connection["password"]
-    endpoint = connection["endpoint"]
-    port = connection["port"]
-    try:
-        scandir(endpoint, username=username, password=password, port=port)
-    except Exception as ex:
-        _LOG.exception(f"Error while connecting to samba server {endpoint} - {ex}")
-        raise
+    username = connection.get("user")
+    password = connection.get("password")
+    endpoint = connection.get("endpoint")
+    port = connection.get("port")
+    next(scandir(endpoint, username=username, password=password, port=port))
 
 
 def _sync_samba_documents(

@@ -35,7 +35,7 @@ import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
 import DatasourcesDetailPage from './DatasourcesDetailPage';
 
 const TypeOptions = {
-  minio: 'S3 Compatible',
+  minio: 'MinIO',
   windows_share: 'Windows Share',
   sharepoint: 'Sharepoint',
   google_drive: 'Google Drive',
