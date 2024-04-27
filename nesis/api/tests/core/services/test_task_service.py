@@ -49,10 +49,9 @@ def create_datasource(token: str) -> Datasource:
         "name": str(uuid.uuid4()),
         "connection": {
             "user": "caikuodda",
-            "password": "password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 

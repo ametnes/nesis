@@ -52,11 +52,10 @@ def create_datasource(token: str, datasource_type: str) -> Datasource:
         "name": str(uuid.uuid4()),
         "connection": {
             "user": "caikuodda",
-            "password": "password",
-            "host": "localhost",
+            "password": "some.password",
             "endpoint": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "region": "region",
+            "dataobjects": "initdb",
         },
     }
 
@@ -95,11 +94,13 @@ def test_ingest_datasource_minio(
     )
 
 
+@mock.patch("nesis.api.core.document_loaders.samba.scandir")
 @mock.patch("nesis.api.core.tasks.document_management.samba._unsync_samba_documents")
 @mock.patch("nesis.api.core.tasks.document_management.samba._sync_samba_documents")
 def test_ingest_datasource_samba(
     _sync_samba_documents: mock.MagicMock,
     _unsync_samba_documents: mock.MagicMock,
+    scandir,
     tc,
     cache_client,
     http_client,

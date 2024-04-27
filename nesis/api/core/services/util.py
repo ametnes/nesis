@@ -4,6 +4,7 @@ from typing import List, Union, Optional
 
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import Document
+from nesis.api.core.util import isblank
 from nesis.api.core.util.http import HttpClient
 
 from apscheduler.triggers.cron import CronTrigger, BaseTrigger
@@ -152,7 +153,11 @@ def has_valid_keys(value: dict) -> bool:
         value is not None
         and isinstance(value, dict)
         and len(
-            {key: val for key, val in value.items() if len(key) != 0 and len(val) != 0}
+            {
+                key: val
+                for key, val in value.items()
+                if isblank(key) != 0 and isblank(value) != 0
+            }
         )
         != 0
     )

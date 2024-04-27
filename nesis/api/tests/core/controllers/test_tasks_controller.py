@@ -38,9 +38,8 @@ def create_datasource(client, session):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
