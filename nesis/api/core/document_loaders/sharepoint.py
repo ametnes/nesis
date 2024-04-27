@@ -216,4 +216,8 @@ def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
     assert not isblank(
         connection.get("certificate")
     ), "A valid certificate must be supplied"
-    return {key: val for key, val in connection.items() if key in _valid_keys}
+    return {
+        key: val
+        for key, val in connection.items()
+        if key in _valid_keys and not isblank(connection[key])
+    }

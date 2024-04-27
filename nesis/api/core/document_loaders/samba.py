@@ -53,40 +53,36 @@ def fetch_documents(
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
-    port = connection.get("port")
+    port = connection.get("port") or DEFAULT_SAMBA_PORT
     _valid_keys = ["port", "endpoint", "user", "password", "dataobjects"]
-    if port is None or not port:
-        connection["port"] = DEFAULT_SAMBA_PORT
-    elif not port.isnumeric():
-        raise ValidationException("Port value cannot be non numeric")
+    if not str(port).isnumeric():
+        raise ValueError("Port value cannot be non numeric")
 
     assert not isblank(
         connection.get("endpoint")
     ), "A valid share address must be supplied"
-    assert not isblank(connection.get("user")), "A valid user"
-    assert not isblank(connection.get("password")), "A valid password"
 
     try:
         _connect_samba_server(connection)
-    except ValidationException as sb:
+    except Exception as ex:
         _LOG.exception(
             f"Failed to connect to samba server at {connection['endpoint']}",
-            stack_info=True,
         )
-        raise
-    return {key: val for key, val in connection.items() if key in _valid_keys}
+        raise ValueError(ex)
+    connection["port"] = port
+    return {
+        key: val
+        for key, val in connection.items()
+        if key in _valid_keys and not isblank(connection[key])
+    }
 
 
 def _connect_samba_server(connection):
-    username = connection["user"]
-    password = connection["password"]
-    endpoint = connection["endpoint"]
-    port = connection["port"]
-    try:
-        scandir(endpoint, username=username, password=password, port=port)
-    except Exception as ex:
-        _LOG.exception(f"Error while connecting to samba server {endpoint} - {ex}")
-        raise
+    username = connection.get("user")
+    password = connection.get("password")
+    endpoint = connection.get("endpoint")
+    port = connection.get("port")
+    next(scandir(endpoint, username=username, password=password, port=port))
 
 
 def _sync_samba_documents(

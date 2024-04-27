@@ -42,4 +42,4 @@ def run_sql(engine, path):
 
 
 def isblank(item: str) -> bool:
-    return item is None or item == "" or item.isspace()
+    return item is None or item == "" or str(item).isspace()

@@ -467,6 +467,18 @@ function sambaConnection() {
           </td>
         </tr>
         <tr>
+          <td>Port</td>
+          <td>
+            <TextField
+              type="text"
+              id="port"
+              placeholder="Port (defaults to 445)"
+              name="connection.port"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
           <td>Username</td>
           <td>
             <TextField

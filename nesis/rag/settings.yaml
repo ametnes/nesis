@@ -17,7 +17,7 @@ llm:
 embedding:
   # Should be matching the value above in most cases
   mode: ${NESIS_RAG_EMBEDDING_MODE:local}
-  ingest_mode: ${NESIS_RAG_EMBEDDING_INGEST_MODE:simple }
+  ingest_mode: ${NESIS_RAG_EMBEDDING_INGEST_MODE:simple}
 
 vectorstore:
   database: pgvector

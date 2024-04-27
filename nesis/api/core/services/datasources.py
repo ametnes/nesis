@@ -291,7 +291,10 @@ class DatasourceService(ServiceOperation):
             if datasource.get("connection"):
                 try:
                     connection = validators.validate_datasource_connection(datasource)
-                    datasource_record.connection = connection
+                    datasource_record.connection = {
+                        **datasource_record.connection,
+                        **connection,
+                    }
                 except (ValueError, AssertionError) as ve:
                     raise ServiceException(ve)
 
