@@ -567,6 +567,20 @@ function sharepointConnection() {
         </tr>
         <tr>
           <td>
+            Tenant ID <RequiredIndicator />
+          </td>
+          <td>
+            <TextField
+              type="text"
+              id="tenantId"
+              placeholder="tenant ID"
+              name="connection.tenant"
+              validate={required}
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
             Thumbprint <RequiredIndicator />
           </td>
           <td>

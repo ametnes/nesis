@@ -1,5 +1,6 @@
 import json
 import pathlib
+import uuid
 import tempfile
 from typing import Dict, Any
 from urllib.parse import urlparse
@@ -40,7 +41,7 @@ def fetch_documents(
         client_id = connection.get("client_id")
         tenant = connection.get("tenant")
         thumbprint = connection.get("thumbprint")
-        cert_path = connection.get("certificate")
+        cert_path = _get_temp_certificate_path(connection)
 
         _sharepoint_context = ClientContext(site_url).with_client_certificate(
             tenant=tenant,
@@ -65,6 +66,22 @@ def fetch_documents(
         )
     except Exception as ex:
         _LOG.exception(f"Error fetching sharepoint documents - {ex}")
+
+
+def _get_temp_certificate_path(connection) -> str:
+    cert_path = ""
+    certificate_details = connection["certificate"]
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=tempfile.gettempdir(),
+        ) as tmp:
+            cert_path = f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
+
+            with open(cert_path, "w") as svc_file:
+                svc_file.write(certificate_details)
+    except Exception as ex:
+        _LOG.error(f"Failed to generate certificate path - {ex}")
+    return cert_path
 
 
 def _sync_sharepoint_documents(
