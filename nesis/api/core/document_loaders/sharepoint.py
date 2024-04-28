@@ -1,13 +1,15 @@
 import json
 import pathlib
-import uuid
+import tempfile
 from typing import Dict, Any
+from urllib.parse import urlparse
+
+import memcache
 
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.client_request_exception import ClientRequestException
-from office365.sharepoint.files.system_object_type import FileSystemObjectType
 
-from nesis.api.core.util import http, clean_control
+from nesis.api.core.util import http, clean_control, isblank
 import logging
 from nesis.api.core.models.entities import Document
 from nesis.api.core.services.util import (
@@ -37,11 +39,11 @@ def fetch_documents(
     global _sharepoint_context
     try:
 
-        site_url = connection.get("site_url")
+        site_url = connection.get("endpoint")
         client_id = connection.get("client_id")
         tenant = connection.get("tenant")
         thumbprint = connection.get("thumbprint")
-        cert_path = connection.get("certificate_path")
+        cert_path = connection.get("certificate")
 
         if _sharepoint_context is None:
             _sharepoint_context = ClientContext(site_url).with_client_certificate(
@@ -81,7 +83,7 @@ def _sync_sharepoint_documents(
             )
 
         # Data objects allow us to specify folder names
-        sharepoint_folders = connection.get("data_objects")
+        sharepoint_folders = connection.get("dataobjects")
         if sharepoint_folders is None:
             _LOG.warning("Sharepoint folders are specified, so I can't do much")
 
@@ -129,7 +131,7 @@ def _sync_sharepoint_documents(
 
 
 def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_client):
-    site_url = connection.get("site_url")
+    site_url = connection.get("endpoint")
     parsed_site_url = urlparse(site_url)
     site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
     self_link = f"{site_root_url}{file.serverRelativeUrl}"
@@ -182,7 +184,7 @@ def _sync_document(
     metadata: dict,
     file,
 ):
-    site_url = connection["site_url"]
+    site_url = connection["endpoint"]
     _metadata = metadata
 
     with tempfile.NamedTemporaryFile(
@@ -207,10 +209,9 @@ def _sync_document(
                 store_metadata = document.store_metadata
                 if store_metadata and store_metadata.get("last_modified"):
                     last_modified = store_metadata["last_modified"]
-                    if not strptime(date_string=last_modified).replace(
-                        tzinfo=None
-                    ) < file.last_time_last_modified.replace(tzinfo=None).replace(
-                        microsecond=0
+                    if (
+                        not strptime(date_string=last_modified).replace(tzinfo=None)
+                        < file.time_last_modified
                     ):
                         _LOG.debug(
                             f"Skipping sharepoint document {file.name} already up to date"
@@ -276,10 +277,9 @@ def _sync_document(
 
 
 def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connection):
-    global _sharepoint_context
 
     try:
-        site_url = connection.get("site_url")
+        site_url = connection.get("endpoint")
 
         if sp_context is None:
             raise Exception(
@@ -293,7 +293,7 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
             file_url = store_metadata["file_url"]
             try:
                 # Check that the file still exists on the sharepoint server
-                _sharepoint_context.web.get_file_by_server_relative_url(
+                sp_context.web.get_file_by_server_relative_url(
                     file_url
                 ).get().execute_query()
             except ClientRequestException as e:
@@ -302,7 +302,7 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
                     for document_data in rag_metadata.get("data") or []:
                         try:
                             http_client.delete(
-                                url=f"{rag_endpoint}/v1/ingest/{document_data['doc_id']}"
+                                url=f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
                             )
                         except:
                             _LOG.warn(
@@ -310,12 +310,23 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
                             )
                     _LOG.info(f"Deleting document {document.filename}")
                     delete_document(document_id=document.id)
+            except Exception as ex:
+                _LOG.warning(
+                    f"Failed to retrieve file {file_url} from sharepoint - {ex}"
+                )
     except:
         _LOG.warning("Error fetching and updating documents", exc_info=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
-    _valid_keys = ["endpoint", "client_id", "thumbprint", "certificate", "dataobjects"]
+    _valid_keys = [
+        "endpoint",
+        "tenant",
+        "client_id",
+        "thumbprint",
+        "certificate",
+        "dataobjects",
+    ]
     assert not isblank(connection.get("endpoint")), "A site url must be supplied"
     assert not isblank(connection.get("client_id")), "A client_id must be supplied"
     assert not isblank(connection.get("thumbprint")), "A thumbprint must be supplied"
