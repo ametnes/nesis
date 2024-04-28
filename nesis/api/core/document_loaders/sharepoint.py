@@ -1,23 +1,7 @@
 import json
 import pathlib
-<<<<<<< HEAD
-<<<<<<< HEAD
-import tempfile
-from typing import Dict, Any
-from urllib.parse import urlparse
-
-import memcache
-=======
 import uuid
 from typing import Dict, Any
->>>>>>> 360abaf (feat(frontend)(api): add datasource type specific input validation (#55))
-=======
-import tempfile
-from typing import Dict, Any
-from urllib.parse import urlparse
-
-import memcache
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
 
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.client_request_exception import ClientRequestException
@@ -44,7 +28,6 @@ _sharepoint_context = None
 
 
 def fetch_documents(
-<<<<<<< HEAD
     connection: Dict[str, str],
     rag_endpoint: str,
     http_client: http.HttpClient,
@@ -96,57 +79,6 @@ def _sync_sharepoint_documents(
             raise Exception(
                 "Sharepoint context is null, cannot proceed with document processing."
             )
-=======
-        connection: Dict[str, str],
-        rag_endpoint: str,
-        http_client: http.HttpClient,
-        metadata: Dict[str, Any],
-        cache_client: memcache.Client,
-) -> None:
-    global _sharepoint_context
-    try:
-
-        site_url = connection.get("site_url")
-        client_id = connection.get("client_id")
-        tenant = connection.get("tenant")
-        thumbprint = connection.get("thumbprint")
-        cert_path = connection.get("certificate_path")
-
-        if _sharepoint_context is None:
-            _sharepoint_context = ClientContext(site_url).with_client_certificate(
-                tenant=tenant,
-                client_id=client_id,
-                thumbprint=thumbprint,
-                cert_path=cert_path,
-            )
-
-        _sync_sharepoint_documents(
-            sp_context=_sharepoint_context,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-            metadata=metadata,
-            cache_client=cache_client,
-        )
-        _unsync_sharepoint_documents(
-            sp_context=_sharepoint_context,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-        )
-    except Exception as ex:
-        _LOG.exception(f"Error fetching sharepoint documents - {ex}")
-
-
-def _sync_sharepoint_documents(
-        sp_context, connection, rag_endpoint, http_client, metadata, cache_client
-):
-    try:
-        _LOG.info(f"Initializing sharepoint syncing to endpoint {rag_endpoint}")
-
-        if sp_context is None:
-            raise Exception("Sharepoint context is null, cannot proceed with document processing.")
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
 
         # Data objects allow us to specify folder names
         sharepoint_folders = connection.get("data_objects")
@@ -162,12 +94,8 @@ def _sync_sharepoint_documents(
 
             if sharepoint_folder is None:
                 _LOG.warning(
-<<<<<<< HEAD
                     f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders"
                 )
-=======
-                    f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders")
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
                 continue
 
             _process_folder_files(
@@ -180,13 +108,9 @@ def _sync_sharepoint_documents(
             )
 
             # Recursively get all the child folders
-<<<<<<< HEAD
             _child_folders_recursive = sharepoint_folder.get_folders(
                 True
             ).execute_query()
-=======
-            _child_folders_recursive = sharepoint_folder.get_folders(True).execute_query()
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
             for _child_folder in _child_folders_recursive:
                 _process_folder_files(
                     _child_folder,
@@ -207,11 +131,7 @@ def _sync_sharepoint_documents(
 def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_client):
     site_url = connection.get("site_url")
     parsed_site_url = urlparse(site_url)
-<<<<<<< HEAD
     site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
-=======
-    site_root_url = '{uri.scheme}://{uri.netloc}'.format(uri=parsed_site_url)
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
     self_link = f"{site_root_url}{file.serverRelativeUrl}"
     _metadata = {
         **(metadata or {}),
@@ -240,11 +160,7 @@ def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_c
 
 
 def _process_folder_files(
-<<<<<<< HEAD
     folder, connection, rag_endpoint, http_client, metadata, cache_client
-=======
-        folder, connection, rag_endpoint, http_client, metadata, cache_client
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
 ):
     # process files in folder
     _files = folder.get_files(False).execute_query()
@@ -260,29 +176,17 @@ def _process_folder_files(
 
 
 def _sync_document(
-<<<<<<< HEAD
     connection: dict,
     rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: dict,
     file,
-=======
-        connection: dict,
-        rag_endpoint: str,
-        http_client: http.HttpClient,
-        metadata: dict,
-        file,
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
 ):
     site_url = connection["site_url"]
     _metadata = metadata
 
     with tempfile.NamedTemporaryFile(
-<<<<<<< HEAD
         dir=tempfile.gettempdir(),
-=======
-            dir=tempfile.gettempdir(),
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
     ) as tmp:
         key_parts = file.serverRelativeUrl.split("/")
 
@@ -304,11 +208,7 @@ def _sync_document(
                 if store_metadata and store_metadata.get("last_modified"):
                     last_modified = store_metadata["last_modified"]
                     if not strptime(date_string=last_modified).replace(
-<<<<<<< HEAD
                         tzinfo=None
-=======
-                            tzinfo=None
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
                     ) < file.last_time_last_modified.replace(tzinfo=None).replace(
                         microsecond=0
                     ):
@@ -382,13 +282,9 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
         site_url = connection.get("site_url")
 
         if sp_context is None:
-<<<<<<< HEAD
             raise Exception(
                 "Sharepoint context is null, cannot proceed with document processing."
             )
-=======
-            raise Exception("Sharepoint context is null, cannot proceed with document processing.")
->>>>>>> d678b52 (Recommit- Adding Sharepoint datasource)
 
         documents = get_documents(base_uri=site_url)
         for document in documents:
