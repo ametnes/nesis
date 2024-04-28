@@ -29,7 +29,7 @@ def test_sync_sharepoint_documents(
         "name": "sharepoint documents",
         "engine": "sharepoint",
         "connection": {
-            "site_url": "https://ametnes.sharepoint.com/sites/nesis-test/",
+            "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
             "tenant": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
@@ -117,7 +117,7 @@ def test_sync_updated_sharepoint_documents(
         "name": "sharepoint documents",
         "engine": "sharepoint",
         "connection": {
-            "site_url": "https://ametnes.sharepoint.com/sites/nesis-test/",
+            "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
             "tenant": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
@@ -233,7 +233,7 @@ def test_unsync_sharepoint_documents(
         "name": "sharepoint documents",
         "engine": "sharepoint",
         "connection": {
-            "site_url": "https://ametnes.sharepoint.com/sites/nesis-test/",
+            "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
             "tenant": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
@@ -336,7 +336,7 @@ class SharepointTest(ut.TestCase):
             "name": "sharepoint documents",
             "engine": "sharepoint",
             "connection": {
-                "site_url": "https://ametnes.sharepoint.com/sites/nesis-test/",
+                "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
                 "client_id": "<sharepoint_app_client_id>",
                 "tenant": "<sharepoint_app_tenant_id>",
                 "thumbprint": "<sharepoint_app_cert_thumbprint>",
