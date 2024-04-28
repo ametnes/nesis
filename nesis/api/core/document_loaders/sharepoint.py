@@ -26,8 +26,6 @@ from nesis.api.core.util.dateutil import strptime
 
 _LOG = logging.getLogger(__name__)
 
-_sharepoint_context = None
-
 
 def fetch_documents(
     connection: Dict[str, str],
@@ -36,7 +34,6 @@ def fetch_documents(
     metadata: Dict[str, Any],
     cache_client: memcache.Client,
 ) -> None:
-    global _sharepoint_context
     try:
 
         site_url = connection.get("endpoint")
@@ -45,13 +42,12 @@ def fetch_documents(
         thumbprint = connection.get("thumbprint")
         cert_path = connection.get("certificate")
 
-        if _sharepoint_context is None:
-            _sharepoint_context = ClientContext(site_url).with_client_certificate(
-                tenant=tenant,
-                client_id=client_id,
-                thumbprint=thumbprint,
-                cert_path=cert_path,
-            )
+        _sharepoint_context = ClientContext(site_url).with_client_certificate(
+            tenant=tenant,
+            client_id=client_id,
+            thumbprint=thumbprint,
+            cert_path=cert_path,
+        )
 
         _sync_sharepoint_documents(
             sp_context=_sharepoint_context,
