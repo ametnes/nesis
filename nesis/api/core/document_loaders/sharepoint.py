@@ -143,7 +143,7 @@ def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_c
 
     """
     We use memcache's add functionality to implement a shared lock to allow for multiple instances
-    operating 
+    operating  
     """
     _lock_key = clean_control(f"{__name__}/locks/{self_link}")
     if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
