@@ -71,22 +71,6 @@ def fetch_documents(
         _LOG.exception(f"Error fetching sharepoint documents - {ex}")
 
 
-def _get_temp_certificate_path(connection) -> str:
-    cert_path = ""
-    certificate_details = connection["certificate"]
-    try:
-        with tempfile.NamedTemporaryFile(
-            dir=tempfile.gettempdir(), delete_on_close=False
-        ) as tmp:
-            cert_path = f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
-
-            with open(cert_path, "w") as svc_file:
-                svc_file.write(certificate_details)
-    except Exception as ex:
-        _LOG.error(f"Failed to generate certificate path - {ex}")
-    return cert_path
-
-
 def _sync_sharepoint_documents(
     sp_context, connection, rag_endpoint, http_client, metadata, cache_client
 ):
@@ -337,7 +321,7 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
     _valid_keys = [
         "endpoint",
-        "tenant",
+        "tenant_id",
         "client_id",
         "thumbprint",
         "certificate",
@@ -345,6 +329,7 @@ def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
     ]
     assert not isblank(connection.get("endpoint")), "A site url must be supplied"
     assert not isblank(connection.get("client_id")), "A client_id must be supplied"
+    assert not isblank(connection.get("tenant_id")), "A client_id must be supplied"
     assert not isblank(connection.get("thumbprint")), "A thumbprint must be supplied"
     assert not isblank(
         connection.get("certificate")
