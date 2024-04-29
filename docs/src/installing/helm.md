@@ -63,14 +63,14 @@ nesis-rag-757584f46c-9kqtf         1/1     Running   0          45s
 ## Testing your Nesis
 
 1. Port forward services;
-   ```commandline title="Nesis Frontend"
+   ```commandline title="MinIO Frontend"
    kubectl port-forward svc/nesis-minio 9001
    ```
 
 2. Point your browser to <a href="http://localhost:9001" target="_blank">http://localhost:9001</a> and login with `admin`:`password`.
    
 3. In another terminal;
-   ```commandline title="MinIO Frontend"
+   ```commandline title="Nesis Frontend"
    kubectl port-forward svc/nesis-frontend 8000
    ```
    
