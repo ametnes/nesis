@@ -64,17 +64,17 @@ nesis-rag-757584f46c-9kqtf         1/1     Running   0          45s
 
 1. Port forward services;
    ```commandline title="Nesis Frontend"
-   kubectl port-forward svc/nesis-minio 8000
+   kubectl port-forward svc/nesis-minio 9001
    ```
 
-2. Point your browser to <a href="http://localhost:8000" target="_blank">http://localhost:8000</a> and login with `test@domain.com`:`password`.
+2. Point your browser to <a href="http://localhost:9001" target="_blank">http://localhost:9001</a> and login with `admin`:`password`.
    
 3. In another terminal;
    ```commandline title="MinIO Frontend"
-   kubectl port-forward svc/nesis-frontend 9001
+   kubectl port-forward svc/nesis-frontend 8000
    ```
    
-4. Point your browser to <a href="http://localhost:9001" target="_blank">http://localhost:9001</a> and login with `admin`:`password`.
+4. Point your browser to <a href="http://localhost:8000" target="_blank">http://localhost:8000</a> and login with `test@domain.com`:`password`.
    
 5. Upload documents into the MinIO bucket `private-documents`.
 6. In the `Nesis Frontend` add a datasource with;
