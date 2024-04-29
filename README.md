@@ -77,7 +77,7 @@ To get started with Nesis,
       8. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
 
 ### Deploy with Kubernetes
-To deploy Nesis into your kubernetes cluster, see [https://ametnes.github.io/nesis/installing/helm/](https://ametnes.github.io/nesis/installing/helm/)
+To deploy Nesis into your kubernetes cluster, see [Helm Instructions](https://ametnes.github.io/nesis/installing/helm/)
 
 ## What does Nesis mean?
 Nesis is derived from the greek noun gnosis which means knowledge.
