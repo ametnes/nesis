@@ -6,7 +6,7 @@ import nesis.api.core.document_loaders.google_drive as google_drive
 import nesis.api.core.document_loaders.minio as s3_documents
 import nesis.api.core.document_loaders.s3 as s3
 import nesis.api.core.document_loaders.samba as samba
-import nesis.api.core.document_loaders.sharepoint as sharepoint_documents
+import nesis.api.core.document_loaders.sharepoint as sharepoint
 from nesis.api.core.models.entities import Datasource, DatasourceType
 from nesis.api.core.services.datasources import DatasourceService
 from nesis.api.core.util import http
@@ -45,10 +45,11 @@ def ingest_datasource(**kwargs) -> None:
                 metadata={"datasource": datasource.name},
             )
         case DatasourceType.SHAREPOINT:
-            sharepoint_documents.fetch_documents(
-                **kwargs,
+            sharepoint.fetch_documents(
                 connection=datasource.connection,
                 rag_endpoint=rag_endpoint,
+                http_client=http_client,
+                cache_client=cache_client,
                 metadata={"datasource": datasource.name},
             )
         case DatasourceType.GOOGLE_DRIVE:

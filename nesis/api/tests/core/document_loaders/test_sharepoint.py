@@ -31,7 +31,7 @@ def test_sync_sharepoint_documents(
         "connection": {
             "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
-            "tenant": "<sharepoint_app_tenant_id>",
+            "tenant_id": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
             "certificate": "path_to_private_cert_keyfile",
             "dataobjects": "Books",
@@ -119,7 +119,7 @@ def test_sync_updated_sharepoint_documents(
         "connection": {
             "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
-            "tenant": "<sharepoint_app_tenant_id>",
+            "tenant_id": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
             "certificate": "path_to_private_cert_keyfile",
             "dataobjects": "Books",
@@ -235,7 +235,7 @@ def test_unsync_sharepoint_documents(
         "connection": {
             "endpoint": "https://ametnes.sharepoint.com/sites/nesis-test/",
             "client_id": "<sharepoint_app_client_id>",
-            "tenant": "<sharepoint_app_tenant_id>",
+            "tenant_id": "<sharepoint_app_tenant_id>",
             "thumbprint": "<sharepoint_app_cert_thumbprint>",
             "certificate": "path_to_private_cert_keyfile",
             "dataobjects": "Books",
@@ -308,63 +308,3 @@ def test_unsync_sharepoint_documents(
     )
     documents = session.query(Document).all()
     assert len(documents) == 0
-
-
-class SharepointTest(ut.TestCase):
-
-    def setUp(self) -> None:
-        self.http_client = mock.MagicMock()
-        # self.http_client = http.HttpClient()
-        # document_management._minio_client = mock.MagicMock()
-
-        os.environ["OPENAI_API_BASE"] = "http://localhost:8080/v1"
-
-        self.config = tests.config
-        initialize_engine(self.config)
-        self.session: Session = DBSession()
-        tests.clear_database(self.session)
-
-        os.environ["OPENAI_API_KEY"] = "<open-api-key>"
-
-        os.environ["OPTIMAI_ADMIN_EMAIL"] = "<username>"
-        os.environ["OPTIMAI_ADMIN_PASSWORD"] = "<password>"
-
-        services.init_services(self.config)
-
-    def test_fetch_sharepoint_documents(self) -> None:
-        data = {
-            "name": "sharepoint documents",
-            "engine": "sharepoint",
-            "connection": {
-                "site_url": "https://ametnes.sharepoint.com/sites/nesis-test/",
-                "client_id": "<sharepoint_app_client_id>",
-                "tenant": "<sharepoint_app_tenant_id>",
-                "thumbprint": "<sharepoint_app_cert_thumbprint>",
-                "certificate": "path_to_private_cert_keyfile",
-                "dataobjects": "Books",
-            },
-        }
-
-        datasource = Datasource(
-            name=data["name"],
-            connection=data["connection"],
-            source_type=DatasourceType.SHAREPOINT,
-            status=DatasourceStatus.ONLINE,
-        )
-
-        self.session.add(datasource)
-        self.session.commit()
-
-        endpoint = (
-            "https://resource-6159823050-privategpt.dev-accounts.ametnes.net/v1/ingest"
-        )
-
-        metadata = {}
-
-        sharepoint.fetch_documents(
-            connection=data["connection"],
-            http_client=self.http_client,
-            rag_endpoint=endpoint,
-            metadata=metadata,
-            cache_client=mock.MagicMock(),
-        )

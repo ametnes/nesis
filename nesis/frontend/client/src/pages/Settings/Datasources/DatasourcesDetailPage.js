@@ -574,7 +574,7 @@ function sharepointConnection() {
               type="text"
               id="tenantId"
               placeholder="tenant ID"
-              name="connection.tenant"
+              name="connection.tenant_id"
               validate={required}
             />
           </td>

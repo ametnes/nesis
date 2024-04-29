@@ -39,31 +39,34 @@ def fetch_documents(
 
         site_url = connection.get("endpoint")
         client_id = connection.get("client_id")
-        tenant = connection.get("tenant")
+        tenant = connection.get("tenant_id")
         thumbprint = connection.get("thumbprint")
-        cert_path = _get_temp_certificate_path(connection)
 
-        _sharepoint_context = ClientContext(site_url).with_client_certificate(
-            tenant=tenant,
-            client_id=client_id,
-            thumbprint=thumbprint,
-            cert_path=cert_path,
-        )
+        with tempfile.NamedTemporaryFile(dir=tempfile.gettempdir()) as tmp:
+            cert_path = f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
+            pathlib.Path(cert_path).write_text(connection["certificate"])
 
-        _sync_sharepoint_documents(
-            sp_context=_sharepoint_context,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-            metadata=metadata,
-            cache_client=cache_client,
-        )
-        _unsync_sharepoint_documents(
-            sp_context=_sharepoint_context,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-        )
+            _sharepoint_context = ClientContext(site_url).with_client_certificate(
+                tenant=tenant,
+                client_id=client_id,
+                thumbprint=thumbprint,
+                cert_path=cert_path,
+            )
+
+            _sync_sharepoint_documents(
+                sp_context=_sharepoint_context,
+                connection=connection,
+                rag_endpoint=rag_endpoint,
+                http_client=http_client,
+                metadata=metadata,
+                cache_client=cache_client,
+            )
+            _unsync_sharepoint_documents(
+                sp_context=_sharepoint_context,
+                connection=connection,
+                rag_endpoint=rag_endpoint,
+                http_client=http_client,
+            )
     except Exception as ex:
         _LOG.exception(f"Error fetching sharepoint documents - {ex}")
 
@@ -73,7 +76,7 @@ def _get_temp_certificate_path(connection) -> str:
     certificate_details = connection["certificate"]
     try:
         with tempfile.NamedTemporaryFile(
-            dir=tempfile.gettempdir(),
+            dir=tempfile.gettempdir(), delete_on_close=False
         ) as tmp:
             cert_path = f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
 
