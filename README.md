@@ -33,14 +33,14 @@ Nesis is built to handle large amounts of data at scale. Enabling connectivity t
 Nesis is able to transform data from various formats into vector embeddings to be used by your LLM of choice.
 
 Enterprise ready knowledge discovery solution that empowers users to
-1. 🗣Interact with vast document repositories in a conversational AI style.
-2. 🛂Role based access control access to the document repositories, ensuring that the enterprise user only views information they are allowed to.
-3. 🗄Connect to vast number of repositories. Currently, S3, Windows Shares, MinIO
-4. ☁ 🏢Can be deployed in your cloud or on-premises.
-5. 🔐User session management.
+1. 🗣 Interact with vast document repositories in a conversational AI style.
+2. 🛂 Role based access control access to the document repositories, ensuring that the enterprise user only views information they are allowed to.
+3. 🗄 Connect to vast number of repositories. Currently, S3, WindowsNT Shares (for your on-prem Windows environment), MinIO, Sharepoint
+4. ☁ 🏢 Can be deployed in your cloud or on-premises.
+5. 🔐 User session management.
 
 ## Getting started
-To get started with Nesis
+To get started with Nesis,
 
 ### Deploy with Docker Compose
 1. Obtain your **OPENAI_API_KEY** from https://platform.openai.com/api-keys:
@@ -76,15 +76,8 @@ To get started with Nesis
       7. Click **Create**
       8. Then, run an adhoc ingestion by clicking the **Ingest** button of the datasource.
 
-- *Note*: Replace `YOUR_USERNAME` and `YOUR_PASSWORD` with the correct values of your `username` and `password`.
-
-
 ### Deploy with Kubernetes
-To deploy Nesis into your kubernetes cluster, run
-```commandline
-helm upgrade --install my-nesis-instance helm -f helm/values-local.yaml
-```
-All possible values configuration is documented in the helm [README.md](./helm/README.md) file
+To deploy Nesis into your kubernetes cluster, see [Helm Instructions](https://ametnes.github.io/nesis/installing/helm/).
 
 ## What does Nesis mean?
 Nesis is derived from the greek noun gnosis which means knowledge.
@@ -95,8 +88,8 @@ If enough users support to have the feature, we will be sure to include it in ou
 
 🐞If you find any functionality not working as expected, please feel free to open a bug report.
 
-## Stars let us know you visited
-Please give us a star to let us know you visited this page. You are already awesome.
+## ⭐ Stars let us know you visited ⭐
+Please give us a ⭐ to let us know you visited this page. You are already awesome.
 
 ## Origins
 This project has been inspired by other open-source projects. Here is a list of some of them;
