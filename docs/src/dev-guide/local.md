@@ -110,16 +110,12 @@ Install dependencies
 pip install -r nesis/api/requirements.txt
 ```
 
-Running the database migration
-```bash
-alembic -x "url=postgresql://postgres:password@127.0.0.1:65432/nesis" --config nesis/api/alembic.ini upgrade head
-```
-
 Start the service
 ```bash
 export NESIS_ADMIN_EMAIL="some.email@domain.com"
 export NESIS_ADMIN_PASSWORD="password"
-python nesis/rag/api/main.py
+export NESIS_API_DATABASE_CREATE="true"
+python nesis/api/core/main.py
 ```
 
 #### Start the frontend

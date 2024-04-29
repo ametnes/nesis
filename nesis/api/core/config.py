@@ -9,7 +9,7 @@ default = {
     "database": {
         "url": os.environ.get("NESIS_API_DATABASE_URL"),
         "debug": os.environ.get("NESIS_API_DATABASE_DEBUG", False),
-        "create": False,
+        "create": bool(os.environ.get("NESIS_API_DATABASE_CREATE", "false")),
     },
     "tasks": {
         "job": {
