@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 
 import pytest
 from sqlalchemy.orm.session import Session
@@ -28,10 +29,9 @@ def client():
 def test_create_user(client):
     # Get the prediction
     data = {
-        "name": "s3 documents",
+        "name": "Full Name",
         "password": tests.admin_password,
         "email": tests.admin_email,
-        "root": True,
     }
 
     response = client.post(
@@ -73,6 +73,75 @@ def test_create_user(client):
     assert response.json.get("password") is None
 
     return response.json
+
+
+def test_create_user_oauth(client):
+    # Test that if authentication with oauth key/value pair
+
+    oauth_token_key = "____nesis_test_oath_key___"
+    oauth_token_value = str(uuid.uuid4())
+    os.environ["NESIS_OAUTH_TOKEN_KEY"] = oauth_token_key
+    os.environ["NESIS_OAUTH_TOKEN_VALUE"] = oauth_token_value
+
+    user = test_create_user(client=client)
+
+    data = {
+        "name": "Full Name",
+        "email": user["email"],
+    }
+
+    # No oauth tokens supplied and no password supplied, so we must fail
+    response = client.post(
+        "/v1/sessions", headers=tests.get_header(), data=json.dumps(data)
+    )
+    assert 401 == response.status_code
+    assert response.json.get("token") is None
+
+    # Invalid oauth tokens supplied and no password supplied so we must fail
+    response = client.post(
+        "/v1/sessions",
+        headers=tests.get_header(),
+        data=json.dumps({**data, oauth_token_key: str(uuid.uuid4())}),
+    )
+    assert 401 == response.status_code
+    assert response.json.get("token") is None
+
+    response = client.post(
+        "/v1/sessions",
+        headers=tests.get_header(),
+        data=json.dumps({**data, oauth_token_key: oauth_token_value}),
+    )
+    assert 200 == response.status_code
+    assert response.json.get("token") is not None
+
+    admin_session = response.json
+
+    # Now get the list of users, we should have just the one
+    response = client.get(
+        f"/v1/users", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 1 == len(response.json["items"])
+
+    # Authenticate as another user
+    response = client.post(
+        "/v1/sessions",
+        headers=tests.get_header(),
+        data=json.dumps(
+            {
+                **data,
+                oauth_token_key: oauth_token_value,
+                "email": "another.user.email@domain.com",
+            }
+        ),
+    )
+    assert 200 == response.status_code
+    assert response.json.get("token") is not None
+
+    # Now get the list of users, we should have two users
+    response = client.get(
+        f"/v1/users", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 2 == len(response.json["items"])
 
 
 def test_create_users(client):
