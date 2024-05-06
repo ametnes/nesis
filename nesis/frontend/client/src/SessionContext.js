@@ -10,6 +10,8 @@ import { clearToken } from './utils/tokenStorage';
 import { useHistory } from 'react-router-dom';
 import useSessionStorage from './utils/useSessionStorage';
 import apiClient from './utils/httpClient';
+import { PublicClientApplication } from '@azure/msal-browser';
+
 const SessionContext = React.createContext({
   session: null,
   setSession: () => '',
@@ -24,7 +26,7 @@ SessionProvider.propTypes = {
 
 export default SessionContext;
 
-const SESSION_KEY = 'AMETNES_CURRENT_SESSION';
+const SESSION_KEY = 'NESIS_CURRENT_SESSION';
 
 export function SessionProvider({ children }) {
   const [session, setSession] = useSessionStorage(SESSION_KEY);
@@ -55,14 +57,14 @@ export function useCurrentUser() {
   return context && context.user;
 }
 
-export function useSignOut(client) {
+export function useSignOut(client, config) {
   const context = useContext(SessionContext);
   const setSession = context?.setSession;
   const history = useHistory();
   return useCallback(
     function () {
-      logoutFromGoogle();
-      logoutFromOptimAI(client);
+      logoutMicrosoft(config);
+      logoutNesis(client);
       clearToken();
       setSession(null);
       history.push('/signin');
@@ -71,16 +73,20 @@ export function useSignOut(client) {
   );
 }
 
-function logoutFromGoogle() {
-  if (window.gapi && window.gapi.auth2) {
-    const auth2 = window.gapi.auth2.getAuthInstance();
-    if (auth2 != null) {
-      auth2.signOut().then(auth2.disconnect());
-    }
-  }
+async function logoutMicrosoft(config) {
+  const msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
+      authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
+      redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+      postLogoutRedirectUri: 'http://localhost:3000/',
+    },
+  });
+  await msalInstance.initialize();
+  msalInstance.logoutRedirect();
 }
 
-function logoutFromOptimAI(client) {
+function logoutNesis(client) {
   if (!client) {
     return;
   }

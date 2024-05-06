@@ -3,6 +3,7 @@ const logger = require('../util/logger');
 const post = (requests, profile) => async (request, response) => {
   const url = profile.SERVICE_ENDPOINT;
   const session = request.body;
+  const oauth_token_key = process.env.NESIS_OAUTH_TOKEN_KEY;
 
   if (!session) {
     return response.status(400).send({
@@ -10,12 +11,31 @@ const post = (requests, profile) => async (request, response) => {
     });
   }
 
+  // session cannot contain the oauth token key
+  if (oauth_token_key in session) {
+    return response.status(400).send({
+      message: 'Invalid request. session not supplied',
+    });
+  }
+
   logger.info(`Posting to ${url}/sessions`);
-  requests
-    .post(`${url}/sessions`)
-    .set('Accept', 'application/json')
-    .set('Content-Type', 'application/json')
-    .send(session)
+
+  let oauthProvider = null;
+
+  if (session.azure) {
+    logger.info(`Loggin with Azure ${session.azure.accessToken}`);
+    oauthProvider = authenticateWithAzure(requests, profile, session.azure);
+  } else {
+    oauthProvider = requests
+      .post(`${url}/sessions`)
+      .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
+      .send({ ...session });
+  }
+
+  logger.info(`Posting to ${url}/sessions`);
+
+  oauthProvider
     .then((res) => {
       response.status(res.status).send(res.body);
     })
@@ -46,6 +66,39 @@ const _delete = (requests, url) => (request, response) => {
       response.status(err.status).send(err.response.body);
     });
 };
+
+async function authenticateWithAzure(requests, profile, azure) {
+  try {
+    const url = profile.SERVICE_ENDPOINT;
+    const oauth_token_key = profile.NESIS_OAUTH_TOKEN_KEY;
+    const oauth_token_value = profile.NESIS_OAUTH_TOKEN_VALUE;
+
+    const email = azure.account.username;
+    const name = azure.account.name;
+
+    const payload = {
+      email: email,
+      name: azure.account.name,
+      [oauth_token_key]: oauth_token_value,
+    };
+    return requests
+      .post(`${url}/sessions`)
+      .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
+      .send(payload)
+      .then((res) => ({
+        status: res.status,
+        body: {
+          ...res.body,
+          email,
+          name,
+        },
+      }));
+  } catch (e) {
+    console.error(e);
+    return Promise.reject(e);
+  }
+}
 
 module.exports.post = post;
 module.exports.delete = _delete;

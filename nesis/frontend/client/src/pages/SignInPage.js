@@ -9,9 +9,13 @@ import FullPageFormContainer from '../components/layout/FullPageFormContainer';
 import client from '../utils/httpClient';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import SessionContext from '../SessionContext';
+import { useConfig } from '../ConfigContext';
 import { useHistory } from 'react-router-dom';
 import { setToken } from '../utils/tokenStorage';
 import MessageRow from '../components/MessageRow';
+import { Col, Container, Row, Form } from 'react-bootstrap';
+import classes from '../styles/SignInPage.module.css';
+import AzureButton from '../components/AzureButton';
 
 const LogoContainer = styled.div`
   margin-top: 32px;
@@ -86,6 +90,8 @@ const SignInPage = () => {
   const [error, setError] = useState();
   const { setSession } = useContext(SessionContext);
   const history = useHistory();
+  const config = useConfig();
+  const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
 
   function submit(session, actions) {
     client
@@ -160,6 +166,16 @@ const SignInPage = () => {
               </FormikForm>
             )}
           </Formik>
+
+          <Container fluid>
+            <Row>
+              <Col className={`${classes.colsign} px-1`} lg={10}>
+                {azureAuthEnabled && (
+                  <AzureButton onFailure={setError} onSuccess={handleSuccess} />
+                )}
+              </Col>
+            </Row>
+          </Container>
         </div>
       </FullPageFormContainer>
     </Page>

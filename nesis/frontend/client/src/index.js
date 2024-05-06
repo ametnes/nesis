@@ -7,13 +7,16 @@ import { ThemeProvider } from 'styled-components/macro';
 import theme from './utils/theme';
 import { SessionProvider } from './SessionContext';
 import { ToasterContextProvider } from './ToasterContext';
+import { ConfigContextProvider } from './ConfigContext';
 
 ReactDOM.render(
   <SessionProvider>
     <ToasterContextProvider>
       <ThemeProvider theme={theme}>
         <Router basename={process.env.PUBLIC_URL}>
-          <Route path="/" component={App} />
+          <ConfigContextProvider>
+            <Route path="/" component={App} />
+          </ConfigContextProvider>
         </Router>
       </ThemeProvider>
     </ToasterContextProvider>

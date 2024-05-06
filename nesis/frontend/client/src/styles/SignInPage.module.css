@@ -1,0 +1,176 @@
+.loginbg {
+  background-color: #f9fafd;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.formsize {
+  width: 50%;
+  margin: auto;
+}
+
+.borderbottom {
+  border-bottom: 1px solid rgb(228, 228, 228);
+  margin: 20px 0;
+}
+
+.loginButton {
+  width: 100%;
+  background-color: #052475;
+  border: 0;
+  padding: 10px 0;
+  color: white;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.recoverpassword {
+  text-align: end;
+  padding: 10px 0 !important;
+  color: #052475;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.formdata:focus {
+  border: 1px solid #ced4da !important;
+}
+
+.textend {
+  text-align: end;
+}
+
+.orborder {
+  border-bottom: 1px solid rgb(212, 212, 212);
+  margin: 20px 0;
+}
+
+.w100 {
+  width: 100%;
+}
+
+.w10 {
+  width: 10%;
+  color: #ced4da;
+  font-weight: 500;
+}
+
+.w50 {
+  width: 50%;
+}
+
+.w45 {
+  width: 45%;
+}
+
+.passwordchange {
+  color: #052475;
+}
+
+spam {
+  color: #052475;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+h6 {
+  font-size: 14px;
+}
+
+.font12 {
+  font-size: 0.75rem;
+}
+
+.datapassword a:hover {
+  color: #052475;
+}
+
+.datapassword {
+  color: #052475;
+  text-align: end;
+  margin: 15px 0;
+}
+
+.orloginbuttongoogle {
+  border: 1px solid rgb(255, 43, 43);
+  padding: 15px 3px;
+  border-radius: 10px;
+  background-color: white;
+  color: black;
+  width: 100%;
+  font-size: 18px;
+}
+
+.orloginbuttongithub {
+  border: 1px solid rgb(0, 0, 0);
+  padding: 15px 3px;
+  border-radius: 10px;
+  background-color: white;
+  color: black;
+  width: 100%;
+  font-size: 18px;
+}
+
+.loginnavbg {
+  background-color: white;
+  border-bottom: 1px solid rgb(235, 235, 235);
+  padding: 20px 0;
+}
+
+.backbutton a {
+  color: #052475;
+  font-weight: 600;
+  border-bottom: 1px solid #052475;
+}
+
+.backbutton a:hover {
+  text-decoration: none;
+}
+
+.backicons {
+  width: 16px;
+  margin-right: 3px;
+}
+
+.signinheading p {
+  font-size: 18px !important;
+}
+
+.changeToSignup {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.changeToSignup a {
+  color: #052475 !important;
+  text-decoration: none !important;
+}
+
+.colsign {
+  margin: 0 auto;
+}
+
+@media only screen and (max-width: 450px) {
+  .w25 {
+    width: 160px !important;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  .formsize {
+    width: 100%;
+    padding: 30px !important;
+  }
+  .signinheading {
+    text-align: center;
+  }
+  .orloginbuttongoogle {
+    margin: 0 !important;
+  }
+}
+
+/* .mb2 {
+    margin-bottom: 1.2rem !important;
+} */
