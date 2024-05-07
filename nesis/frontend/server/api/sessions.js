@@ -1,5 +1,4 @@
 const logger = require('../util/logger');
-import { useMsal } from "@azure/msal-react";
 
 const post = (requests, profile) => async (request, response) => {
   const url = profile.SERVICE_ENDPOINT;
