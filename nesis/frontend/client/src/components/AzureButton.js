@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import useClient from '../utils/useClient';
 import { useConfig } from '../ConfigContext';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
@@ -10,45 +10,51 @@ export default function AzureButton({ onFailure, onSuccess }) {
   const config = useConfig();
   const client = useClient();
 
+  const msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
+      authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
+      redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+      navigateToLoginRequestUrl: true,
+    },
+    cache: {
+      cacheLocation: config?.auth?.OAUTH_AZURE_CACHELOCATION,
+      storeAuthStateInCookie: config?.auth?.OAUTH_AZURE_STOREAUTHSTATEINCOOKIE,
+    },
+  });
+
+  useEffect(() => {
+    const initialize = async () => {
+      console.log('Initializing...');
+      await msalInstance.initialize();
+      await msalInstance
+        .handleRedirectPromise()
+        .then((response) => {
+          if (response?.accessToken) {
+            client
+              .post('sessions', {
+                azure: response,
+              })
+              .then((response) => {
+                onSuccess(response?.body?.email, response);
+              })
+              .catch((error) => {
+                onFailure(parseApiErrorMessage(error));
+              });
+          }
+        })
+        .catch((error) => {
+          onFailure(parseApiErrorMessage(error));
+        });
+    };
+    initialize();
+  }, []);
+
   const handleLogin = async (evt) => {
     evt.preventDefault();
-    const msalInstance = new PublicClientApplication({
-      auth: {
-        clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
-        authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
-        redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
-      },
-      cache: {
-        cacheLocation: config?.auth?.OAUTH_AZURE_CACHELOCATION,
-        storeAuthStateInCookie:
-          config?.auth?.OAUTH_AZURE_STOREAUTHSTATEINCOOKIE,
-      },
-    });
+
     await msalInstance.initialize();
-    await msalInstance
-      .loginPopup({
-        scopes: config?.AZURE_SCOPES || ['User.Read'],
-      })
-      .then(async (response) => {
-        console.log(response);
-        if (response?.accessToken) {
-          client
-            .post('sessions', {
-              azure: response,
-            })
-            .then((response) => {
-              onSuccess(response?.body?.email, response);
-            })
-            .catch((error) => {
-              onFailure(parseApiErrorMessage(error));
-            });
-        } else if (onFailure) {
-          onFailure('Could not login using Azure');
-        }
-      })
-      .catch((error) => {
-        onFailure(parseApiErrorMessage(error));
-      });
+    await msalInstance.loginRedirect();
   };
 
   return (
