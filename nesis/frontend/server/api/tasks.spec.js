@@ -1,5 +1,5 @@
 const api = require('./tasks');
-const config = require('../config');
+const config = require('../profile');
 const sinon = require('sinon');
 const { Request } = require('../util/test-util');
 

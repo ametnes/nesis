@@ -9,7 +9,6 @@ import classes from '../styles/SignInPage.module.css';
 export default function AzureButton({ onFailure, onSuccess }) {
   const config = useConfig();
   const client = useClient();
-
   const msalInstance = new PublicClientApplication({
     auth: {
       clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
@@ -25,7 +24,6 @@ export default function AzureButton({ onFailure, onSuccess }) {
 
   useEffect(() => {
     const initialize = async () => {
-      console.log('Initializing...');
       await msalInstance.initialize();
       await msalInstance
         .handleRedirectPromise()
@@ -47,7 +45,11 @@ export default function AzureButton({ onFailure, onSuccess }) {
           onFailure(parseApiErrorMessage(error));
         });
     };
-    initialize();
+    try {
+      initialize();
+    } catch (e) {
+      onFailure('Error log in in with Azure');
+    }
   }, []);
 
   const handleLogin = async (evt) => {

@@ -63,7 +63,7 @@ export function useSignOut(client, config) {
   const history = useHistory();
   return useCallback(
     function () {
-      logoutMicrosoft(config);
+      // logoutMicrosoft(config);
       logoutNesis(client);
       clearToken();
       setSession(null);
@@ -74,16 +74,20 @@ export function useSignOut(client, config) {
 }
 
 async function logoutMicrosoft(config) {
-  const msalInstance = new PublicClientApplication({
-    auth: {
-      clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
-      authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
-      redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
-      postLogoutRedirectUri: 'http://localhost:3000/',
-    },
-  });
-  await msalInstance.initialize();
-  msalInstance.logoutRedirect();
+  try {
+    const msalInstance = new PublicClientApplication({
+      auth: {
+        clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
+        authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
+        redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+        postLogoutRedirectUri: 'http://localhost:3000/',
+      },
+    });
+    await msalInstance.initialize();
+    msalInstance.logoutRedirect();
+  } catch (e) {
+    /* ignored */
+  }
 }
 
 function logoutNesis(client) {

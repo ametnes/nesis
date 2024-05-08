@@ -3,7 +3,7 @@ const logger = require('../util/logger');
 const post = (requests, profile) => async (request, response) => {
   const url = profile.SERVICE_ENDPOINT;
   const session = request.body;
-  const oauth_token_key = process.env.NESIS_OAUTH_TOKEN_KEY;
+  const oauth_token_key = profile.NESIS_OAUTH_TOKEN_KEY;
 
   if (!session || session[oauth_token_key]) {
     return response.status(400).send({
@@ -17,8 +17,6 @@ const post = (requests, profile) => async (request, response) => {
       message: 'Invalid request. session not supplied',
     });
   }
-
-  logger.info(`Posting to ${url}/sessions`);
 
   let oauthProvider = null;
 

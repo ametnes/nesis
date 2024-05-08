@@ -20,6 +20,7 @@ class Request {
     this.tasks = [];
     this.taskById = {};
     this.targets = {};
+    this.azureUserData = {};
   }
   set(header, value) {
     this.headers[header] = value;
@@ -114,6 +115,8 @@ class Request {
         res = { body: this.tasks, status: 200 };
       } else if (this.url.includes('/tasks/')) {
         res = { body: this.taskById, status: 200 };
+      } else if (this.url.endsWith('/v1.0/me')) {
+        res = { body: this.azureUserData, status: 200 };
       }
     } else if (this.method === 'DELETE') {
       res = { body: 'Deleted', status: 200 };
