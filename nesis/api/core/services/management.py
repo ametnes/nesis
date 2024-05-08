@@ -66,6 +66,7 @@ class UserSessionService(ServiceOperation):
         self.__LOG.debug(f"Received session object {kwargs}")
         email = user_session.get("email")
         password = user_session.get("password")
+
         # Hard code these to make it easier to test
         session_oauth_token_value = user_session.get(
             os.environ.get("NESIS_OAUTH_TOKEN_KEY") or "___nesis_oauth_token_key___"
