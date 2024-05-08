@@ -16,6 +16,7 @@ import MessageRow from '../components/MessageRow';
 import { Col, Container, Row, Form } from 'react-bootstrap';
 import classes from '../styles/SignInPage.module.css';
 import AzureButton from '../components/AzureButton';
+import { Toggles } from 'react-bootstrap-icons';
 
 const LogoContainer = styled.div`
   margin-top: 32px;
@@ -88,10 +89,12 @@ const HTTP_STATUS_UNAUTHORIZED = 401;
 
 const SignInPage = () => {
   const [error, setError] = useState();
+  const [toggleCreds, setToggleCreds] = useState(false);
   const { setSession } = useContext(SessionContext);
   const history = useHistory();
   const config = useConfig();
   const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
+  const oauthEnabled = azureAuthEnabled;
 
   function submit(session, actions) {
     client
@@ -130,52 +133,59 @@ const SignInPage = () => {
           <Heading1>Nesis</Heading1>
           <Heading2>Your Enterprise Knowledge Partner</Heading2>
           <MessageRow variant="danger">{error}</MessageRow>
-          <Formik
-            initialValues={{
-              email: '',
-              password: '',
-            }}
-            onSubmit={submit}
-          >
-            {({ isSubmitting, resetForm }) => (
-              <FormikForm>
-                <FormRow>
-                  <TextField
-                    type="name"
-                    id="email"
-                    placeholder="enter your email"
-                    name="email"
-                    validate={required}
-                  />
-                </FormRow>
-                <FormRow>
-                  <TextField
-                    type="password"
-                    id="password"
-                    placeholder="**********"
-                    name="password"
-                    validate={required}
-                  />
-                </FormRow>
-                <StyledButtonWrapper>
-                  <ActionButton disabled={isSubmitting} type="submit">
-                    Log In
-                    <BsArrowRightShort />
-                  </ActionButton>
-                </StyledButtonWrapper>
-              </FormikForm>
-            )}
-          </Formik>
 
           <Container fluid>
             <Row>
               <Col className={`${classes.colsign} px-1`} lg={10}>
-                {azureAuthEnabled && (
+                {azureAuthEnabled && !toggleCreds && (
                   <AzureButton onFailure={setError} onSuccess={handleSuccess} />
                 )}
               </Col>
             </Row>
           </Container>
+          <div style={{textAlign: 'right'}}>
+            <Toggles size={25} className="mr-2" onClick={() => setToggleCreds(!toggleCreds)} /> Form
+          </div>
+          {(!oauthEnabled || toggleCreds) && (
+            <div>
+            <Formik
+              initialValues={{
+                email: '',
+                password: '',
+              }}
+              onSubmit={submit}
+            >
+              {({ isSubmitting, resetForm }) => (
+                <FormikForm>
+                  <FormRow>
+                    <TextField
+                      type="name"
+                      id="email"
+                      placeholder="enter your email"
+                      name="email"
+                      validate={required}
+                    />
+                  </FormRow>
+                  <FormRow>
+                    <TextField
+                      type="password"
+                      id="password"
+                      placeholder="**********"
+                      name="password"
+                      validate={required}
+                    />
+                  </FormRow>
+                  <StyledButtonWrapper>
+                    <ActionButton disabled={isSubmitting} type="submit">
+                      Log In
+                      <BsArrowRightShort />
+                    </ActionButton>
+                  </StyledButtonWrapper>
+                </FormikForm>
+              )}
+            </Formik>
+            </div>
+          )}
         </div>
       </FullPageFormContainer>
     </Page>

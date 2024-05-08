@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useHistory, Route, Switch, useRouteMatch } from 'react-router-dom';
-import { GearFill } from 'react-bootstrap-icons';
 import Nesis from '../../components/Menu';
 import styled from 'styled-components/macro';
 import { FileEarmarkPost } from 'react-bootstrap-icons';

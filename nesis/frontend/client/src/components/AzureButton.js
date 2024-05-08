@@ -4,6 +4,7 @@ import { useConfig } from '../ConfigContext';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import { PublicClientApplication } from '@azure/msal-browser';
 import AzureIcon from '../images/AzureIcon.png';
+import MicrosoftIcon from '../images/MicrosoftIcon.png';
 import classes from '../styles/SignInPage.module.css';
 
 export default function AzureButton({ onFailure, onSuccess }) {
@@ -62,8 +63,8 @@ export default function AzureButton({ onFailure, onSuccess }) {
   return (
     <>
       <button className={`${classes.orloginbutton} my-3`} onClick={handleLogin}>
-        <img className={`${classes.loginorimg} mx-1`} src={AzureIcon} />
-        Continue With Microsoft
+        <img className={`${classes.loginorimg} mx-1`} src={MicrosoftIcon} />
+        Sign in with Microsoft
       </button>
     </>
   );

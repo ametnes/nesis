@@ -171,6 +171,22 @@ h6 {
   }
 }
 
-/* .mb2 {
-    margin-bottom: 1.2rem !important;
-} */
+.orloginbutton {
+  border: 1px solid rgb(0, 127, 212);
+  padding: 15px 3px;
+  border-radius: 10px;
+  background-color: white;
+  color: black;
+  width: 100%;
+  font-size: 18px;
+}
+
+.orloginbutton {
+  border: 1px solid rgb(0, 18, 30);
+  padding: 15px 3px;
+  border-radius: 1px;
+  background-color: white;
+  color: black;
+  width: 100%;
+  font-size: 12px;
+}
