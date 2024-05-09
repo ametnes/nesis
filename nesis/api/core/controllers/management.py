@@ -30,8 +30,8 @@ def operate_users():
         return jsonify(error_message(str(se))), 409
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -65,8 +65,8 @@ def operate_user(user_id):
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -90,8 +90,8 @@ def operate_user_roles(user_id):
         return jsonify(error_message(str(se))), 409
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -107,8 +107,8 @@ def operate_user_role(user_id, role_id):
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -132,8 +132,8 @@ def operate_roles():
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
@@ -176,8 +176,8 @@ def operate_role(role_id):
         return jsonify(error_message(str(se))), 409
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
 
@@ -196,8 +196,8 @@ def operate_sessions():
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error operating session")
         return jsonify(error_message("Server error")), 500

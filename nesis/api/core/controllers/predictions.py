@@ -43,8 +43,8 @@ def operate_module_predictions(module):
         return jsonify(error_message(str(se))), 400
     except util.UnauthorizedAccess:
         return jsonify(error_message("Unauthorized access")), 401
-    except util.PermissionException:
-        return jsonify(error_message("Forbidden action on resource")), 403
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
     except:
         _LOG.exception("Error getting user")
         return jsonify(error_message("Server error")), 500
