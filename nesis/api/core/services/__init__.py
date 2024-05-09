@@ -95,11 +95,16 @@ def authorized(
     )
 
     if resource:
-        query = query.filter(RoleAction.resource == resource)
+        query = query.filter(RoleAction.resource.in_([resource, "*"]))
 
     user_role_actions = query.all()
     if len(user_role_actions) == 0:
-        raise PermissionException(f"Not authorized to perform this action")
+        message = (
+            f"Not authorized to perform {action.name} on {resource}"
+            if resource
+            else f"Not authorized to perform {action.name} on {resource_type.name}"
+        )
+        raise PermissionException(message)
 
     return session_user
 

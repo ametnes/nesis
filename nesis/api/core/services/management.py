@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional
+from typing import Optional, List
 
 import bcrypt
 import memcache
@@ -400,23 +400,27 @@ class RoleService(ServiceOperation):
 
             for action in role_actions:
                 action_resource: Optional[str] = action.get("resource")
+                action_resources: Optional[List[str]] = action.get("resources") or []
+                if action_resource:
+                    action_resources.append(action_resource)
                 action_action: Optional[str] = action.get("action")
 
-                if not any([action_resource, action_action]):
+                if action_action is None or len(action_resources) == 0:
                     raise ServiceException("resource or resources must be supplied")
 
-                action_resource_parts = action_resource.split("/")
-                resource_type = action_resource_parts[0]
-                resource_item = None
-                if len(action_resource_parts) > 1:
-                    resource_item = action_resource_parts[1]
-                role_action = RoleAction(
-                    action=Action[action_action.upper()],
-                    role=None,
-                    resource=resource_item,
-                    resource_type=ResourceType[resource_type.upper()],
-                )
-                role_action_list.append(role_action)
+                for action_resource in action_resources:
+                    action_resource_parts = action_resource.split("/")
+                    resource_type = action_resource_parts[0]
+                    resource_item = None
+                    if len(action_resource_parts) > 1:
+                        resource_item = action_resource_parts[1]
+                    role_action = RoleAction(
+                        action=Action[action_action.upper()],
+                        role=None,
+                        resource=resource_item,
+                        resource_type=ResourceType[resource_type.upper()],
+                    )
+                    role_action_list.append(role_action)
 
             if len(role_action_list) == 0:
                 raise ServiceException("Invalid role. Policy not supplied")
@@ -603,7 +607,9 @@ class RoleService(ServiceOperation):
 
 class UserRoleService(ServiceOperation):
     """
-    Manage user roles
+    Manage user roles. This is a function of the user service. Permissions are part of the user function.
+    Whatever a user is permitted to do on a user, they are permitted to do on the user role.
+    For this reason, we don't check/test permissions in the user role service as it is called only in the user service.
     """
 
     def __init__(self, config: dict, session_service: UserSessionService):
@@ -614,21 +620,13 @@ class UserRoleService(ServiceOperation):
 
         self.__LOG.info("Initializing service...")
 
-    def create(self, **kwargs) -> Role:
+    def create(self, **kwargs) -> UserRole:
         user_id: str = kwargs["user_id"]
         user_role: dict = kwargs["role"]
 
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.CREATE,
-                resource_type=self.__resource_type,
-            )
 
             role: Role = (
                 session.query(Role).filter(Role.uuid == user_role["id"]).first()
@@ -662,19 +660,11 @@ class UserRoleService(ServiceOperation):
             if session:
                 session.close()
 
-    def get(self, **kwargs) -> list[Role]:
+    def get(self, **kwargs) -> list[UserRole]:
         user_id = kwargs.get("user_id")
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.READ,
-                resource_type=self.__resource_type,
-            )
 
             return (
                 session.query(Role)
@@ -696,14 +686,6 @@ class UserRoleService(ServiceOperation):
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.DELETE,
-                resource_type=self.__resource_type,
-            )
 
             if uuid is None:
                 query = (
@@ -729,21 +711,13 @@ class UserRoleService(ServiceOperation):
             if session:
                 session.close()
 
-    def update(self, **kwargs) -> Role:
+    def update(self, **kwargs) -> UserRole:
         role_uuid = kwargs["id"]
         role: dict = kwargs["role"]
 
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.UPDATE,
-                resource_type=self.__resource_type,
-            )
 
             role_record = session.query(Role).filter(Role.uuid == role_uuid)
             session.query(UserRole).filter(Role.uuid == role_uuid).filter(
