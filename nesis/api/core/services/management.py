@@ -161,13 +161,14 @@ class UserService(ServiceOperation):
     Manage system users
     """
 
-    def __init__(
-        self, config: dict, session_service: UserSessionService, user_role_service
-    ) -> None:
+    def __init__(self, config: dict, session_service: UserSessionService) -> None:
         self._config = config
         self._resource_type = ResourceType.USERS
         self._session_service = session_service
-        self._user_role_service = user_role_service
+        self._user_role_service = UserRoleService(
+            config, session_service=session_service
+        )
+
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
         self._LOG.info("Initializing service...")
@@ -344,6 +345,38 @@ class UserService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+    def get_roles(self, **kwargs):
+        uuid = kwargs["user_id"]
+
+        session = DBSession()
+
+        services.authorized(
+            session_service=self._session_service,
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.READ,
+            resource_type=self._resource_type,
+            resource=self.__get_rbac_resource(user_id=uuid),
+        )
+
+        return self._user_role_service.get(**kwargs)
+
+    def delete_role(self, **kwargs):
+        uuid = kwargs["user_id"]
+
+        session = DBSession()
+
+        services.authorized(
+            session_service=self._session_service,
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.READ,
+            resource_type=self._resource_type,
+            resource=self.__get_rbac_resource(user_id=uuid),
+        )
+
+        return self._user_role_service.delete(**kwargs)
 
 
 class RoleService(ServiceOperation):
