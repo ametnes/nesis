@@ -173,7 +173,7 @@ def test_create_role_as_user(client):
         headers=tests.get_header(token=user_session["token"]),
         data=json.dumps(role),
     )
-    assert 200 == roles_response.status_code, response.json
+    assert 200 == roles_response.status_code, roles_response.json
 
 
 def test_read_permitted_resources_as_user(client):
@@ -263,3 +263,77 @@ def test_read_permitted_resources_as_user(client):
     assert 1 == len(
         get_datasources["items"]
     ), f"Expected 1 datasource by received {len(get_datasources.json['items'])}"
+
+
+def test_update_user_permitted_as_user(client):
+    """
+    This tests that a user given read access to a specific datasource, will only be able to
+    list/read from that since datasource
+    :param client:
+    :return:
+    """
+
+    # Create an admin user
+    admin_session = tests.get_admin_session(app=client)
+
+    # Create a role
+    role = {
+        "name": "user-manager",
+        "policy": {
+            "items": [
+                {"action": "create", "resources": ["users/*", "roles/*"]},
+                {"action": "read", "resources": ["users/*", "roles/*"]},
+                {"action": "delete", "resources": ["users/*", "roles/*"]},
+                {"action": "update", "resources": ["users/*", "roles/*"]},
+            ]
+        },
+    }
+    response = client.post(
+        f"/v1/roles",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(role),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Define a user
+    user = {
+        "name": "Full Name",
+        "email": "full.name@domain.com",
+        "password": "password",
+        "roles": [response.json["id"]],
+        "enabled": True,
+    }
+
+    # Create a user with the above role
+    user_response = client.post(
+        f"/v1/users",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(user),
+    )
+    assert 200 == user_response.status_code, user_response.json
+
+    # Create a session for the user
+    response = client.post(
+        f"/v1/sessions",
+        headers=tests.get_header(),
+        data=json.dumps(user),
+    )
+    assert 200 == response.status_code, response.json
+    user_session = response.json
+
+    # Update the user's name
+    user["name"] = "Updated Full Name"
+    response = client.put(
+        f"/v1/users/{user_response.json['id']}",
+        headers=tests.get_header(token=user_session["token"]),
+        data=json.dumps(user),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Test the user's name has been updated
+    response = client.get(
+        f"/v1/users/{user_response.json['id']}",
+        headers=tests.get_header(token=user_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+    assert response.json["name"] == user["name"]
