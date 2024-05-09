@@ -371,7 +371,7 @@ class UserService(ServiceOperation):
             session_service=self._session_service,
             session=session,
             token=kwargs.get("token"),
-            action=Action.READ,
+            action=Action.DELETE,
             resource_type=self._resource_type,
             resource=self.__get_rbac_resource(user_id=uuid),
         )
