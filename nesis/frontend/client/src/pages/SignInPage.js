@@ -143,47 +143,52 @@ const SignInPage = () => {
               </Col>
             </Row>
           </Container>
-          <div style={{textAlign: 'right'}}>
-            <Toggles size={25} className="mr-2" onClick={() => setToggleCreds(!toggleCreds)} /> Form
+          <div style={{ textAlign: 'right' }}>
+            <Toggles
+              size={25}
+              className="mr-2"
+              onClick={() => setToggleCreds(!toggleCreds)}
+            />{' '}
+            Form
           </div>
           {(!oauthEnabled || toggleCreds) && (
             <div>
-            <Formik
-              initialValues={{
-                email: '',
-                password: '',
-              }}
-              onSubmit={submit}
-            >
-              {({ isSubmitting, resetForm }) => (
-                <FormikForm>
-                  <FormRow>
-                    <TextField
-                      type="name"
-                      id="email"
-                      placeholder="enter your email"
-                      name="email"
-                      validate={required}
-                    />
-                  </FormRow>
-                  <FormRow>
-                    <TextField
-                      type="password"
-                      id="password"
-                      placeholder="**********"
-                      name="password"
-                      validate={required}
-                    />
-                  </FormRow>
-                  <StyledButtonWrapper>
-                    <ActionButton disabled={isSubmitting} type="submit">
-                      Log In
-                      <BsArrowRightShort />
-                    </ActionButton>
-                  </StyledButtonWrapper>
-                </FormikForm>
-              )}
-            </Formik>
+              <Formik
+                initialValues={{
+                  email: '',
+                  password: '',
+                }}
+                onSubmit={submit}
+              >
+                {({ isSubmitting, resetForm }) => (
+                  <FormikForm>
+                    <FormRow>
+                      <TextField
+                        type="name"
+                        id="email"
+                        placeholder="enter your email"
+                        name="email"
+                        validate={required}
+                      />
+                    </FormRow>
+                    <FormRow>
+                      <TextField
+                        type="password"
+                        id="password"
+                        placeholder="**********"
+                        name="password"
+                        validate={required}
+                      />
+                    </FormRow>
+                    <StyledButtonWrapper>
+                      <ActionButton disabled={isSubmitting} type="submit">
+                        Log In
+                        <BsArrowRightShort />
+                      </ActionButton>
+                    </StyledButtonWrapper>
+                  </FormikForm>
+                )}
+              </Formik>
             </div>
           )}
         </div>
