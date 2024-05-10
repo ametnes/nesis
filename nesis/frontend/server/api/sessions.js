@@ -15,7 +15,6 @@ const post = (requests, profile) => async (request, response) => {
   let oauthProvider = null;
 
   if (session.azure) {
-    logger.info(`Loggin with Azure ${session.azure.accessToken}`);
     oauthProvider = authenticateWithAzure(requests, profile, session.azure);
   } else {
     oauthProvider = requests

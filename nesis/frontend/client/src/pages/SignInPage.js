@@ -183,11 +183,20 @@ const SignInPage = () => {
               </Formik>
             </div>
           )}
-          <div style={{ padding: '10px' }}>
-            <span style={{ cursor: 'pointer', padding: '5px' }}
-              onClick={() => setToggleCreds(!toggleCreds)}
-            >Use {!toggleCreds ? 'password' : 'Azure'}</span>
-          </div>
+          {oauthEnabled && (
+            <div style={{ padding: '10px' }}>
+              <span
+                style={{
+                  cursor: 'pointer',
+                  backgroundColor: '#cccccc',
+                  padding: '5px',
+                }}
+                onClick={() => setToggleCreds(!toggleCreds)}
+              >
+                Use {!toggleCreds ? 'password' : 'Azure'}
+              </span>
+            </div>
+          )}
         </div>
       </FullPageFormContainer>
     </Page>
