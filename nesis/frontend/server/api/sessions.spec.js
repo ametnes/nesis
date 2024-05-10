@@ -95,7 +95,7 @@ describe('Sessions', () => {
     assert.deepEqual(requests.data, {
       email: 'michy.tan@acme.onmicrosoft.com',
       name: 'First Last',
-      ___nesis_oauth_token_key___: '___nesis_oauth_token_value___'
+      ___nesis_oauth_token_key___: '___nesis_oauth_token_value___',
     });
   });
 });
