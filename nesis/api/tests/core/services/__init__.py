@@ -26,7 +26,5 @@ def create_role(
     return role_record
 
 
-def assign_role(
-    service: UserRoleService, token: str, role: dict, user_id: str
-) -> UserRole:
-    return service.create(token=token, user_id=user_id, role=role)
+def assign_role(service: UserService, token: str, role: dict, user_id: str):
+    service.update(token=token, user_id=user_id, user={"roles": [role["id"]]})
