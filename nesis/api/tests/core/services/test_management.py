@@ -116,7 +116,7 @@ def test_datasource_permissions(http_client, tc):
         service=services.role_service, role=role, token=admin_user.token
     )
     assign_role(
-        service=services.user_role_service,
+        service=services.user_service,
         token=admin_user.token,
         role=role_record.to_dict(),
         user_id=given_user_record.uuid,

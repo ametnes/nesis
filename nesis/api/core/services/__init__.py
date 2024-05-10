@@ -30,12 +30,11 @@ settings_service: SettingsService
 user_service: UserService
 user_session_service: UserSessionService
 role_service: RoleService
-user_role_service: UserRoleService
 task_service: TaskService
 
 
 def init_services(config, http_client=None):
-    global datasource_service, qanda_prediction_service, settings_service, user_service, user_session_service, role_service, user_role_service, task_service
+    global datasource_service, qanda_prediction_service, settings_service, user_service, user_session_service, role_service, task_service
 
     user_session_service = UserSessionService(config=config)
 
@@ -46,11 +45,9 @@ def init_services(config, http_client=None):
         config=config, session_service=user_session_service
     )
 
-    user_role_service = UserRoleService(config, session_service=user_session_service)
     user_service = UserService(
         config=config,
         session_service=user_session_service,
-        user_role_service=user_role_service,
     )
     role_service = RoleService(config=config, session_service=user_session_service)
     datasource_service = DatasourceService(

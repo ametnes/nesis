@@ -77,12 +77,12 @@ def operate_user_roles(user_id):
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == POST:
-            result = services.user_role_service.create(
-                token=token, user_id=user_id, role=request.json
+            result = services.user_service.update(
+                token=token, user_id=user_id, user={"roles": [request.json.get("id")]}
             )
             return jsonify(result.to_dict())
         else:
-            results = services.user_role_service.get(token=token, user_id=user_id)
+            results = services.user_service.get_roles(token=token, user_id=user_id)
             return jsonify({"items": [item.to_dict() for item in results]})
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
@@ -101,7 +101,7 @@ def operate_user_roles(user_id):
 def operate_user_role(user_id, role_id):
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
-        services.user_service.delete(token=token, user_id=user_id, role_id=role_id)
+        services.user_service.delete_role(token=token, user_id=user_id, role_id=role_id)
         return jsonify(success=True)
     except util.ServiceException as se:
         return jsonify(error_message(str(se))), 400
