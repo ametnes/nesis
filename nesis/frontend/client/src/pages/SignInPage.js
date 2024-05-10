@@ -143,14 +143,6 @@ const SignInPage = () => {
               </Col>
             </Row>
           </Container>
-          <div style={{ textAlign: 'right' }}>
-            <Toggles
-              size={25}
-              className="mr-2"
-              onClick={() => setToggleCreds(!toggleCreds)}
-            />{' '}
-            Form
-          </div>
           {(!oauthEnabled || toggleCreds) && (
             <div>
               <Formik
@@ -191,6 +183,11 @@ const SignInPage = () => {
               </Formik>
             </div>
           )}
+          <div style={{ padding: '10px' }}>
+            <span style={{ cursor: 'pointer', padding: '5px' }}
+              onClick={() => setToggleCreds(!toggleCreds)}
+            >Use {!toggleCreds ? 'password' : 'Azure'}</span>
+          </div>
         </div>
       </FullPageFormContainer>
     </Page>
