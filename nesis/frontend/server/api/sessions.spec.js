@@ -1,6 +1,7 @@
 const api = require('./sessions');
 const config = require('../profile');
 const sinon = require('sinon');
+const assert = require('chai').assert;
 const { Request } = require('../util/test-util');
 
 describe('Sessions', () => {
@@ -90,5 +91,11 @@ describe('Sessions', () => {
     post(request, response);
     sinon.assert.calledWith(statusStab, 200);
     sinon.assert.called(responseStab);
+
+    assert.deepEqual(requests.data, {
+      email: 'michy.tan@acme.onmicrosoft.com',
+      name: 'First Last',
+      ___nesis_oauth_token_key___: '___nesis_oauth_token_value___'
+    });
   });
 });

@@ -6,12 +6,6 @@ const post = (requests, profile) => async (request, response) => {
   const session = request.body;
   const oauth_token_key = profile.NESIS_OAUTH_TOKEN_KEY;
 
-  if (!session || session[oauth_token_key]) {
-    return response.status(400).send({
-      message: 'Invalid request. session not supplied',
-    });
-  }
-
   // session cannot contain the oauth token key
   if (oauth_token_key in session) {
     return response.status(400).send({
