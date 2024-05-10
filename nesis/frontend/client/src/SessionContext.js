@@ -63,10 +63,10 @@ export function useSignOut(client, config) {
   const history = useHistory();
   return useCallback(
     function () {
-      // logoutMicrosoft(config);
       logoutNesis(client);
       clearToken();
       setSession(null);
+      logoutMicrosoft(config);
       history.push('/signin');
     },
     [setSession, history],
