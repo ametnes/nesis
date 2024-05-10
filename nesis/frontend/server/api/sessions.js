@@ -1,4 +1,3 @@
-const { log } = require('winston');
 const logger = require('../util/logger');
 
 const post = (requests, profile) => async (request, response) => {
@@ -7,7 +6,7 @@ const post = (requests, profile) => async (request, response) => {
   const oauth_token_key = profile.NESIS_OAUTH_TOKEN_KEY;
 
   // session cannot contain the oauth token key
-  if (oauth_token_key in session) {
+  if (!session || oauth_token_key in session) {
     return response.status(400).send({
       message: 'Invalid request. session not supplied',
     });

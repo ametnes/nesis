@@ -57,6 +57,25 @@ describe('Sessions', () => {
     sinon.assert.called(responseStab);
   });
 
+  it('can not be created with no payload', () => {
+    const requests = new Request();
+    const request = {
+      headers: {},
+      body: null,
+    };
+
+    const responseStab = sinon.stub();
+    const statusStab = sinon.stub().returns({ send: responseStab });
+    const response = {
+      status: statusStab,
+    };
+
+    const post = api.post(requests, config.profile.DEV);
+    post(request, response);
+    sinon.assert.calledWith(statusStab, 400);
+    sinon.assert.called(responseStab);
+  });
+
   it('can be created with Azure', () => {
     const requests = new Request();
     requests.azureUserData = {
@@ -70,8 +89,8 @@ describe('Sessions', () => {
         email: 'michy.tan@acme.onmicrosoft.com',
         azure: {
           authority: 'https://login.microsoftonline.com/common/',
-          uniqueId: '9cdd0b94-93cb-48db-8bc8-2e157577ed06',
-          tenantId: '041e34c2-962e-44b0-8aa4-8789a81ee28d',
+          uniqueId: '9cdd0b94-0000-48db-8bc8-00000000',
+          tenantId: '041e34c2-0000-44b0-8aa4-00000000',
           accessToken: 'some.key',
           account: {
             username: 'michy.tan@acme.onmicrosoft.com',
