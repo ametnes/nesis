@@ -3,7 +3,6 @@ import useClient from '../utils/useClient';
 import { useConfig } from '../ConfigContext';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import { PublicClientApplication } from '@azure/msal-browser';
-import AzureIcon from '../images/AzureIcon.png';
 import MicrosoftIcon from '../images/MicrosoftIcon.png';
 import classes from '../styles/SignInPage.module.css';
 
