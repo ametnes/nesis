@@ -10,6 +10,8 @@ const getConfig = (requests, profile) => (request, response) => {
       OAUTH_AZURE_STOREAUTHSTATEINCOOKIE:
         profile.NESIS_OAUTH_AZURE_STOREAUTHSTATEINCOOKIE,
       OAUTH_AZURE_SCOPES: profile.NESIS_OAUTH_AZURE_SCOPES || ['User.Read'],
+      OAUTH_GOOGLE_ENABLED: profile.NESIS_OAUTH_GOOGLE_ENABLED,
+      OAUTH_GOOGLE_CLIENT_ID: profile.NESIS_OAUTH_GOOGLE_CLIENT_ID,
     },
   };
   response.status(200).send(JSON.stringify(config));

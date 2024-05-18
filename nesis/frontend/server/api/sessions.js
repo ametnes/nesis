@@ -16,6 +16,9 @@ const post = (requests, profile) => async (request, response) => {
 
   if (session.azure) {
     oauthProvider = authenticateWithAzure(requests, profile, session.azure);
+  } else if(session.google){
+    oauthProvider = authenticateWithGoogle(requests, profile, session.google);
+
   } else {
     oauthProvider = requests
       .post(`${url}/sessions`)
@@ -88,7 +91,33 @@ function authenticateWithAzure(requests, profile, azure) {
     .then(() => sendOauthSession(requests, name, email, profile));
 }
 
-function sendOauthSession(requests, name, email, profile) {
+function authenticateWithGoogle(requests, profile, google) {
+  const googleApiUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
+ return requests
+ .get(googleApiUrl)
+ .set('Authorization', `Bearer ${google.access_token}`)
+ .set('Content-Type', 'application/json')
+ .send()
+ .then((res) => {
+    if (res.body?.email === undefined || res.error) {
+      // invalid credentials 
+      const error = new Error('Invalid Google credentials');
+      Object.assign(error, {
+        status:401,
+        response: {
+          body: 'Invalid google credentials',
+        }
+      });
+      throw error;
+    } else {
+    return res.body;}
+ })
+ .then((userInfo) => sendOauthSession(requests, userInfo.name, userInfo.email, profile));
+
+}
+
+function sendOauthSession(requests, name, email, profile) { 
   const url = profile.SERVICE_ENDPOINT;
   const oauth_token_key = profile.NESIS_OAUTH_TOKEN_KEY;
   const oauth_token_value = profile.NESIS_OAUTH_TOKEN_VALUE;
@@ -97,7 +126,7 @@ function sendOauthSession(requests, name, email, profile) {
     name: name,
     [oauth_token_key]: oauth_token_value,
   };
-
+  
   return requests
     .post(`${url}/sessions`)
     .set('Accept', 'application/json')

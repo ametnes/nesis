@@ -15,6 +15,8 @@ const profile = {
     NESIS_OAUTH_AZURE_SCOPES: process.env.NESIS_OAUTH_AZURE_SCOPES || [
       'User.Read',
     ],
+    NESIS_OAUTH_GOOGLE_ENABLED: process.env.NESIS_OAUTH_GOOGLE_ENABLED,
+    NESIS_OAUTH_GOOGLE_CLIENT_ID: process.env.NESIS_OAUTH_GOOGLE_CLIENT_ID,
   },
   DEV: {
     SERVICE_ENDPOINT: `http://localhost:6000/v1`,
@@ -32,6 +34,8 @@ const profile = {
     NESIS_OAUTH_AZURE_SCOPES: process.env.NESIS_OAUTH_AZURE_SCOPES || [
       'User.Read',
     ],
+    NESIS_OAUTH_GOOGLE_ENABLED: true,
+    NESIS_OAUTH_GOOGLE_CLIENT_ID: process.env.NESIS_OAUTH_GOOGLE_CLIENT_ID,
   },
 };
 

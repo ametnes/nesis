@@ -17,6 +17,7 @@ import { Col, Container, Row, Form } from 'react-bootstrap';
 import classes from '../styles/SignInPage.module.css';
 import AzureButton from '../components/AzureButton';
 import { Toggles } from 'react-bootstrap-icons';
+import GoogleButton from '../components/GoogleButton';
 
 const LogoContainer = styled.div`
   margin-top: 32px;
@@ -94,7 +95,8 @@ const SignInPage = () => {
   const history = useHistory();
   const config = useConfig();
   const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
-  const oauthEnabled = azureAuthEnabled;
+  const googleAuthEnabled = config?.auth?.OAUTH_GOOGLE_ENABLED && config?.auth?.OAUTH_GOOGLE_CLIENT_ID !== undefined;
+  const oauthEnabled = azureAuthEnabled || googleAuthEnabled;
 
   function submit(session, actions) {
     client
@@ -142,6 +144,13 @@ const SignInPage = () => {
                 )}
               </Col>
             </Row>
+            <Row>
+              <Col className={`${classes.colsign} px-1`} lg={10}>
+                {googleAuthEnabled && !toggleCreds && (
+                  <GoogleButton onFailure={setError} onSuccess={handleSuccess} />
+                )}
+              </Col>
+            </Row>
           </Container>
           {(!oauthEnabled || toggleCreds) && (
             <div>
@@ -184,13 +193,8 @@ const SignInPage = () => {
             </div>
           )}
           {oauthEnabled && (
-            <div style={{ padding: '10px' }}>
-              <span
-                style={{
-                  cursor: 'pointer',
-                  backgroundColor: '#cccccc',
-                  padding: '5px',
-                }}
+            <div className={classes.toggleCredsDiv}>
+              <span  className={classes.toggleCreds}
                 onClick={() => setToggleCreds(!toggleCreds)}
               >
                 Use {!toggleCreds ? 'password' : 'Azure'}
