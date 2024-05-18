@@ -5,7 +5,7 @@ import { GearFill } from 'react-bootstrap-icons';
 import DatasourcesPage from './Datasources/DatasourcesPage';
 import UsersPage from './Users/UsersPage';
 import RolesPage from './Roles/RolesPage';
-import Optim from '../../components/Menu';
+import Nesis from '../../components/Menu';
 import styled from 'styled-components/macro';
 
 const Heading = styled.h1`
@@ -23,7 +23,7 @@ const SettingsPage = () => {
   const history = useHistory();
   const match = useRouteMatch();
   return (
-    <Optim>
+    <Nesis>
       <Heading>
         <GearFill size={25} className="mr-2" /> Settings
       </Heading>
@@ -68,7 +68,7 @@ const SettingsPage = () => {
           <Route exact path={`${match.path}/roles`} component={RolesPage} />
         </Switch>
       </div>
-    </Optim>
+    </Nesis>
   );
 };
 

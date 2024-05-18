@@ -7,6 +7,7 @@ import { ReactComponent as Logo } from '../images/Nesis.svg';
 import styled from 'styled-components/macro';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
+import { useConfig } from '../ConfigContext';
 import { LightSquareButton } from './inputs/SquareButton';
 
 const Main = styled.div`
@@ -78,7 +79,8 @@ const HeaderToolBarIcon = styled.div`
 
 export default function MenuHeader({ onMobileMenuClick }) {
   const history = useHistory();
-  const signOut = useSignOut(client);
+  const config = useConfig();
+  const signOut = useSignOut(client, config);
   const session = useCurrentSession();
   const iconSize = 20;
 
@@ -94,10 +96,7 @@ export default function MenuHeader({ onMobileMenuClick }) {
         {session && (
           <UserControlsRow>
             <HeaderToolBarIcon>
-              <a
-                href="https://github.com/ametnes/nesis/blob/main/docs/README.md"
-                target="_blank"
-              >
+              <a href="https://ametnes.github.io/nesis/" target="_blank">
                 <QuestionSquare size={iconSize} className="help-icon" /> Help
               </a>
             </HeaderToolBarIcon>

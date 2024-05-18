@@ -66,10 +66,14 @@ class UserSessionService(ServiceOperation):
         self.__LOG.debug(f"Received session object {kwargs}")
         email = user_session.get("email")
         password = user_session.get("password")
+
+        # Hard code these to make it easier to test
         session_oauth_token_value = user_session.get(
-            os.environ.get("NESIS_OAUTH_TOKEN_KEY")
+            os.environ.get("NESIS_OAUTH_TOKEN_KEY") or "___nesis_oauth_token_key___"
         )
-        oauth_token_value = os.environ.get("NESIS_OAUTH_TOKEN_VALUE")
+        oauth_token_value = (
+            os.environ.get("NESIS_OAUTH_TOKEN_VALUE") or "___nesis_oauth_token_value___"
+        )
 
         try:
 
@@ -85,7 +89,6 @@ class UserSessionService(ServiceOperation):
                 user_password = password.encode("utf-8")
                 if not bcrypt.checkpw(user_password, db_pass):
                     raise UnauthorizedAccess("Invalid email/password")
-                # update last login details.
                 db_user = users[0]
 
                 return self.__create_user_session(db_user)
@@ -114,7 +117,7 @@ class UserSessionService(ServiceOperation):
 
     def __create_user_session(self, db_user: User):
         user_dict = db_user.to_dict()
-        token = SG("[\l\d]{128}").render()
+        token = SG(r"[\l\d]{128}").render()
         session_token = self.__cache_key(token)
         expiry = (
             self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
@@ -122,7 +125,7 @@ class UserSessionService(ServiceOperation):
         if self.__cache.get(session_token) is None:
             self.__cache.set(session_token, user_dict, time=expiry)
         while self.__cache.get(session_token)["id"] != user_dict["id"]:
-            token = SG("[\l\d]{128}").render()
+            token = SG(r"[\l\d]{128}").render()
             session_token = self.__cache_key(token)
             self.__cache.set(session_token, user_dict, time=expiry)
         return UserSession(token=token, expiry=expiry, user=db_user)

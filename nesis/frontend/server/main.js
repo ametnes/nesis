@@ -7,7 +7,7 @@ const logger = require('./util/logger');
 const api = require('./api/index');
 
 const app = express();
-const config = require('./config');
+const config = require('./profile');
 const profile = config.profile[process.env.PROFILE] || config.profile.DEV;
 //Handles post requests
 const bodyParser = require('body-parser');
@@ -29,7 +29,7 @@ async function init() {
     USERS: '/api/users',
     TASKS: '/api/tasks',
     DATA_SOURCES: '/api/datasources',
-    DATA_SOURCES_MODELS: '/api/models',
+    CONFIG: '/api/config',
     QANDA_PREDICTIONS: '/api/qanda/predictions',
   };
 
@@ -90,6 +90,7 @@ async function init() {
     `${API.QANDA_PREDICTIONS}/:id`,
     api.qanda_predictions.getById(requests, profile),
   );
+  app.get(`${API.CONFIG}`, api.config.get(requests, profile));
 
   app.get('/*', (req, res) => {
     res.sendFile(path.join(home, 'index.html'));

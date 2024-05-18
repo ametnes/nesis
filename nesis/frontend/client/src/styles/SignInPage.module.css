@@ -1,0 +1,32 @@
+.colsign {
+  margin: 0 auto;
+}
+
+@media only screen and (max-width: 450px) {
+  .w25 {
+    width: 160px !important;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  .formsize {
+    width: 100%;
+    padding: 30px !important;
+  }
+  .signinheading {
+    text-align: center;
+  }
+  .orloginbutton {
+    margin: 0 !important;
+  }
+}
+
+.orloginbutton {
+  border: 1px solid rgb(0, 18, 30);
+  padding: 15px 3px;
+  border-radius: 1px;
+  background-color: white;
+  color: black;
+  width: 100%;
+  font-size: 12px;
+}
