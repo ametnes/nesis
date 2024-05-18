@@ -12,6 +12,7 @@ The Nessus project is divided into four components.
        7. Converting documents into embeddings.
        8. Interfacing with any OpenAI compatible endpoints.
 4. Vector DB - For storing vector embeddings.
+5. LLM Inference Engine - This is the LLM service that powers the AI process.
 
 
 ## Sequence
