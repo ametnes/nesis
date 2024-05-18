@@ -12,7 +12,7 @@ export function renderWithRouter(
   {
     route = '/',
     history = createMemoryHistory({ initialEntries: [route] }),
-  } = {}
+  } = {},
 ) {
   const Wrapper = ({ children }) => (
     <Router history={history}>{children}</Router>
@@ -23,7 +23,7 @@ export function renderWithRouter(
   };
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 export function renderWithContext(ui, options) {
   return {
@@ -31,9 +31,9 @@ export function renderWithContext(ui, options) {
       <ToasterContextProvider>
         <ConfigContextProvider>
           <GoogleContextProvider>{ui}</GoogleContextProvider>
-        </ConfigContextProvider >
+        </ConfigContextProvider>
       </ToasterContextProvider>,
-      options
+      options,
     ),
   };
 }

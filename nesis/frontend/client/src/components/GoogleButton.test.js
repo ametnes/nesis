@@ -8,5 +8,4 @@ describe('<GoogleButton>', () => {
     const buttonComponent = getByText('Sign in With Google');
     expect(buttonComponent).toBeInTheDocument();
   });
-
 });

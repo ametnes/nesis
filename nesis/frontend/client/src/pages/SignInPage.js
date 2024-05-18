@@ -95,7 +95,9 @@ const SignInPage = () => {
   const history = useHistory();
   const config = useConfig();
   const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
-  const googleAuthEnabled = config?.auth?.OAUTH_GOOGLE_ENABLED && config?.auth?.OAUTH_GOOGLE_CLIENT_ID !== undefined;
+  const googleAuthEnabled =
+    config?.auth?.OAUTH_GOOGLE_ENABLED &&
+    config?.auth?.OAUTH_GOOGLE_CLIENT_ID !== undefined;
   const oauthEnabled = azureAuthEnabled || googleAuthEnabled;
 
   function submit(session, actions) {
@@ -147,7 +149,10 @@ const SignInPage = () => {
             <Row>
               <Col className={`${classes.colsign} px-1`} lg={10}>
                 {googleAuthEnabled && !toggleCreds && (
-                  <GoogleButton onFailure={setError} onSuccess={handleSuccess} />
+                  <GoogleButton
+                    onFailure={setError}
+                    onSuccess={handleSuccess}
+                  />
                 )}
               </Col>
             </Row>
@@ -194,7 +199,8 @@ const SignInPage = () => {
           )}
           {oauthEnabled && (
             <div className={classes.toggleCredsDiv}>
-              <span  className={classes.toggleCreds}
+              <span
+                className={classes.toggleCreds}
                 onClick={() => setToggleCreds(!toggleCreds)}
               >
                 Use {!toggleCreds ? 'password' : 'Azure'}

@@ -5,24 +5,24 @@ import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import GoogleIcon from '../images/GoogleIcon.png';
 import classes from '../styles/SignInPage.module.css';
 
-export default function GoogleButton({ onFailure, onSuccess}) {
-  const client = useClient();  
+export default function GoogleButton({ onFailure, onSuccess }) {
+  const client = useClient();
 
- const googleLogin = useGoogleLogin( {
+  const googleLogin = useGoogleLogin({
     onSuccess: (tokenRespose) => {
-        client.post('sessions', { google: tokenRespose})
+      client
+        .post('sessions', { google: tokenRespose })
         .then((response) => {
-            onSuccess(response?.body?.email, response);
+          onSuccess(response?.body?.email, response);
         })
         .catch((error) => {
-            onFailure(parseApiErrorMessage(error));
-        })
+          onFailure(parseApiErrorMessage(error));
+        });
     },
     onError: (error) => {
-        handleFailure(error);
-    }
-
- });
+      handleFailure(error);
+    },
+  });
 
   function handleFailure(error) {
     onFailure('Could not login using Google');
@@ -30,7 +30,7 @@ export default function GoogleButton({ onFailure, onSuccess}) {
 
   return (
     <>
-     <button className={`${classes.orloginbutton} my-3`} onClick={googleLogin}>
+      <button className={`${classes.orloginbutton} my-3`} onClick={googleLogin}>
         <img className={`${classes.loginorimg} mx-1`} src={GoogleIcon} />
         Sign in with Google
       </button>
