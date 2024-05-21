@@ -269,6 +269,23 @@ def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
     assert not isblank(
         connection.get("dataobjects")
     ), "One or more buckets must be supplied"
+
+    endpoint = connection.get("endpoint")
+    dataobjects = connection.get("dataobjects")
+
+    endpoint_parts = endpoint.split("://")
+    client = Minio(
+        endpoint=endpoint_parts[1].split("/")[0],
+        access_key=connection.get("user"),
+        secret_key=connection.get("password"),
+        secure=endpoint_parts[0] == "https",
+    )
+
+    try:
+        list(client.list_objects(dataobjects.split(",")[0], recursive=True))
+    except:
+        raise ValueError(f"Failed to connect to minio instance {endpoint}")
+
     return {
         key: val
         for key, val in connection.items()

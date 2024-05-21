@@ -5,7 +5,7 @@ data-center, in AWS, GCP or Azure.
 
 Nesis is available on the Ametnes Platform and can be deployed in your kubernetes cluster wherever you host it.
 
-The first step is to setup your kubernetes cluster as an Ametnes Application Location. See these detailed <a href="https://cloud.ametnes.com/docs/concepts/data-service-location/" target="_blank">instructions</a>.
+The first step is to set up your kubernetes cluster as an Ametnes Application Location. See these detailed <a href="https://cloud.ametnes.com/docs/concepts/data-service-location/" target="_blank">instructions</a>.
 
 ## Create the service
 
