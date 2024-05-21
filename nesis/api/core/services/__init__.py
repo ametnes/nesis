@@ -22,6 +22,7 @@ from nesis.api.core.services.management import (
 )
 from nesis.api.core.services.task_service import TaskService
 from nesis.api.core.services.util import PermissionException
+from nesis.api.core.services.app_service import AppService
 
 
 qanda_prediction_service: QandaPredictionService
@@ -31,10 +32,11 @@ user_service: UserService
 user_session_service: UserSessionService
 role_service: RoleService
 task_service: TaskService
+app_service: AppService
 
 
 def init_services(config, http_client=None):
-    global datasource_service, qanda_prediction_service, settings_service, user_service, user_session_service, role_service, task_service
+    global datasource_service, qanda_prediction_service, settings_service, user_service, user_session_service, role_service, task_service, app_service
 
     user_session_service = UserSessionService(config=config)
 
@@ -62,6 +64,8 @@ def init_services(config, http_client=None):
     )
 
     datasource_service.task_service = task_service
+
+    app_service = AppService(config=config, session_service=user_session_service)
 
     # Initialize system
     init_system(config=config)

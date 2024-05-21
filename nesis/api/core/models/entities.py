@@ -522,7 +522,7 @@ class App(Base):
     uuid = Column(Unicode(255), unique=True, nullable=False)
     name = Column(Unicode(255))
     description = Column(Unicode(255))
-    secret = Column(Unicode(4096), nullable=False)
+    secret = Column(LargeBinary, nullable=False)
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
     attributes = Column(JSONB)
     enabled = Column(Boolean, default=True, nullable=False)
@@ -535,7 +535,7 @@ class App(Base):
     def __init__(
         self,
         name: str,
-        secret: str,
+        secret: bytes,
         description: str,
         create_date: dt.datetime = dt.datetime.utcnow(),
     ):
@@ -569,14 +569,14 @@ class AppRole(Base):
             ("role",), [Role.id], name="fk_app_role_role", ondelete="CASCADE"
         ),
         ForeignKeyConstraint(
-            ("app",), [User.id], name="fk_app_role_app", ondelete="CASCADE"
+            ("app",), [App.id], name="fk_app_role_app", ondelete="CASCADE"
         ),
     )
 
     def __init__(self, role: Role, app: App):
         self.uuid = str(uuid.uuid4())
         self.role = role.id
-        self.user = app.id
+        self.app = app.id
 
     def to_dict(self, **kwargs) -> dict:
         dict_value = {

@@ -17,7 +17,7 @@ from nesis.api.core.services import PermissionException
 from nesis.api.tests.core.services import (
     create_user_session,
     create_role,
-    assign_role,
+    assign_role_to_user,
 )
 
 
@@ -115,7 +115,7 @@ def test_datasource_permissions(http_client, tc):
     role_record = create_role(
         service=services.role_service, role=role, token=admin_user.token
     )
-    assign_role(
+    assign_role_to_user(
         service=services.user_service,
         token=admin_user.token,
         role=role_record.to_dict(),

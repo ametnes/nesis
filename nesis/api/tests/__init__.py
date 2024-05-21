@@ -17,6 +17,7 @@ from nesis.api.core.models.entities import (
     Datasource,
     Document,
     Task,
+    App,
 )
 
 os.environ["PGPT_PROFILES"] = "test"
@@ -89,6 +90,7 @@ def clear_database(session):
     session.query(Datasource).delete()
     session.query(Document).delete()
     session.query(Task).delete()
+    session.query(App).delete()
     session.commit()
 
 

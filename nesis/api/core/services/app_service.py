@@ -1,42 +1,27 @@
+import base64
 import logging
-from typing import Dict, Any, List, Optional
 
-import apscheduler
-import pytz
-from apscheduler.events import (
-    EVENT_JOB_ERROR,
-    EVENT_JOB_EXECUTED,
-    JobEvent,
-    EVENT_JOB_SUBMITTED,
-    EVENT_JOB_ADDED,
-)
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.date import DateTrigger
+import memcache
+from strgen import StringGenerator as SG
+
+import bcrypt
 
 import nesis.api.core.services as services
-import nesis.api.core.util.dateutil as du
 from nesis.api.core.models import DBSession, objects
 from nesis.api.core.models.entities import (
     RoleAction,
     Action,
-    Datasource,
-    Task,
-    DatasourceStatus,
     App,
     AppRole,
     Role,
 )
-from nesis.api.core.models.objects import TaskType, TaskStatus
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
     ConflictException,
     PermissionException,
+    UnauthorizedAccess,
 )
-from nesis.api.core.services.util import validate_schedule
-from nesis.api.core.apps.document_management import ingest_datasource
 from nesis.api.core.util.http import HttpClient
 
 _LOG = logging.getLogger(__name__)
@@ -147,52 +132,7 @@ class AppRoleService(ServiceOperation):
                 session.close()
 
     def update(self, **kwargs) -> AppRole:
-        role_uuid = kwargs["id"]
-        role: dict = kwargs["role"]
-
-        session = DBSession()
-        try:
-            session.expire_on_commit = False
-
-            role_record = session.query(Role).filter(Role.uuid == role_uuid)
-            session.query(AppRole).filter(Role.uuid == role_uuid).filter(
-                AppRole.role == Role.id
-            ).delete()
-
-            role_actions: Optional[dict] = role.get("policy")
-
-            for action in role_actions:
-                action_resource: Optional[str] = action.get("resource")
-                action_actions: Optional[set[str]] = action.get("policy")
-                action_resources: Optional[set[str]] = action.get("resources") or set()
-
-                if not any([action_resource, action_resources]):
-                    raise ServiceException("resource or resources must be supplied")
-
-                if action_resource:
-                    action_resources.add(action_resource)
-
-                for action_resource in action_resources:
-                    for action_actions_action in action_actions:
-                        role_action = RoleAction(
-                            action=action_actions_action,
-                            role=role_record.id,
-                            resource=action_resource,
-                            resource_type=objects.ResourceType.APPS,
-                        )
-                        session.add(role_action)
-
-            session.commit()
-
-            return role_record
-
-        except Exception as e:
-            session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
-        finally:
-            if session:
-                session.close()
+        raise NotImplementedError("Invalid operation on datasource")
 
 
 class AppService(ServiceOperation):
@@ -204,7 +144,6 @@ class AppService(ServiceOperation):
     def __init__(
         self,
         config: dict,
-        http_client: HttpClient,
         session_service: ServiceOperation,
     ):
         self._resource_type = objects.ResourceType.APPS
@@ -212,7 +151,6 @@ class AppService(ServiceOperation):
         self._app_role_service = AppRoleService(
             config=config, session_service=session_service
         )
-        self._http_client = http_client
         self._config = config
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
@@ -254,19 +192,22 @@ class AppService(ServiceOperation):
             name: str = app.get("name")
             description: str = app.get("description")
 
-            entity = App(
-                name=name,
-                description=description,
-            )
+            secret = SG(r"[\l\d]{32}").render()
+            secret_hash = bcrypt.hashpw(secret.encode("utf-8"), bcrypt.gensalt())
+
+            entity = App(name=name, description=description, secret=secret_hash)
 
             session.add(entity)
             session.commit()
-            session.refresh(entity)
 
+            # Attach any desired roles to the app
             for app_role in app.get("roles") or []:
                 self._app_role_service.create(
-                    **kwargs, user_id=entity.uuid, role={"id": app_role}
+                    **kwargs, app_id=entity.uuid, role={"id": app_role}
                 )
+
+            encoded_secret = base64.b64encode(f"{entity.uuid}:{secret}".encode("utf-8"))
+            entity.secret = encoded_secret
 
             return entity
         except Exception as exc:
@@ -296,6 +237,21 @@ class AppService(ServiceOperation):
             query = session.query(App).filter(App.uuid.in_(apps))
             if app_id:
                 query = query.filter(App.uuid == app_id)
+            return query.all()
+        except Exception as e:
+            self._LOG.exception(f"Error when fetching apps")
+            raise
+        finally:
+            if session:
+                session.close()
+
+    def get_by_id(self, app_id) -> App:
+
+        session = DBSession()
+        try:
+
+            session.expire_on_commit = False
+            query = session.query(App).filter(App.uuid == app_id)
             return query.all()
         except Exception as e:
             self._LOG.exception(f"Error when fetching apps")
@@ -381,6 +337,14 @@ class AppService(ServiceOperation):
             session.merge(app_record)
             session.commit()
 
+            self._app_role_service.delete(**{**kwargs, "app_id": app_id})
+
+            for app_role in app.get("roles") or []:
+                try:
+                    self._app_role_service.create(**kwargs, role={"id": app_role})
+                except ConflictException as ex:
+                    self._LOG.info(ex)
+
             return app_record
 
         except Exception as e:
@@ -389,3 +353,47 @@ class AppService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+
+class AppSessionService(ServiceOperation):
+    """
+    Manage user sessions
+    """
+
+    def __init__(self, config):
+        self.__config = config
+        self.__cache = memcache.Client(config["memcache"]["hosts"], debug=1)
+        self.__LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
+
+    def get(self, **kwargs):
+        token = kwargs.get("token")
+        if token is None:
+            raise UnauthorizedAccess("Token not supplied")
+
+        key = self.__cache_app_key(token)
+        value = self.__cache.get(key)
+        session_object = {"token": token, "app": value}
+
+        if session_object is None:
+
+            encoded_secret = base64.b64decode(token).decode("utf-8")
+            encoded_secret_parts = encoded_secret.split(":")
+
+            app: App = AppService.get_by_id(app_id=encoded_secret_parts[0])
+
+            raise UnauthorizedAccess("Invalid token")
+
+        return session_object
+
+    def delete(self, **kwargs):
+        raise NotImplementedError("Invalid operation on datasource")
+
+    @staticmethod
+    def __cache_app_key(key):
+        return f"application/{key}"
+
+    def create(self, **kwargs) -> None:
+        raise NotImplementedError("Invalid operation on datasource")
+
+    def update(self, **kwargs):
+        raise NotImplementedError("Invalid operation on datasource")

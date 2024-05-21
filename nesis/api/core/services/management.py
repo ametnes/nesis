@@ -39,24 +39,35 @@ class UserSessionService(ServiceOperation):
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
 
-        key = self.__cache_key(token)
+        key = self.__cache_user_key(token)
         value = self.__cache.get(key)
 
-        if value is None:
+        if value is not None:
+            session_object = {"token": token, "user": value}
+        else:
+            key = self.__cache_app_key(token)
+            value = self.__cache.get(key)
+            session_object = {"token": token, "app": value}
+
+        if session_object is None:
             raise UnauthorizedAccess("Invalid token")
 
-        return {"token": token, "user": value}
+        return session_object
 
     def delete(self, **kwargs):
         token = kwargs["token"]
         session = self.get(**kwargs)
         if session["token"] != token:
             raise UnauthorizedAccess("Invalid session token")
-        self.__cache.delete(self.__cache_key(token))
+        self.__cache.delete(self.__cache_user_key(token))
 
     @staticmethod
-    def __cache_key(key):
+    def __cache_user_key(key):
         return f"sessions/{key}"
+
+    @staticmethod
+    def __cache_app_key(key):
+        return f"application/{key}"
 
     def create(self, **kwargs) -> UserSession:
         user_session = kwargs["session"]
@@ -118,7 +129,7 @@ class UserSessionService(ServiceOperation):
     def __create_user_session(self, db_user: User):
         user_dict = db_user.to_dict()
         token = SG(r"[\l\d]{128}").render()
-        session_token = self.__cache_key(token)
+        session_token = self.__cache_user_key(token)
         expiry = (
             self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
         )
@@ -126,7 +137,7 @@ class UserSessionService(ServiceOperation):
             self.__cache.set(session_token, user_dict, time=expiry)
         while self.__cache.get(session_token)["id"] != user_dict["id"]:
             token = SG(r"[\l\d]{128}").render()
-            session_token = self.__cache_key(token)
+            session_token = self.__cache_user_key(token)
             self.__cache.set(session_token, user_dict, time=expiry)
         return UserSession(token=token, expiry=expiry, user=db_user)
 
@@ -748,49 +759,4 @@ class UserRoleService(ServiceOperation):
                 session.close()
 
     def update(self, **kwargs) -> UserRole:
-        role_uuid = kwargs["id"]
-        role: dict = kwargs["role"]
-
-        session = DBSession()
-        try:
-            session.expire_on_commit = False
-
-            role_record = session.query(Role).filter(Role.uuid == role_uuid)
-            session.query(UserRole).filter(Role.uuid == role_uuid).filter(
-                UserRole.role == Role.id
-            ).delete()
-
-            role_actions: Optional[dict] = role.get("policy")
-
-            for action in role_actions:
-                action_resource: Optional[str] = action.get("resource")
-                action_actions: Optional[set[str]] = action.get("policy")
-                action_resources: Optional[set[str]] = action.get("resources") or set()
-
-                if not any([action_resource, action_resources]):
-                    raise ServiceException("resource or resources must be supplied")
-
-                if action_resource:
-                    action_resources.add(action_resource)
-
-                for action_resource in action_resources:
-                    for action_actions_action in action_actions:
-                        role_action = RoleAction(
-                            action=action_actions_action,
-                            role=role_record.id,
-                            resource=action_resource,
-                            resource_type=ResourceType.USERS,
-                        )
-                        session.add(role_action)
-
-            session.commit()
-
-            return role_record
-
-        except Exception as e:
-            session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
-        finally:
-            if session:
-                session.close()
+        raise NotImplementedError("Invalid operation on datasource")
