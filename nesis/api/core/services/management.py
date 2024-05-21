@@ -779,6 +779,7 @@ class UserRoleService(ServiceOperation):
                             action=action_actions_action,
                             role=role_record.id,
                             resource=action_resource,
+                            resource_type=ResourceType.USERS,
                         )
                         session.add(role_action)
 
