@@ -12,6 +12,8 @@ const getConfig = (requests, profile) => (request, response) => {
       OAUTH_AZURE_SCOPES: profile.NESIS_OAUTH_AZURE_SCOPES || ['User.Read'],
       OAUTH_GOOGLE_ENABLED: profile.NESIS_OAUTH_GOOGLE_ENABLED,
       OAUTH_GOOGLE_CLIENT_ID: profile.NESIS_OAUTH_GOOGLE_CLIENT_ID,
+      OAUTH_GOOGLE_CLIENT_SECRET: process.env.NESIS_OAUTH_GOOGLE_CLIENT_SECRET,
+      OAUTH_GOOGLE_REDIRECTURI: process.env.NESIS_OAUTH_GOOGLE_REDIRECTURI,
     },
   };
   response.status(200).send(JSON.stringify(config));

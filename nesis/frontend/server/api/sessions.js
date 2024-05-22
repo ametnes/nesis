@@ -1,4 +1,6 @@
 const logger = require('../util/logger');
+const querystring = require('querystring');
+const { OAuth2Client } = require('google-auth-library');
 
 const post = (requests, profile) => async (request, response) => {
   const url = profile.SERVICE_ENDPOINT;
@@ -55,8 +57,7 @@ const _delete = (requests, url) => (request, response) => {
     })
     .catch((err) => {
       logger.error(
-        `Fail posting to ${url}: ${JSON.stringify(err)} with status ${
-          err.status
+        `Fail posting to ${url}: ${JSON.stringify(err)} with status ${err.status
         }`,
       );
       response.status(err.status).send(err.response.body);
@@ -90,32 +91,54 @@ function authenticateWithAzure(requests, profile, azure) {
     .then(() => sendOauthSession(requests, name, email, profile));
 }
 
-function authenticateWithGoogle(requests, profile, google) {
-  const googleApiUrl = 'https://www.googleapis.com/oauth2/v3/userinfo';
+function authenticateWithGoogle(requests, profile, code) {
+  const grant_type = 'authorization_code';
+  const googleApiUrl = 'https://oauth2.googleapis.com/token';
 
+  const payload = {
+    client_id: profile.NESIS_OAUTH_GOOGLE_CLIENT_ID,
+    client_secret: profile.NESIS_OAUTH_GOOGLE_CLIENT_SECRET,
+    redirect_uri: profile.NESIS_OAUTH_GOOGLE_REDIRECTURI,
+    grant_type: grant_type,
+    code: code
+  }
+
+  const body = querystring.stringify(payload);
   return requests
-    .get(googleApiUrl)
-    .set('Authorization', `Bearer ${google.access_token}`)
-    .set('Content-Type', 'application/json')
-    .send()
-    .then((res) => {
-      if (res.body?.email === undefined || res.error) {
-        // invalid credentials
-        const error = new Error('Invalid Google credentials');
-        Object.assign(error, {
-          status: 401,
-          response: {
-            body: 'Invalid google credentials',
-          },
-        });
-        throw error;
-      } else {
-        return res.body;
-      }
-    })
-    .then((userInfo) =>
+    .post(googleApiUrl)
+    .set('Content-Type', 'application/x-www-form-urlencoded')
+    .send(body)
+    .then((response) => {
+      const resp = response.body
+      return verifyToken(payload.client_id, resp.id_token);
+
+    }).then((userInfo) =>
       sendOauthSession(requests, userInfo.name, userInfo.email, profile),
-    );
+    )
+    .catch((e) => {
+      const messsage = 'Invalid azure access token';
+      const error = new Error(messsage);
+      Object.assign(error, {
+        status: 401,
+        response: {
+          body: 'Invalid azure access token',
+        },
+      });
+      throw error;
+    });
+}
+
+async function verifyToken(client_id, jwtToken) {
+  const client = new OAuth2Client(client_id);
+  // Call the verifyIdToken to verify and decode it
+  const ticket = await client.verifyIdToken({
+    idToken: jwtToken,
+    audience: client_id,
+  });
+  // Get the JSON with all the user info
+  const payload = ticket.getPayload();
+  // This is a JSON object that contains all the user info
+  return payload;
 }
 
 function sendOauthSession(requests, name, email, profile) {
