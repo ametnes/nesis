@@ -106,22 +106,17 @@ class AppRoleService(ServiceOperation):
         session = DBSession()
         try:
             session.expire_on_commit = False
+            query = (
+                session.query(AppRole)
+                .filter(AppRole.role == Role.id)
+                .filter(AppRole.app == App.id)
+                .filter(App.uuid == app_id)
+            )
 
-            if uuid is None:
-                query = (
-                    session.query(AppRole)
-                    .filter(AppRole.role == Role.id)
-                    .filter(AppRole.user == App.id)
-                    .filter(App.uuid == app_id)
-                )
-            else:
-                query = (
-                    session.query(AppRole)
-                    .filter(AppRole.role == Role.id)
-                    .filter(AppRole.user == App.id)
-                    .filter(Role.uuid == uuid)
-                    .filter(App.uuid == app_id)
-                )
+            # Select a role id if supplied, otherwise delete all apps roles
+            if uuid is not None:
+                query = query.filter(Role.uuid == uuid)
+
             query.delete()
             session.commit()
         except Exception as e:

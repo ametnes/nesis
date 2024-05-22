@@ -1,12 +1,13 @@
 from typing import Tuple
 
-from nesis.api.core.models.entities import UserRole, Role
+from nesis.api.core.models.entities import UserRole, Role, Datasource
 from nesis.api.core.services import (
     UserService,
     UserSessionService,
     RoleService,
     UserRoleService,
     AppService,
+    DatasourceService,
 )
 
 
@@ -32,4 +33,21 @@ def assign_role_to_user(service: UserService, token: str, role: dict, user_id: s
 
 
 def assign_role_to_app(service: AppService, token: str, role: dict, app_id: str):
-    service.update(token=token, app_id=app_id, user={"roles": [role["id"]]})
+    service.update(token=token, app_id=app_id, app={"roles": [role["id"]]})
+
+
+def create_datasource(
+    service: DatasourceService, token: str, name: str = None
+) -> Datasource:
+    payload = {
+        "type": "minio",
+        "name": name or "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+    }
+
+    return service.create(datasource=payload, token=token)

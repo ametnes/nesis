@@ -80,41 +80,25 @@ def authorized(
     action: Action,
     resource_type: ResourceType,
     resource: str = None,
+    **kwargs,
 ) -> dict:
     user_session = session_service.get(token=token)
     session_user = user_session.get("user")
     session_app = user_session.get("app")
+    user_id = kwargs.get("user_id")
 
     if not any([session_app, session_user]):
         raise UnauthorizedAccess()
 
-    # noinspection PyTypeChecker
-    query = (
-        session.query(RoleAction)
-        .filter(RoleAction.action == action)
-        .filter(RoleAction.resource_type == resource_type)
+    if session_user is not None and session_user.get("root", False):
+        return session_user
+
+    query = _get_action_query(
+        action, resource, resource_type, session, session_app, session_user, user_id
     )
 
-    if session_user:
-
-        if session_user.get("root") or False:
-            return session_user
-
-        query = (
-            query.filter(RoleAction.role == UserRole.role)
-            .filter(UserRole.user == User.id)
-            .filter(User.uuid == session_user["id"])
-        )
-
-    if session_app:
-        query = (
-            query.filter(RoleAction.role == AppRole.role)
-            .filter(AppRole.app == App.id)
-            .filter(App.uuid == session_app["id"])
-        )
-
-    if resource:
-        query = query.filter(RoleAction.resource.in_([resource, "*"]))
+    if query is None:
+        raise UnauthorizedAccess()
 
     role_actions = query.all()
     if len(role_actions) == 0:
@@ -125,7 +109,39 @@ def authorized(
         )
         raise PermissionException(message)
 
-    return session_user
+    return session_user or session_app
+
+
+def _get_action_query(
+    action, resource, resource_type, session, session_app, session_user, user_id
+):
+    # noinspection PyTypeChecker
+    query = (
+        session.query(RoleAction)
+        .filter(RoleAction.action == action)
+        .filter(RoleAction.resource_type == resource_type)
+    )
+    if all([user_id, session_app]) or session_user is not None:
+        _user_id = user_id
+        if session_user is not None:
+            _user_id = session_user["id"]
+
+        query = (
+            query.filter(RoleAction.role == UserRole.role)
+            .filter(UserRole.user == User.id)
+            .filter(User.uuid == _user_id)
+        )
+    elif session_app is not None:
+        query = (
+            query.filter(RoleAction.role == AppRole.role)
+            .filter(AppRole.app == App.id)
+            .filter(App.uuid == session_app["id"])
+        )
+    else:
+        query = None
+    if resource:
+        query = query.filter(RoleAction.resource.in_([resource, "*"]))
+    return query
 
 
 def authorized_resources(
@@ -134,34 +150,24 @@ def authorized_resources(
     token: str,
     action: Action,
     resource_type: ResourceType,
+    **kwargs,
 ) -> list[RoleAction]:
     user_session = session_service.get(token=token)
     session_user = user_session.get("user")
     session_app = user_session.get("app")
+    user_id = kwargs.get("user_id")
 
     if not any([session_app, session_user]):
         raise UnauthorizedAccess()
-
-    # noinspection PyTypeChecker
-    query = (
-        session.query(RoleAction)
-        .filter(RoleAction.action == action)
-        .filter(RoleAction.resource_type == resource_type)
+    query = _get_action_query(
+        action=action,
+        resource=None,
+        resource_type=resource_type,
+        session=session,
+        session_app=session_app,
+        session_user=session_user,
+        user_id=user_id,
     )
-
-    if session_user:
-        query = (
-            query.filter(RoleAction.role == UserRole.role)
-            .filter(UserRole.user == User.id)
-            .filter(User.uuid == session_user["id"])
-        )
-
-    if session_app:
-        query = (
-            query.filter(RoleAction.role == AppRole.role)
-            .filter(AppRole.app == App.id)
-            .filter(App.uuid == session_app["id"])
-        )
 
     # If root, return all actions
     def get_enabled_datasources():
@@ -169,6 +175,9 @@ def authorized_resources(
 
     def get_enabled_tasks():
         return session.query(Task).filter(Task.enabled.is_(True)).all()
+
+    def get_enabled_apps():
+        return session.query(App).filter(App.enabled.is_(True)).all()
 
     if session_user is not None and session_user.get("root") or False:
         match resource_type:
@@ -193,6 +202,17 @@ def authorized_resources(
                         role=None,
                     )
                     for ds in tasks
+                ]
+            case ResourceType.APPS:
+                apps = get_enabled_apps()
+                return [
+                    RoleAction(
+                        action=action,
+                        resource_type=resource_type,
+                        resource=app.uuid,
+                        role=None,
+                    )
+                    for app in apps
                 ]
             case _:
                 raise util.PermissionException("Unauthorized resource type")
