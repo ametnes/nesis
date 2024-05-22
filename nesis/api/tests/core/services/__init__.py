@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from nesis.api.core.models.entities import UserRole, Role, Datasource
+from nesis.api.core.models.entities import UserRole, Role, Datasource, Prediction
 from nesis.api.core.services import (
     UserService,
     UserSessionService,
@@ -8,6 +8,7 @@ from nesis.api.core.services import (
     UserRoleService,
     AppService,
     DatasourceService,
+    QandaPredictionService,
 )
 
 
@@ -17,6 +18,16 @@ def create_user_session(service: UserSessionService, email, password):
         "email": email,
     }
     return service.create(session=admin_data)
+
+
+def create_user(service: UserService, token, email, password, role_ids=None):
+    data = {
+        "name": email,
+        "password": password,
+        "email": email,
+        "roles": role_ids,
+    }
+    return service.create(user=data, token=token)
 
 
 def create_role(
@@ -51,3 +62,11 @@ def create_datasource(
     }
 
     return service.create(datasource=payload, token=token)
+
+
+def create_prediction(
+    service: QandaPredictionService, token: str, query: str, user_id: str = None
+) -> Prediction:
+    payload = {"query": query, "save": True}
+
+    return service.create(payload=payload, token=token, user_id=user_id)
