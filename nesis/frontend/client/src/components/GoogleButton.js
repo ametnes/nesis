@@ -13,13 +13,13 @@ export default function GoogleButton({ onFailure, onSuccess }) {
   const googleLogin = useGoogleLogin({
     ux_mode: 'redirect',
     flow: 'auth-code',
-    redirect_uri: config?.auth?.OAUTH_GOOGLE_REDIRECTURI
+    redirect_uri: config?.auth?.OAUTH_GOOGLE_REDIRECTURI,
   });
 
   useEffect(() => {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const codeParam = urlParams.get("code");
+    const codeParam = urlParams.get('code');
 
     if (codeParam) {
       client
@@ -36,7 +36,6 @@ export default function GoogleButton({ onFailure, onSuccess }) {
       const error = 'Failed to Login';
       handleFailure(error);
     }
-
   }, []);
 
   function handleFailure(error) {
@@ -46,7 +45,11 @@ export default function GoogleButton({ onFailure, onSuccess }) {
   return (
     <>
       <button className={`${classes.orloginbutton} my-3`} onClick={googleLogin}>
-        <img alt='Sign in with Google' className={`${classes.loginorimg} mx-1`} src={GoogleIcon} />
+        <img
+          alt="Sign in with Google"
+          className={`${classes.loginorimg} mx-1`}
+          src={GoogleIcon}
+        />
         Sign in with Google
       </button>
     </>

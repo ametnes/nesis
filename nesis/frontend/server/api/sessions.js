@@ -57,7 +57,8 @@ const _delete = (requests, url) => (request, response) => {
     })
     .catch((err) => {
       logger.error(
-        `Fail posting to ${url}: ${JSON.stringify(err)} with status ${err.status
+        `Fail posting to ${url}: ${JSON.stringify(err)} with status ${
+          err.status
         }`,
       );
       response.status(err.status).send(err.response.body);
@@ -100,8 +101,8 @@ function authenticateWithGoogle(requests, profile, code) {
     client_secret: profile.NESIS_OAUTH_GOOGLE_CLIENT_SECRET,
     redirect_uri: profile.NESIS_OAUTH_GOOGLE_REDIRECTURI,
     grant_type: grant_type,
-    code: code
-  }
+    code: code,
+  };
 
   const body = querystring.stringify(payload);
   return requests
@@ -109,10 +110,10 @@ function authenticateWithGoogle(requests, profile, code) {
     .set('Content-Type', 'application/x-www-form-urlencoded')
     .send(body)
     .then((response) => {
-      const resp = response.body
+      const resp = response.body;
       return verifyToken(payload.client_id, resp.id_token);
-
-    }).then((userInfo) =>
+    })
+    .then((userInfo) =>
       sendOauthSession(requests, userInfo.name, userInfo.email, profile),
     )
     .catch((e) => {
