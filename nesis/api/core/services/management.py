@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 import bcrypt
 import memcache
@@ -12,6 +12,7 @@ import nesis.api.core.services as services
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.objects import ResourceType, UserSession
 from nesis.api.core.models.entities import User, Role, RoleAction, UserRole, Action
+from nesis.api.core.services.app_service import AppSessionService
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
@@ -29,12 +30,11 @@ class UserSessionService(ServiceOperation):
 
     def __init__(self, config):
         self.__config = config
-        self.__enable_user_verification = config.get("verify_users", False)
-        self.__verify_users_override = config.get("verify_users_override", False)
+        self._app_session_service = AppSessionService(config=config)
         self.__cache = memcache.Client(config["memcache"]["hosts"], debug=1)
         self.__LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
-    def get(self, **kwargs):
+    def get(self, **kwargs) -> Dict[str, Any]:
         token = kwargs.get("token")
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
@@ -45,9 +45,7 @@ class UserSessionService(ServiceOperation):
         if value is not None:
             session_object = {"token": token, "user": value}
         else:
-            key = self.__cache_app_key(token)
-            value = self.__cache.get(key)
-            session_object = {"token": token, "app": value}
+            session_object = self._app_session_service.get(**kwargs)
 
         if session_object is None:
             raise UnauthorizedAccess("Invalid token")

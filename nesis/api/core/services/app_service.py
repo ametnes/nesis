@@ -245,17 +245,12 @@ class AppService(ServiceOperation):
             if session:
                 session.close()
 
-    def get_by_id(self, app_id) -> App:
-
+    @staticmethod
+    def get_app(**kwargs) -> App:
+        app_id = kwargs["app_id"]
         session = DBSession()
         try:
-
-            session.expire_on_commit = False
-            query = session.query(App).filter(App.uuid == app_id)
-            return query.all()
-        except Exception as e:
-            self._LOG.exception(f"Error when fetching apps")
-            raise
+            return session.query(App).filter(App.uuid == app_id).first()
         finally:
             if session:
                 session.close()
@@ -372,28 +367,43 @@ class AppSessionService(ServiceOperation):
 
         key = self.__cache_app_key(token)
         value = self.__cache.get(key)
-        session_object = {"token": token, "app": value}
 
-        if session_object is None:
-
+        if value is None:
             encoded_secret = base64.b64decode(token).decode("utf-8")
             encoded_secret_parts = encoded_secret.split(":")
+            if len(encoded_secret_parts) != 2:
+                raise UnauthorizedAccess("Invalid app token supplied")
 
-            app: App = AppService.get_by_id(app_id=encoded_secret_parts[0])
+            app: App = AppService.get_app(app_id=encoded_secret_parts[0])
+            if app is None:
+                raise UnauthorizedAccess("Invalid token")
+            auth_secret = encoded_secret_parts[1].encode("utf-8")
+            if not bcrypt.checkpw(auth_secret, app.secret):
+                raise UnauthorizedAccess("Invalid app token supplied")
+            value = app.to_dict()
 
-            raise UnauthorizedAccess("Invalid token")
+            default_expiry = 1800
+            expiry = (
+                (self.__config.get("apps") or {})
+                .get("session", {"expiry": default_expiry})
+                .get("expiry", default_expiry)
+            )
+
+            self.__cache.set(key=key, val=value, time=expiry)
+
+        session_object = {"token": token, "app": value}
 
         return session_object
 
     def delete(self, **kwargs):
-        raise NotImplementedError("Invalid operation on datasource")
+        raise NotImplementedError("Invalid operation on service")
 
     @staticmethod
     def __cache_app_key(key):
-        return f"application/{key}"
+        return f"applications/{key}"
 
     def create(self, **kwargs) -> None:
-        raise NotImplementedError("Invalid operation on datasource")
+        raise NotImplementedError("Invalid operation on service")
 
     def update(self, **kwargs):
-        raise NotImplementedError("Invalid operation on datasource")
+        raise NotImplementedError("Invalid operation on service")

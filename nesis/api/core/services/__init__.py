@@ -6,6 +6,8 @@ from nesis.api.core.models.entities import (
     User,
     Datasource,
     Task,
+    AppRole,
+    App,
 )
 from nesis.api.core.models.objects import ResourceType
 from sqlalchemy.orm import Session
@@ -21,7 +23,7 @@ from nesis.api.core.services.management import (
     UserRoleService,
 )
 from nesis.api.core.services.task_service import TaskService
-from nesis.api.core.services.util import PermissionException
+from nesis.api.core.services.util import PermissionException, UnauthorizedAccess
 from nesis.api.core.services.app_service import AppService
 
 
@@ -80,26 +82,42 @@ def authorized(
     resource: str = None,
 ) -> dict:
     user_session = session_service.get(token=token)
-    session_user = user_session["user"]
+    session_user = user_session.get("user")
+    session_app = user_session.get("app")
 
-    if session_user.get("root") or False:
-        return session_user
+    if not any([session_app, session_user]):
+        raise UnauthorizedAccess()
 
     # noinspection PyTypeChecker
     query = (
         session.query(RoleAction)
-        .filter(RoleAction.role == UserRole.role)
         .filter(RoleAction.action == action)
         .filter(RoleAction.resource_type == resource_type)
-        .filter(UserRole.user == User.id)
-        .filter(User.uuid == session_user["id"])
     )
+
+    if session_user:
+
+        if session_user.get("root") or False:
+            return session_user
+
+        query = (
+            query.filter(RoleAction.role == UserRole.role)
+            .filter(UserRole.user == User.id)
+            .filter(User.uuid == session_user["id"])
+        )
+
+    if session_app:
+        query = (
+            query.filter(RoleAction.role == AppRole.role)
+            .filter(AppRole.app == App.id)
+            .filter(App.uuid == session_app["id"])
+        )
 
     if resource:
         query = query.filter(RoleAction.resource.in_([resource, "*"]))
 
-    user_role_actions = query.all()
-    if len(user_role_actions) == 0:
+    role_actions = query.all()
+    if len(role_actions) == 0:
         message = (
             f"Not authorized to perform {action.name} on {resource}"
             if resource
@@ -118,16 +136,32 @@ def authorized_resources(
     resource_type: ResourceType,
 ) -> list[RoleAction]:
     user_session = session_service.get(token=token)
-    session_user = user_session["user"]
+    session_user = user_session.get("user")
+    session_app = user_session.get("app")
+
+    if not any([session_app, session_user]):
+        raise UnauthorizedAccess()
 
     # noinspection PyTypeChecker
     query = (
         session.query(RoleAction)
-        .filter(RoleAction.role == UserRole.role)
         .filter(RoleAction.action == action)
         .filter(RoleAction.resource_type == resource_type)
-        .filter(UserRole.user == User.id)
     )
+
+    if session_user:
+        query = (
+            query.filter(RoleAction.role == UserRole.role)
+            .filter(UserRole.user == User.id)
+            .filter(User.uuid == session_user["id"])
+        )
+
+    if session_app:
+        query = (
+            query.filter(RoleAction.role == AppRole.role)
+            .filter(AppRole.app == App.id)
+            .filter(App.uuid == session_app["id"])
+        )
 
     # If root, return all actions
     def get_enabled_datasources():
@@ -136,7 +170,7 @@ def authorized_resources(
     def get_enabled_tasks():
         return session.query(Task).filter(Task.enabled.is_(True)).all()
 
-    if session_user.get("root") or False:
+    if session_user is not None and session_user.get("root") or False:
         match resource_type:
             case ResourceType.DATASOURCES:
                 dss = get_enabled_datasources()
@@ -166,7 +200,7 @@ def authorized_resources(
     action_list = []
     dss = None
     tasks = None
-    for role_action in query.filter(User.uuid == session_user["id"]).all():
+    for role_action in query.all():
         if role_action.resource and role_action.resource.strip() == "*":
             match resource_type:
                 case ResourceType.DATASOURCES:

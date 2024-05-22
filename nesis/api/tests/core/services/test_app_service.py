@@ -89,3 +89,32 @@ def test_create_app(http_client, tc):
     encoded_secret_parts = encoded_secret.split(":")
 
     assert encoded_secret_parts[0] == app.uuid
+
+    return app
+
+
+def test_app_session(http_client, tc):
+    app: App = test_create_app(http_client=http_client, tc=tc)
+
+    app_api_key = app.secret.decode("utf-8")
+    services.user_session_service.get(token=app_api_key)
+
+    role = {
+        "name": "user-admin-2",
+        "policy": {
+            "items": [
+                {"action": "create", "resource": "roles/*"},
+                {"action": "create", "resource": "users/*"},
+            ]
+        },
+    }
+
+    # api key creates the role
+    create_role(service=services.role_service, role=role, token=app_api_key)
+
+    app2: App = test_create_app(http_client=http_client, tc=tc)
+    create_role(
+        service=services.role_service, role=role, token=app2.secret.decode("utf-8")
+    )
+
+    # create_datasource()
