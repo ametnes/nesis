@@ -748,48 +748,4 @@ class UserRoleService(ServiceOperation):
                 session.close()
 
     def update(self, **kwargs) -> UserRole:
-        role_uuid = kwargs["id"]
-        role: dict = kwargs["role"]
-
-        session = DBSession()
-        try:
-            session.expire_on_commit = False
-
-            role_record = session.query(Role).filter(Role.uuid == role_uuid)
-            session.query(UserRole).filter(Role.uuid == role_uuid).filter(
-                UserRole.role == Role.id
-            ).delete()
-
-            role_actions: Optional[dict] = role.get("policy")
-
-            for action in role_actions:
-                action_resource: Optional[str] = action.get("resource")
-                action_actions: Optional[set[str]] = action.get("policy")
-                action_resources: Optional[set[str]] = action.get("resources") or set()
-
-                if not any([action_resource, action_resources]):
-                    raise ServiceException("resource or resources must be supplied")
-
-                if action_resource:
-                    action_resources.add(action_resource)
-
-                for action_resource in action_resources:
-                    for action_actions_action in action_actions:
-                        role_action = RoleAction(
-                            action=action_actions_action,
-                            role=role_record.id,
-                            resource=action_resource,
-                        )
-                        session.add(role_action)
-
-            session.commit()
-
-            return role_record
-
-        except Exception as e:
-            session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
-        finally:
-            if session:
-                session.close()
+        raise NotImplementedError("Invalid operation on user role service")
