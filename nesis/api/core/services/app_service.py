@@ -201,7 +201,9 @@ class AppService(ServiceOperation):
                     **kwargs, app_id=entity.uuid, role={"id": app_role}
                 )
 
-            encoded_secret = base64.b64encode(f"{entity.uuid}:{secret}".encode("utf-8"))
+            encoded_secret = base64.b64encode(
+                f"{entity.uuid}:{secret}".encode("utf-8")
+            ).decode("utf-8")
             entity.secret = encoded_secret
 
             return entity

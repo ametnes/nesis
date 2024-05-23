@@ -139,10 +139,10 @@ def get_user_session(client, session, roles) -> Dict[str, Any]:
     ).json
 
 
-def create_role(client, session: dict, role: dict) -> Dict[str, Any]:
+def create_role(client, session: dict, role: dict, expect=200) -> Dict[str, Any]:
 
     response = client.post(
         f"/v1/roles", headers=get_header(token=session["token"]), data=json.dumps(role)
     )
-    assert 200 == response.status_code, response.text
+    assert expect == response.status_code, response.text
     return response.json

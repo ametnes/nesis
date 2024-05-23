@@ -527,10 +527,7 @@ class App(Base):
     attributes = Column(JSONB)
     enabled = Column(Boolean, default=True, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("name", name="uq_app_name"),
-        UniqueConstraint("secret", name="uq_app_secret"),
-    )
+    __table_args__ = (UniqueConstraint("name", name="uq_app_name"),)
 
     def __init__(
         self,
@@ -545,14 +542,18 @@ class App(Base):
         self.description = description
         self.create_date = create_date
 
-    def to_dict(self, **kwargs):
-        return {
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        result = {
             "id": self.uuid,
             "name": self.name,
             "description": self.description,
             "enabled": self.enabled,
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
         }
+        if isinstance(self.secret, str) and "secret" in (kwargs.get("include") or []):
+            result["secret"] = self.secret
+
+        return result
 
 
 class AppRole(Base):

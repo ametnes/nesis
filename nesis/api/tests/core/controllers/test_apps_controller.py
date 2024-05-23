@@ -1,0 +1,112 @@
+import json
+import unittest as ut
+import uuid
+
+import pytest
+from sqlalchemy.orm.session import Session
+
+import nesis.api.core.services as services
+import nesis.api.tests as tests
+from nesis.api.core.controllers import app as cloud_app
+from nesis.api.core.models import initialize_engine, DBSession
+
+
+@pytest.fixture
+def client():
+
+    pytest.config = tests.config
+    initialize_engine(tests.config)
+    session: Session = DBSession()
+    tests.clear_database(session)
+
+    services.init_services(tests.config)
+    return cloud_app.test_client()
+
+
+@pytest.fixture
+def tc():
+    return ut.TestCase()
+
+
+def create_app(client, session, roles):
+    payload = {
+        "name": "finance6",
+        "roles": roles,
+    }
+
+    response = client.post(
+        f"/v1/apps",
+        headers=tests.get_header(token=session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+    return response.json
+
+
+def test_create_app(client, tc):
+    """
+    Create an app with create permission on users and roles
+    """
+    admin_session = tests.get_admin_session(app=client)
+    role = {
+        "name": f"user-admin-{uuid.uuid4()}",
+        "policy": {
+            "items": [
+                {"action": "create", "resource": "roles/*"},
+                {"action": "create", "resource": "users/*"},
+            ]
+        },
+    }
+    role_result = tests.create_role(client=client, session=admin_session, role=role)
+    app = create_app(client=client, session=admin_session, roles=[role_result["id"]])
+
+    assert app.get("id") is not None
+    # The secret is shown just this once and the user must save it somewhere safe
+    assert app.get("secret") is not None
+
+    # The app is now able to create a role
+    role_result = tests.create_role(
+        client=client,
+        session={"token": app["secret"]},
+        role={**role, "name": f"user-admin-{uuid.uuid4()}"},
+    )
+    assert role_result.get("id") is not None
+
+    """
+    # Just a quick test that get works and returns all available apps
+    """
+    response = client.get(
+        f"/v1/apps",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.text
+    assert 1 == len(response.json["items"])
+
+    # Ensure secrets are not leaked back to the user
+    assert response.json["items"][0].get("secret") is None
+
+    """
+    If app is deleted, we should not be able to perform any action as the app
+    """
+    response = client.delete(
+        f"/v1/apps/{app['id']}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.text
+    # Ensure no records exist
+    response = client.get(
+        f"/v1/apps",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.text
+    assert 0 == len(response.json["items"])
+
+    # Now attempting to create a role as the app should fail with a permission error
+    role_result = tests.create_role(
+        client=client,
+        session={"token": app["secret"]},
+        role={**role, "name": f"user-admin-{uuid.uuid4()}"},
+        expect=403,
+    )
+
+    assert role_result["message"] == "Not authorized to perform CREATE on ROLES"

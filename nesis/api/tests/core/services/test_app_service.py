@@ -105,7 +105,7 @@ def _create_app(role: dict = None):
 def test_app_session(http_client, tc):
     app: App = test_create_app(http_client=http_client, tc=tc)
 
-    app_api_key = app.secret.decode("utf-8")
+    app_api_key: str = app.secret
     services.user_session_service.get(token=app_api_key)
 
     role = {
@@ -123,14 +123,12 @@ def test_app_session(http_client, tc):
 
     app2: App = test_create_app(http_client=http_client, tc=tc)
     role["name"] = "user-admin-3"
-    create_role(
-        service=services.role_service, role=role, token=app2.secret.decode("utf-8")
-    )
+    create_role(service=services.role_service, role=role, token=str(app2.secret))
 
     # Create a datasource without the right permission
     with pytest.raises(PermissionException) as ex_info:
         create_datasource(
-            token=app2.secret.decode("utf-8"),
+            token=str(app2.secret),
             service=services.datasource_service,
             name=f"datasource-{uuid.uuid4()}",
         )
@@ -158,7 +156,7 @@ def test_app_session(http_client, tc):
     datasource_role = create_role(
         service=services.role_service,
         role=datasource_policy,
-        token=app2.secret.decode("utf-8"),
+        token=str(app2.secret),
     )
     assign_role_to_app(
         service=services.app_service,
@@ -167,7 +165,7 @@ def test_app_session(http_client, tc):
         app_id=app2.uuid,
     )
     create_datasource(
-        token=app2.secret.decode("utf-8"),
+        token=str(app2.secret),
         service=services.datasource_service,
         name=f"datasource-{uuid.uuid4()}",
     )
@@ -176,7 +174,7 @@ def test_app_session(http_client, tc):
 def test_app_user_session(http_client, tc):
     app: App = test_create_app(http_client=http_client, tc=tc)
 
-    app_api_key = app.secret.decode("utf-8")
+    # app_api_key = app.secret.decode("utf-8")
 
     # Create an admin session
     admin_user_session = create_user_session(
@@ -193,7 +191,7 @@ def test_app_user_session(http_client, tc):
     # Create a datasource without the right permission
     with pytest.raises(PermissionException) as ex_info:
         create_prediction(
-            token=app.secret.decode("utf-8"),
+            token=str(app.secret),
             service=services.qanda_prediction_service,
             query="What is nesis?",
         )
@@ -235,9 +233,9 @@ def test_app_user_session(http_client, tc):
     )
 
     http_client.post.side_effect = [json.dumps({"response": "the response"})]
-    # Create the user session
+    # App can now create a prediction since we supply the user_id
     prediction = create_prediction(
-        token=app.secret.decode("utf-8"),
+        token=str(app.secret),
         service=services.qanda_prediction_service,
         query="What is nesis?",
         user_id=new_user.uuid,

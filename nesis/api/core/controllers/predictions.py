@@ -33,7 +33,10 @@ def operate_module_predictions(module):
             match Module[module]:
                 case Module.qanda:
                     result = services.qanda_prediction_service.create(
-                        token=token, module=module, payload=request.json
+                        token=token,
+                        module=module,
+                        payload=request.json,
+                        user_id=request.headers.get("X-Request-UserKey"),
                     )
                 case _:
                     raise util.ServiceException("Invalid module")

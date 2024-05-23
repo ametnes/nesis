@@ -20,7 +20,7 @@ def operate_apps():
         match request.method:
             case controllers.POST:
                 result = services.app_service.create(token=token, app=request.json)
-                return jsonify(result.to_dict())
+                return jsonify(result.to_dict(include="secret"))
             case controllers.GET:
                 results = services.app_service.get(token=token)
                 return jsonify({"items": [item.to_dict() for item in results]})
