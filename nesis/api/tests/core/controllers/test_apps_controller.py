@@ -179,7 +179,7 @@ def test_app_as_user(client, http_client, tc):
         "/v1/modules/qanda/predictions",
         headers={
             **tests.get_header(token=app["secret"]),
-            "X-Request-UserKey": user_result["id"],
+            "X-Nesis-Request-UserKey": user_result["id"],
         },
         data=json.dumps({"query": "what do you know?"}),
     )

@@ -36,7 +36,7 @@ def operate_module_predictions(module):
                         token=token,
                         module=module,
                         payload=request.json,
-                        user_id=request.headers.get("X-Request-UserKey"),
+                        user_id=request.headers.get("X-Nesis-Request-UserKey"),
                     )
                 case _:
                     raise util.ServiceException("Invalid module")

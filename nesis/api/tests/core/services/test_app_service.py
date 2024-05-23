@@ -270,5 +270,4 @@ def test_app_session_expiry(http_client, tc):
     # Sleep to simulate inactivity
     sleep(10)
 
-    app_session_value = AppSessionService._cache_app_key(key=app.secret)
     assert service._cache.get(app_session_value) is None
