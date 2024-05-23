@@ -329,13 +329,15 @@ class AppService(ServiceOperation):
             session.merge(app_record)
             session.commit()
 
-            self._app_role_service.delete(**{**kwargs, "app_id": app_id})
+            app_roles = app.get("roles")
+            if app_roles is not None:
+                self._app_role_service.delete(**{**kwargs, "app_id": app_id})
 
-            for app_role in app.get("roles") or []:
-                try:
-                    self._app_role_service.create(**kwargs, role={"id": app_role})
-                except ConflictException as ex:
-                    self._LOG.info(ex)
+                for app_role in app_roles:
+                    try:
+                        self._app_role_service.create(**kwargs, role={"id": app_role})
+                    except ConflictException as ex:
+                        self._LOG.info(ex)
 
             return app_record
 

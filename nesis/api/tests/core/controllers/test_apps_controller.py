@@ -1,6 +1,7 @@
 import json
 import unittest as ut
 import uuid
+from unittest import mock
 
 import pytest
 from sqlalchemy.orm.session import Session
@@ -12,15 +13,8 @@ from nesis.api.core.models import initialize_engine, DBSession
 
 
 @pytest.fixture
-def client():
-
-    pytest.config = tests.config
-    initialize_engine(tests.config)
-    session: Session = DBSession()
-    tests.clear_database(session)
-
-    services.init_services(tests.config)
-    return cloud_app.test_client()
+def http_client():
+    return mock.MagicMock()
 
 
 @pytest.fixture
@@ -28,7 +22,19 @@ def tc():
     return ut.TestCase()
 
 
-def create_app(client, session, roles):
+@pytest.fixture
+def client(http_client):
+
+    pytest.config = tests.config
+    initialize_engine(tests.config)
+    session: Session = DBSession()
+    tests.clear_database(session)
+
+    services.init_services(tests.config, http_client=http_client)
+    return cloud_app.test_client()
+
+
+def create_app(client, session, roles=None):
     payload = {
         "name": "finance6",
         "roles": roles,
@@ -43,7 +49,7 @@ def create_app(client, session, roles):
     return response.json
 
 
-def test_create_app(client, tc):
+def test_create_app(client, http_client, tc):
     """
     Create an app with create permission on users and roles
     """
@@ -110,3 +116,71 @@ def test_create_app(client, tc):
     )
 
     assert role_result["message"] == "Not authorized to perform CREATE on ROLES"
+
+
+def test_app_as_user(client, http_client, tc):
+    """
+    Create an app with create permission on users and roles
+    """
+    admin_session = tests.get_admin_session(app=client)
+    role = {
+        "name": f"user-admin-{uuid.uuid4()}",
+        "policy": {
+            "items": [
+                {"action": "create", "resource": "predictions/*"},
+                {"action": "read", "resource": "datasources/*"},
+            ]
+        },
+    }
+
+    datasource = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+    }
+    datasource_result = tests.create_datasource(
+        client=client, session=admin_session, datasource=datasource
+    )
+    role_result = tests.create_role(client=client, session=admin_session, role=role)
+    app = create_app(client=client, session=admin_session)
+
+    user_payload = {
+        "name": "some name",
+        "email": "some.other.email@domain.com",
+        "password": tests.admin_password,
+        "roles": [role_result["id"]],
+    }
+
+    # Create a user
+    response = client.post(
+        f"/v1/users",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(user_payload),
+    )
+    assert 200 == response.status_code, response.text
+    user_result = response.json
+
+    # Create a prediction without the X-User header, should fail with a 403
+    http_client.post.side_effect = [json.dumps({"response": "the response"})] * 5
+    response = client.post(
+        "/v1/modules/qanda/predictions",
+        headers=tests.get_header(token=app["secret"]),
+        data=json.dumps({"query": "what do you know?"}),
+    )
+    assert 403 == response.status_code, response.text
+
+    # Create a prediction with the X-User header, should succeed
+    response = client.post(
+        "/v1/modules/qanda/predictions",
+        headers={
+            **tests.get_header(token=app["secret"]),
+            "X-Request-UserKey": user_result["id"],
+        },
+        data=json.dumps({"query": "what do you know?"}),
+    )
+    assert 200 == response.status_code, response.text

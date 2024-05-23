@@ -341,13 +341,15 @@ class UserService(ServiceOperation):
             session.merge(user_record)
             session.commit()
 
-            self._user_role_service.delete(**{**kwargs, "user_id": uuid})
+            user_roles = user.get("roles")
+            if user_roles is not None:
+                self._user_role_service.delete(**{**kwargs, "user_id": uuid})
 
-            for user_role in user.get("roles") or []:
-                try:
-                    self._user_role_service.create(**kwargs, role={"id": user_role})
-                except ConflictException as ex:
-                    self._LOG.info(ex)
+                for user_role in user.get("roles") or []:
+                    try:
+                        self._user_role_service.create(**kwargs, role={"id": user_role})
+                    except ConflictException as ex:
+                        self._LOG.info(ex)
 
             return user_record
         except Exception as e:

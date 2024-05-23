@@ -90,6 +90,7 @@ def authorized(
     if not any([session_app, session_user]):
         raise UnauthorizedAccess()
 
+    # if this a root user, permit all actions
     if session_user is not None and session_user.get("root", False):
         return session_user
 
@@ -121,6 +122,8 @@ def _get_action_query(
         .filter(RoleAction.action == action)
         .filter(RoleAction.resource_type == resource_type)
     )
+
+    # if a user_id is supplied as well the session_app, then we use the user's permission (aka. AssumeRole)
     if all([user_id, session_app]) or session_user is not None:
         _user_id = user_id
         if session_user is not None:

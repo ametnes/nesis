@@ -146,3 +146,14 @@ def create_role(client, session: dict, role: dict, expect=200) -> Dict[str, Any]
     )
     assert expect == response.status_code, response.text
     return response.json
+
+
+def create_datasource(client, session, datasource, expected=200):
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=get_header(token=session["token"]),
+        data=json.dumps(datasource),
+    )
+    assert expected == response.status_code, response.text
+    return response.json
