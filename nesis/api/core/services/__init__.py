@@ -82,6 +82,18 @@ def authorized(
     resource: str = None,
     **kwargs,
 ) -> dict:
+    """
+    This function checks if a given session token (app or user) is allowed to perform a given action on the resource (if supplied).
+    If no resource is supplied, then the check is performed on all resources
+    :param session_service: The session service
+    :param session: The DBSession
+    :param token: The token
+    :param action: The action attempted
+    :param resource_type: The resource type
+    :param resource: The resource
+    :param kwargs: Any extra args such
+    :return: The session object
+    """
     user_session = session_service.get(token=token)
     session_user = user_session.get("user")
     session_app = user_session.get("app")

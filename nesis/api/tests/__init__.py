@@ -70,6 +70,7 @@ config = {
         "timezone": os.environ.get("NESIS_API_TASKS_TIMEZONE", str(get_localzone())),
         "executors": {"default_size": 30, "pool_size": 3},
     },
+    "apps": {"session": {"expiry": 1800}},
 }
 
 

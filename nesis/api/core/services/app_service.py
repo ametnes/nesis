@@ -1,5 +1,6 @@
 import base64
 import logging
+from typing import Dict, Any
 
 import memcache
 from strgen import StringGenerator as SG
@@ -29,9 +30,9 @@ _LOG = logging.getLogger(__name__)
 
 class AppRoleService(ServiceOperation):
     """
-    Manage user roles. This is a function of the user service. Permissions are part of the user function.
-    Whatever a user is permitted to do on a user, they are permitted to do on the user role.
-    For this reason, we don't check/test permissions in the user role service as it is called only in the user service.
+    Manage app roles. This is a function of the app service. Permissions are part of the app function.
+    Whatever a app is permitted to do on a app, they are permitted to do on the app role.
+    For this reason, we don't check/test permissions in the app role service as it is called only in the app service.
     """
 
     def __init__(self, config: dict, session_service: ServiceOperation):
@@ -355,40 +356,20 @@ class AppSessionService(ServiceOperation):
     """
 
     def __init__(self, config):
-        self.__config = config
-        self.__cache = memcache.Client(config["memcache"]["hosts"], debug=1)
-        self.__LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
+        self._config = config
+        self._cache = memcache.Client(config["memcache"]["hosts"], debug=1)
+        self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
     def get(self, **kwargs):
         token = kwargs.get("token")
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
 
-        key = self.__cache_app_key(token)
-        value = self.__cache.get(key)
+        key = self._cache_app_key(token)
+        value = self._cache.get(key)
 
         if value is None:
-            encoded_secret = base64.b64decode(token).decode("utf-8")
-            encoded_secret_parts = encoded_secret.split(":")
-            if len(encoded_secret_parts) != 2:
-                raise UnauthorizedAccess("Invalid app token supplied")
-
-            app: App = AppService.get_app(app_id=encoded_secret_parts[0])
-            if app is None:
-                raise UnauthorizedAccess("Invalid token")
-            auth_secret = encoded_secret_parts[1].encode("utf-8")
-            if not bcrypt.checkpw(auth_secret, app.secret):
-                raise UnauthorizedAccess("Invalid app token supplied")
-            value = app.to_dict()
-
-            default_expiry = 1800
-            expiry = (
-                (self.__config.get("apps") or {})
-                .get("session", {"expiry": default_expiry})
-                .get("expiry", default_expiry)
-            )
-
-            self.__cache.set(key=key, val=value, time=expiry)
+            value = self.create(**kwargs)
 
         session_object = {"token": token, "app": value}
 
@@ -398,11 +379,34 @@ class AppSessionService(ServiceOperation):
         raise NotImplementedError("Invalid operation on service")
 
     @staticmethod
-    def __cache_app_key(key):
+    def _cache_app_key(key):
         return f"applications/{key}"
 
-    def create(self, **kwargs) -> None:
-        raise NotImplementedError("Invalid operation on service")
+    def create(self, **kwargs) -> Dict[str, Any]:
+        token = kwargs.get("token")
+        if token is None:
+            raise UnauthorizedAccess("Token not supplied")
+
+        encoded_secret = base64.b64decode(token).decode("utf-8")
+        encoded_secret_parts = encoded_secret.split(":")
+        if len(encoded_secret_parts) != 2:
+            raise UnauthorizedAccess("Invalid app token supplied")
+
+        app: App = AppService.get_app(app_id=encoded_secret_parts[0])
+        if app is None:
+            raise UnauthorizedAccess("Invalid token")
+        auth_secret = encoded_secret_parts[1].encode("utf-8")
+        if not bcrypt.checkpw(auth_secret, app.secret):
+            raise UnauthorizedAccess("Invalid app token supplied")
+        value = app.to_dict()
+
+        expiry = self._config["apps"]["session"]["expiry"]
+
+        key = self._cache_app_key(token)
+
+        self._cache.set(key=key, val=value, time=expiry)
+
+        return value
 
     def update(self, **kwargs):
         raise NotImplementedError("Invalid operation on service")

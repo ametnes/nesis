@@ -1,6 +1,7 @@
 import base64
 import json
 import uuid
+from time import sleep
 from typing import Optional, List
 
 import yaml
@@ -16,6 +17,7 @@ import nesis.api.core.services as services
 from nesis.api.core.models import initialize_engine, DBSession
 from nesis.api.core.models.entities import Datasource, App
 from nesis.api.core.services import PermissionException
+from nesis.api.core.services.app_service import AppSessionService
 from nesis.api.tests.core.services import (
     create_user_session,
     create_role,
@@ -164,17 +166,19 @@ def test_app_session(http_client, tc):
         role=datasource_role.to_dict(),
         app_id=app2.uuid,
     )
-    create_datasource(
+    datasource = create_datasource(
         token=str(app2.secret),
         service=services.datasource_service,
         name=f"datasource-{uuid.uuid4()}",
     )
 
+    assert datasource.id is not None
+    assert datasource.uuid is not None
 
-def test_app_user_session(http_client, tc):
+
+def test_app_as_user_session(http_client, tc):
+
     app: App = test_create_app(http_client=http_client, tc=tc)
-
-    # app_api_key = app.secret.decode("utf-8")
 
     # Create an admin session
     admin_user_session = create_user_session(
@@ -182,13 +186,13 @@ def test_app_user_session(http_client, tc):
         email=tests.admin_email,
         password=tests.admin_password,
     )
-    datasource = create_datasource(
+    create_datasource(
         token=admin_user_session.token,
         service=services.datasource_service,
         name=f"datasource-{uuid.uuid4()}",
     )
 
-    # Create a datasource without the right permission
+    # Create a datasource fails without the right permission
     with pytest.raises(PermissionException) as ex_info:
         create_prediction(
             token=str(app.secret),
@@ -201,7 +205,7 @@ def test_app_user_session(http_client, tc):
     )
 
     """
-    Now we create a user with permissions to create a prediction. Then we create a prediction using the app token
+    Now we create a user with permissions assigned to create a prediction. Then we create a prediction using the app token
     (that does not have any role assigned to it).
     We then create a prediction using the app token combined with the user_id
     """
@@ -243,3 +247,28 @@ def test_app_user_session(http_client, tc):
 
     assert prediction.id is not None
     assert prediction.uid is not None
+
+
+def test_app_session_expiry(http_client, tc):
+    """
+    Test that the app token can expire
+    """
+    app: App = test_create_app(http_client=http_client, tc=tc)
+
+    # Set expiry to 5 seconds
+    tests.config["apps"]["session"]["expiry"] = 5
+    service: AppSessionService = AppSessionService(config=tests.config)
+
+    app_session = service.get(token=app.secret)
+    assert app_session.get("token") is not None
+    assert app_session.get("app") is not None
+    assert app_session["app"].get("id") == app.uuid
+
+    app_session_value = AppSessionService._cache_app_key(key=app.secret)
+    assert service._cache.get(app_session_value) is not None
+
+    # Sleep to simulate inactivity
+    sleep(10)
+
+    app_session_value = AppSessionService._cache_app_key(key=app.secret)
+    assert service._cache.get(app_session_value) is None
