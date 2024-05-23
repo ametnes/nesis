@@ -135,7 +135,7 @@ def _get_action_query(
         .filter(RoleAction.resource_type == resource_type)
     )
 
-    # if a user_id is supplied as well the session_app, then we use the user's permission (aka. AssumeRole)
+    # if a user_id is supplied as well the session_app, then we use the user's permission (aka. AssumeUser)
     if all([user_id, session_app]) or session_user is not None:
         _user_id = user_id
         if session_user is not None:

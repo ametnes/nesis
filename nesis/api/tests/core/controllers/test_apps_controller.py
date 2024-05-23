@@ -165,7 +165,7 @@ def test_app_as_user(client, http_client, tc):
     assert 200 == response.status_code, response.text
     user_result = response.json
 
-    # Create a prediction without the X-User header, should fail with a 403
+    # Create a prediction without the user header, should fail with a 403
     http_client.post.side_effect = [json.dumps({"response": "the response"})] * 5
     response = client.post(
         "/v1/modules/qanda/predictions",
@@ -174,7 +174,7 @@ def test_app_as_user(client, http_client, tc):
     )
     assert 403 == response.status_code, response.text
 
-    # Create a prediction with the X-User header, should succeed
+    # Create a prediction with the user header, should succeed
     response = client.post(
         "/v1/modules/qanda/predictions",
         headers={
