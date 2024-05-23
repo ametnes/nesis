@@ -184,3 +184,5 @@ def test_app_as_user(client, http_client, tc):
         data=json.dumps({"query": "what do you know?"}),
     )
     assert 200 == response.status_code, response.text
+    assert response.json["input"] == "what do you know?"
+    tc.assertDictEqual(response.json["data"], {"response": "the response"})
