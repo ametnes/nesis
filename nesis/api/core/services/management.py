@@ -758,4 +758,3 @@ class UserRoleService(ServiceOperation):
 
     def update(self, **kwargs) -> UserRole:
         raise NotImplementedError("Invalid operation on user role service")
-
