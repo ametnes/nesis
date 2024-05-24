@@ -28,6 +28,7 @@ async function init() {
     ROLES: '/api/roles',
     USERS: '/api/users',
     TASKS: '/api/tasks',
+    APPS: '/api/apps',
     DATA_SOURCES: '/api/datasources',
     CONFIG: '/api/config',
     QANDA_PREDICTIONS: '/api/qanda/predictions',
@@ -64,6 +65,13 @@ async function init() {
   app.get(API.TASKS, api.tasks.getAll(requests, profile));
   app.post(API.TASKS, api.tasks.post(requests, profile));
   app.delete(`${API.TASKS}/:id`, api.tasks.delete(requests, profile));
+
+  //Apps
+  app.get(`${API.APPS}/:id`, api.apps.getById(requests, profile));
+  app.get(API.APPS, api.apps.getAll(requests, profile));
+  app.get(`${API.APPS}/:id/roles`, api.apps.getRoles(requests, profile));
+  app.post(API.APPS, api.apps.post(requests, profile));
+  app.delete(`${API.APPS}/:id`, api.apps.delete(requests, profile));
 
   //Data source
   app.get(

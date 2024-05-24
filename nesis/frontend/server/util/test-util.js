@@ -18,7 +18,9 @@ class Request {
     this.models = [];
     this.dataobjects = [];
     this.tasks = [];
+    this.apps = [];
     this.taskById = {};
+    this.appById = {};
     this.targets = {};
     this.azureUserData = {};
   }
@@ -89,6 +91,12 @@ class Request {
           status: 200,
         };
         this.tasks.push(res.body);
+      } else if (this.url.endsWith('/apps')) {
+        res = {
+          body: Object.assign({}, this.data, { id: util.guid() }),
+          status: 200,
+        };
+        this.apps.push(res.body);
       }
     } else if (this.method === 'PUT') {
       if (this.url.includes('/rules/')) {
@@ -98,6 +106,8 @@ class Request {
       } else if (this.url.includes('/datasources/')) {
         res = { body: this.data, status: 200 };
       } else if (this.url.includes('/tasks/')) {
+        res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/apps/')) {
         res = { body: this.data, status: 200 };
       }
     } else if (this.method === 'GET') {
@@ -113,8 +123,12 @@ class Request {
         res = { body: this.datasourceByName, status: 200 };
       } else if (this.url.endsWith('/tasks')) {
         res = { body: this.tasks, status: 200 };
+      } else if (this.url.endsWith('/apps')) {
+        res = { body: this.apps, status: 200 };
       } else if (this.url.includes('/tasks/')) {
         res = { body: this.taskById, status: 200 };
+      } else if (this.url.includes('/apps/')) {
+        res = { body: this.appById, status: 200 };
       } else if (this.url.endsWith('/v1.0/me')) {
         res = { body: this.azureUserData, status: 200 };
       }

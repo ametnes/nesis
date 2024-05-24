@@ -541,6 +541,7 @@ class App(Base):
         self.secret = secret
         self.description = description
         self.create_date = create_date
+        self.roles = []
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         result = {
@@ -552,6 +553,8 @@ class App(Base):
         }
         if isinstance(self.secret, str) and "secret" in (kwargs.get("include") or []):
             result["secret"] = self.secret
+        if hasattr(self, "roles") and self.roles:
+            result["roles"] = [role.to_dict() for role in self.roles or []]
 
         return result
 

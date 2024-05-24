@@ -6,3 +6,4 @@ module.exports.roles = require('./roles');
 module.exports.users = require('./users');
 module.exports.tasks = require('./tasks');
 module.exports.config = require('./config');
+module.exports.apps = require('./apps');

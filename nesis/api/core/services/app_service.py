@@ -90,7 +90,7 @@ class AppRoleService(ServiceOperation):
             return (
                 session.query(Role)
                 .filter(Role.id == AppRole.role)
-                .filter(AppRole.user == App.id)
+                .filter(AppRole.app == App.id)
                 .filter(App.uuid == app_id)
                 .all()
             )
@@ -235,6 +235,19 @@ class AppService(ServiceOperation):
             query = session.query(App).filter(App.uuid.in_(apps))
             if app_id:
                 query = query.filter(App.uuid == app_id)
+
+            results = query.all()
+
+            if app_id:
+                roles = (
+                    session.query(AppRole)
+                    .filter(AppRole.app == App.id)
+                    .filter(App.uuid == app_id)
+                    .all()
+                )
+                if len(roles) > 0 and len(results) > 0:
+                    results[0].roles = roles
+
             return query.all()
         except Exception as e:
             self._LOG.exception(f"Error when fetching apps")
@@ -348,6 +361,25 @@ class AppService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+    def __get_rbac_resource(self, app_id):
+        return f"{self._resource_type}/{app_id}"
+
+    def get_roles(self, **kwargs):
+        uuid = kwargs["app_id"]
+
+        session = DBSession()
+
+        services.authorized(
+            session_service=self._session_service,
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.READ,
+            resource_type=self._resource_type,
+            resource=self.__get_rbac_resource(app_id=uuid),
+        )
+
+        return self._app_role_service.get(**kwargs)
 
 
 class AppSessionService(ServiceOperation):

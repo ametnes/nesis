@@ -5,6 +5,7 @@ import { GearFill } from 'react-bootstrap-icons';
 import DatasourcesPage from './Datasources/DatasourcesPage';
 import UsersPage from './Users/UsersPage';
 import RolesPage from './Roles/RolesPage';
+import AppsPage from './Apps/AppsPage';
 import Nesis from '../../components/Menu';
 import styled from 'styled-components/macro';
 
@@ -34,6 +35,7 @@ const SettingsPage = () => {
         <RouterTab path="/settings/datasources">Datasources</RouterTab>
         <RouterTab path="/settings/users">Users</RouterTab>
         <RouterTab path="/settings/roles">Roles</RouterTab>
+        <RouterTab path="/settings/apps">Apps</RouterTab>
       </Tabs>
       <div style={{ padding: 8, marginLeft: 5 }}>
         <Switch>
@@ -59,6 +61,7 @@ const SettingsPage = () => {
             component={UsersPage}
           />
           <Route exact path={`${match.path}/users`} component={UsersPage} />
+          {/* Roles settings */}
           <Route exact path={`${match.path}/roles/new`} component={RolesPage} />
           <Route
             exact
@@ -66,6 +69,14 @@ const SettingsPage = () => {
             component={RolesPage}
           />
           <Route exact path={`${match.path}/roles`} component={RolesPage} />
+          {/* Apps settings */}
+          <Route exact path={`${match.path}/apps/new`} component={AppsPage} />
+          <Route
+            exact
+            path={`${match.path}/apps/:id/edit`}
+            component={AppsPage}
+          />
+          <Route exact path={`${match.path}/apps`} component={AppsPage} />
         </Switch>
       </div>
     </Nesis>
