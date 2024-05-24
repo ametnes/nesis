@@ -11,6 +11,7 @@ import { useHistory } from 'react-router-dom';
 import useSessionStorage from './utils/useSessionStorage';
 import apiClient from './utils/httpClient';
 import { PublicClientApplication } from '@azure/msal-browser';
+import { googleLogout } from '@react-oauth/google';
 
 const SessionContext = React.createContext({
   session: null,
@@ -67,6 +68,7 @@ export function useSignOut(client, config) {
       clearToken();
       setSession(null);
       logoutMicrosoft(config);
+      logoutGoogle();
       history.push('/signin');
     },
     [setSession, history],
@@ -84,10 +86,14 @@ async function logoutMicrosoft(config) {
       },
     });
     await msalInstance.initialize();
-    msalInstance.logoutRedirect();
+    await msalInstance.logoutRedirect();
   } catch (e) {
     /* ignored */
   }
+}
+
+async function logoutGoogle() {
+  googleLogout();
 }
 
 function logoutNesis(client) {

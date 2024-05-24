@@ -1,4 +1,6 @@
 const logger = require('../util/logger');
+const querystring = require('querystring');
+const { OAuth2Client } = require('google-auth-library');
 
 const post = (requests, profile) => async (request, response) => {
   const url = profile.SERVICE_ENDPOINT;
@@ -16,6 +18,8 @@ const post = (requests, profile) => async (request, response) => {
 
   if (session.azure) {
     oauthProvider = authenticateWithAzure(requests, profile, session.azure);
+  } else if (session.google) {
+    oauthProvider = authenticateWithGoogle(requests, profile, session.google);
   } else {
     oauthProvider = requests
       .post(`${url}/sessions`)
@@ -86,6 +90,56 @@ function authenticateWithAzure(requests, profile, azure) {
       }
     })
     .then(() => sendOauthSession(requests, name, email, profile));
+}
+
+function authenticateWithGoogle(requests, profile, code) {
+  const grant_type = 'authorization_code';
+  const googleApiUrl = 'https://oauth2.googleapis.com/token';
+
+  const payload = {
+    client_id: profile.NESIS_OAUTH_GOOGLE_CLIENT_ID,
+    client_secret: profile.NESIS_OAUTH_GOOGLE_CLIENT_SECRET,
+    redirect_uri: profile.NESIS_OAUTH_GOOGLE_REDIRECTURI,
+    grant_type: grant_type,
+    code: code,
+  };
+
+  const body = querystring.stringify(payload);
+  return requests
+    .post(googleApiUrl)
+    .set('Content-Type', 'application/x-www-form-urlencoded')
+    .send(body)
+    .then((response) => {
+      const resp = response.body;
+      return verifyToken(payload.client_id, resp.id_token);
+    })
+    .then((userInfo) =>
+      sendOauthSession(requests, userInfo.name, userInfo.email, profile),
+    )
+    .catch((e) => {
+      const messsage = 'Invalid azure access token';
+      const error = new Error(messsage);
+      Object.assign(error, {
+        status: 401,
+        response: {
+          body: 'Invalid google access token',
+        },
+      });
+      throw error;
+    });
+}
+
+async function verifyToken(client_id, jwtToken) {
+  const client = new OAuth2Client(client_id);
+  // Call the verifyIdToken to verify and decode it
+  const ticket = await client.verifyIdToken({
+    idToken: jwtToken,
+    audience: client_id,
+  });
+  // Get the JSON with all the user info
+  const payload = ticket.getPayload();
+  // This is a JSON object that contains all the user info
+  return payload;
 }
 
 function sendOauthSession(requests, name, email, profile) {
