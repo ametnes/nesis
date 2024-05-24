@@ -122,7 +122,7 @@ function authenticateWithGoogle(requests, profile, code) {
       Object.assign(error, {
         status: 401,
         response: {
-          body: 'Invalid azure access token',
+          body: 'Invalid google access token',
         },
       });
       throw error;
