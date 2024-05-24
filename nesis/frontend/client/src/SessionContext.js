@@ -86,7 +86,7 @@ async function logoutMicrosoft(config) {
       },
     });
     await msalInstance.initialize();
-    msalInstance.logoutRedirect();
+    await msalInstance.logoutRedirect();
   } catch (e) {
     /* ignored */
   }
