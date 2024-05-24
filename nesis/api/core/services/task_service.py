@@ -284,7 +284,7 @@ class TaskService(ServiceOperation):
 
             return query.all()
         except Exception as e:
-            self._LOG.exception(f"Error when fetching settings")
+            self._LOG.exception(f"Error when fetching tasks")
             raise
         finally:
             if session:

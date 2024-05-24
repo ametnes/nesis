@@ -48,7 +48,7 @@ export default function AzureButton({ onFailure, onSuccess }) {
     try {
       initialize();
     } catch (e) {
-      onFailure('Error log in in with Azure');
+      onFailure(e?.message || 'Error log in in with Azure');
     }
   }, []);
 

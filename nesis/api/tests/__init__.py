@@ -17,6 +17,7 @@ from nesis.api.core.models.entities import (
     Datasource,
     Document,
     Task,
+    App,
 )
 
 os.environ["PGPT_PROFILES"] = "test"
@@ -69,6 +70,7 @@ config = {
         "timezone": os.environ.get("NESIS_API_TASKS_TIMEZONE", str(get_localzone())),
         "executors": {"default_size": 30, "pool_size": 3},
     },
+    "apps": {"session": {"expiry": 1800}},
 }
 
 
@@ -89,6 +91,7 @@ def clear_database(session):
     session.query(Datasource).delete()
     session.query(Document).delete()
     session.query(Task).delete()
+    session.query(App).delete()
     session.commit()
 
 
@@ -137,10 +140,21 @@ def get_user_session(client, session, roles) -> Dict[str, Any]:
     ).json
 
 
-def create_role(client, session: dict, role: dict) -> Dict[str, Any]:
+def create_role(client, session: dict, role: dict, expect=200) -> Dict[str, Any]:
 
     response = client.post(
         f"/v1/roles", headers=get_header(token=session["token"]), data=json.dumps(role)
     )
-    assert 200 == response.status_code, response.text
+    assert expect == response.status_code, response.text
+    return response.json
+
+
+def create_datasource(client, session, datasource, expected=200):
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=get_header(token=session["token"]),
+        data=json.dumps(datasource),
+    )
+    assert expected == response.status_code, response.text
     return response.json

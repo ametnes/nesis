@@ -33,4 +33,7 @@ default = {
             "timeout_default": 300,
         },
     },
+    "apps": {
+        "session": {"expiry": os.environ.get("NESIS_API_APPS_SESSION_EXPIRY") or 1800}
+    },
 }

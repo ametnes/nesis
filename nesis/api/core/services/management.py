@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 import bcrypt
 import memcache
@@ -12,6 +12,7 @@ import nesis.api.core.services as services
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.objects import ResourceType, UserSession
 from nesis.api.core.models.entities import User, Role, RoleAction, UserRole, Action
+from nesis.api.core.services.app_service import AppSessionService
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
@@ -29,34 +30,42 @@ class UserSessionService(ServiceOperation):
 
     def __init__(self, config):
         self.__config = config
-        self.__enable_user_verification = config.get("verify_users", False)
-        self.__verify_users_override = config.get("verify_users_override", False)
+        self._app_session_service = AppSessionService(config=config)
         self.__cache = memcache.Client(config["memcache"]["hosts"], debug=1)
         self.__LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
-    def get(self, **kwargs):
+    def get(self, **kwargs) -> Dict[str, Any]:
         token = kwargs.get("token")
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
 
-        key = self.__cache_key(token)
+        key = self.__cache_user_key(token)
         value = self.__cache.get(key)
 
-        if value is None:
+        if value is not None:
+            session_object = {"token": token, "user": value}
+        else:
+            session_object = self._app_session_service.get(**kwargs)
+
+        if session_object is None:
             raise UnauthorizedAccess("Invalid token")
 
-        return {"token": token, "user": value}
+        return session_object
 
     def delete(self, **kwargs):
         token = kwargs["token"]
         session = self.get(**kwargs)
         if session["token"] != token:
             raise UnauthorizedAccess("Invalid session token")
-        self.__cache.delete(self.__cache_key(token))
+        self.__cache.delete(self.__cache_user_key(token))
 
     @staticmethod
-    def __cache_key(key):
+    def __cache_user_key(key):
         return f"sessions/{key}"
+
+    @staticmethod
+    def __cache_app_key(key):
+        return f"application/{key}"
 
     def create(self, **kwargs) -> UserSession:
         user_session = kwargs["session"]
@@ -118,7 +127,7 @@ class UserSessionService(ServiceOperation):
     def __create_user_session(self, db_user: User):
         user_dict = db_user.to_dict()
         token = SG(r"[\l\d]{128}").render()
-        session_token = self.__cache_key(token)
+        session_token = self.__cache_user_key(token)
         expiry = (
             self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
         )
@@ -126,7 +135,7 @@ class UserSessionService(ServiceOperation):
             self.__cache.set(session_token, user_dict, time=expiry)
         while self.__cache.get(session_token)["id"] != user_dict["id"]:
             token = SG(r"[\l\d]{128}").render()
-            session_token = self.__cache_key(token)
+            session_token = self.__cache_user_key(token)
             self.__cache.set(session_token, user_dict, time=expiry)
         return UserSession(token=token, expiry=expiry, user=db_user)
 
@@ -332,13 +341,15 @@ class UserService(ServiceOperation):
             session.merge(user_record)
             session.commit()
 
-            self._user_role_service.delete(**{**kwargs, "user_id": uuid})
+            user_roles = user.get("roles")
+            if user_roles is not None:
+                self._user_role_service.delete(**{**kwargs, "user_id": uuid})
 
-            for user_role in user.get("roles") or []:
-                try:
-                    self._user_role_service.create(**kwargs, role={"id": user_role})
-                except ConflictException as ex:
-                    self._LOG.info(ex)
+                for user_role in user.get("roles") or []:
+                    try:
+                        self._user_role_service.create(**kwargs, role={"id": user_role})
+                    except ConflictException as ex:
+                        self._LOG.info(ex)
 
             return user_record
         except Exception as e:

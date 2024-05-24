@@ -510,3 +510,81 @@ class Task(Base):
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
             "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),
         }
+
+
+class App(Base):
+    """
+    An app integration
+    """
+
+    __tablename__ = "app"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    name = Column(Unicode(255))
+    description = Column(Unicode(255))
+    secret = Column(LargeBinary, nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    attributes = Column(JSONB)
+    enabled = Column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (UniqueConstraint("name", name="uq_app_name"),)
+
+    def __init__(
+        self,
+        name: str,
+        secret: bytes,
+        description: str,
+        create_date: dt.datetime = dt.datetime.utcnow(),
+    ):
+        self.uuid = str(uuid.uuid4())
+        self.name = name
+        self.secret = secret
+        self.description = description
+        self.create_date = create_date
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        result = {
+            "id": self.uuid,
+            "name": self.name,
+            "description": self.description,
+            "enabled": self.enabled,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }
+        if isinstance(self.secret, str) and "secret" in (kwargs.get("include") or []):
+            result["secret"] = self.secret
+
+        return result
+
+
+class AppRole(Base):
+    __tablename__ = "app_role"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    role = Column(BigInteger, nullable=False)
+    app = Column(BigInteger, nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("app", "role", name="uq_app_role_app_role"),
+        ForeignKeyConstraint(
+            ("role",), [Role.id], name="fk_app_role_role", ondelete="CASCADE"
+        ),
+        ForeignKeyConstraint(
+            ("app",), [App.id], name="fk_app_role_app", ondelete="CASCADE"
+        ),
+    )
+
+    def __init__(self, role: Role, app: App):
+        self.uuid = str(uuid.uuid4())
+        self.role = role.id
+        self.app = app.id
+
+    def to_dict(self, **kwargs) -> dict:
+        dict_value = {
+            "id": self.uuid,
+            "role": self.role,
+            "app": self.app,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }
+
+        return dict_value

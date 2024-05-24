@@ -1,6 +1,5 @@
 import ast
 import enum
-import json
 from enum import Enum
 
 
@@ -55,6 +54,7 @@ class ResourceType(Enum):
     PREDICTIONS = enum.auto()
     SETTINGS = enum.auto()
     TASKS = enum.auto()
+    APPS = enum.auto()
 
 
 class UserSession:
