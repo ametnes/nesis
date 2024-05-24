@@ -140,7 +140,12 @@ function AppForm({
               placeholder="Description"
               name="description"
             />
-            <Checkbox id="enabled" name="enabled" label="Enabled" />
+            <Checkbox
+              id="enabled"
+              name="enabled"
+              label="Enabled"
+              style={{ paddingTop: '12px' }}
+            />
             <StyledTable>
               <thead>
                 <tr>

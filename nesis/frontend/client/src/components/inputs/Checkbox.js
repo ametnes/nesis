@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 const Wrapper = styled.div`
   display: flex;
   align-items: center;
+  margin-top: 8px;
 `;
 
 const StyledInput = styled.input`

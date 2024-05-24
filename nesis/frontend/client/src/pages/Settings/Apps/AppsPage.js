@@ -269,7 +269,7 @@ const Page = () => {
               <tbody>
                 {!paginatedApps.length && (
                   <tr>
-                    <td colSpan={3}>
+                    <td colSpan={4}>
                       <MessageRow variant="warning" style={{ marginTop: 4 }}>
                         No apps found
                       </MessageRow>

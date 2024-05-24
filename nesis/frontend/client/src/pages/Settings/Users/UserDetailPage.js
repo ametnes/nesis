@@ -147,6 +147,7 @@ function DocumentForm({
             <TextField
               type="text"
               id="name"
+              label="Name"
               placeholder="Full name"
               name="name"
               validate={required}
@@ -154,6 +155,7 @@ function DocumentForm({
             <TextField
               type="text"
               id="email"
+              label="Email"
               placeholder="Email"
               name="email"
               validate={required}
@@ -164,11 +166,17 @@ function DocumentForm({
             <TextField
               type="password"
               id="password"
+              label="Password"
               placeholder="Password"
               name="password"
               validate={values.roles ? null : required}
             />
-            <Checkbox id="enabled" name="enabled" label="Enabled" />
+            <Checkbox
+              id="enabled"
+              name="enabled"
+              label="Enabled"
+              style={{ paddingTop: '12px' }}
+            />
             <StyledTable>
               <thead>
                 <tr>
