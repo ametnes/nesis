@@ -7,7 +7,7 @@ We use mkdocs to create Nesis documentation.
 
 1. Install dependencies with
     ```commandline
-    pip install -r requirements-docs.txt
+    pip install -r requirements.txt
     ```
 2. Serve the documentation on your local with
     ```commandline
