@@ -86,8 +86,8 @@ def operate_app_roles(app_id):
             case controllers.POST:
                 result = services.app_service.update(
                     token=token,
-                    user_id=app_id,
-                    user={"roles": [request.json.get("id")]},
+                    app_id=app_id,
+                    app={"roles": [request.json.get("id")]},
                 )
                 return jsonify(result.to_dict())
             case controllers.GET:

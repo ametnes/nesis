@@ -143,9 +143,7 @@ def test_app_as_user(client, http_client, tc):
             "dataobjects": "initdb",
         },
     }
-    datasource_result = tests.create_datasource(
-        client=client, session=admin_session, datasource=datasource
-    )
+    tests.create_datasource(client=client, session=admin_session, datasource=datasource)
     role_result = tests.create_role(client=client, session=admin_session, role=role)
     app = create_app(client=client, session=admin_session)
 
@@ -186,3 +184,47 @@ def test_app_as_user(client, http_client, tc):
     assert 200 == response.status_code, response.text
     assert response.json["input"] == "what do you know?"
     tc.assertDictEqual(response.json["data"], {"response": "the response"})
+
+
+def test_operate_app_roles(client, http_client, tc):
+    """
+    Test operations on a specific app.
+    1. Add a role to an app
+    2. Get an apps roles
+    """
+    admin_session = tests.get_admin_session(app=client)
+    role = {
+        "name": f"user-admin-{uuid.uuid4()}",
+        "policy": {
+            "items": [
+                {"action": "create", "resource": "predictions/*"},
+                {"action": "read", "resource": "datasources/*"},
+            ]
+        },
+    }
+
+    app = create_app(client=client, session=admin_session)
+
+    # Get roles assigned to the app, expect count == 0
+    response = client.get(
+        f"/v1/apps/{app['id']}/roles",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.text
+    assert 0 == len(response.json["items"])
+
+    role_result = tests.create_role(client=client, session=admin_session, role=role)
+    response = client.post(
+        f"/v1/apps/{app['id']}/roles",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(role_result),
+    )
+    assert 200 == response.status_code, response.text
+
+    # Get roles assigned to the app, expect count == 1
+    response = client.get(
+        f"/v1/apps/{app['id']}/roles",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.text
+    assert 1 == len(response.json["items"])

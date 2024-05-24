@@ -10,8 +10,7 @@ import FormControls from '../../../components/FormControls';
 import { useAddToast } from '../../../ToasterContext';
 import { ModalTitle } from '../../../components/Modal';
 import MessageRow from '../../../components/MessageRow';
-import FormRow, { Column } from '../../../components/layout/FormRow';
-import Table, { DeleteItemButton } from '../../../components/Table';
+import Table from '../../../components/Table';
 import styled from 'styled-components/macro';
 
 const StyledTable = styled(Table)``;
@@ -31,7 +30,7 @@ export default function AppDetailsPage({ roles, appRoles, onSuccess }) {
             maxWidth: '100%',
             overflowWrap: 'break-word',
             padding: '5px',
-            backgroundColor: '#33cc33',
+            backgroundColor: '#ffcc00',
             marginTop: '5px',
           }}
         >
