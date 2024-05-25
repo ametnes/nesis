@@ -76,3 +76,31 @@ def operate_app(app_id):
     except:
         _LOG.exception("Error getting app")
         return jsonify(error_message("Server error")), 500
+
+
+@app.route("/v1/apps/<app_id>/roles", methods=[controllers.POST, controllers.GET])
+def operate_app_roles(app_id):
+    token = get_bearer_token(request.headers.get("Authorization"))
+    try:
+        match request.method:
+            case controllers.POST:
+                result = services.app_service.update(
+                    token=token,
+                    app_id=app_id,
+                    app={"roles": [request.json.get("id")]},
+                )
+                return jsonify(result.to_dict())
+            case controllers.GET:
+                results = services.app_service.get_roles(token=token, app_id=app_id)
+                return jsonify({"items": [item.to_dict() for item in results]})
+    except util.ServiceException as se:
+        return jsonify(error_message(str(se))), 400
+    except util.ConflictException as se:
+        return jsonify(error_message(str(se))), 409
+    except util.UnauthorizedAccess:
+        return jsonify(error_message("Unauthorized access")), 401
+    except util.PermissionException as ex:
+        return jsonify(error_message(str(ex))), 403
+    except:
+        _LOG.exception("Error getting user")
+        return jsonify(error_message("Server error")), 500

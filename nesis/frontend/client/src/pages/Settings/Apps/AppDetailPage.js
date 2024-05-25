@@ -4,105 +4,81 @@ import useClient from '../../../utils/useClient';
 import parseApiErrorMessage from '../../../utils/parseApiErrorMessage';
 import { Formik, Form as FormikForm, FieldArray } from 'formik';
 import { Checkbox, TextField } from '../../../components/form';
+import { Field } from 'formik';
 import { required } from '../../../components/form/validators';
 import FormControls from '../../../components/FormControls';
 import { useAddToast } from '../../../ToasterContext';
 import { ModalTitle } from '../../../components/Modal';
 import MessageRow from '../../../components/MessageRow';
-import FormRow, { Column } from '../../../components/layout/FormRow';
-import Table, { DeleteItemButton } from '../../../components/Table';
+import Table from '../../../components/Table';
 import styled from 'styled-components/macro';
-import { device } from '../../../utils/breakpoints';
-import { Field } from 'formik';
 
 const StyledTable = styled(Table)``;
 
-const StyledFormRow = styled(FormRow)`
-  align-items: stretch;
-
-  & > *:not(:last-child) {
-    margin-right: 20px;
-    flex: auto;
-  }
-`;
-
-const Separator = styled.div`
-  display: none;
-
-  @media ${device.tablet} {
-    display: flex;
-    justify-content: center;
-
-    & > hr {
-      border: 1px solid #e4ecff;
-      width: 50%;
-      margin: 0;
-      margin-top: 20px;
-    }
-  }
-`;
-
-const AddDataobjectWrapper = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-top: 21px;
-`;
-
-const AddDataobjectButton = styled.button`
-  color: #089fdf;
-  background: none;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-export default function DocumentDetailsPage({ roles, userRoles, onSuccess }) {
+export default function AppDetailsPage({ roles, appRoles, onSuccess }) {
   const match = useRouteMatch();
   const [errorMessage, setErrorMessage] = React.useState('');
+  const [secret, setSecret] = React.useState('');
 
   return (
     <>
-      <MessageRow variant="danger">{errorMessage}</MessageRow>
-      <CreateDocument
+      {errorMessage && <MessageRow variant="danger">{errorMessage}</MessageRow>}
+      {secret && (
+        <div
+          style={{
+            display: 'inline-block',
+            maxWidth: '100%',
+            overflowWrap: 'break-word',
+            padding: '5px',
+            backgroundColor: '#ffcc00',
+            marginTop: '5px',
+          }}
+        >
+          <span style={{ fontWeight: 'bold', paddingBottom: '15px' }}>
+            Safely save this app secret, it will not be shown again:
+          </span>{' '}
+          {secret}
+        </div>
+      )}
+      <CreateApp
+        onSuccess={setSecret}
         roles={roles}
-        userRoles={userRoles}
-        onSuccess={onSuccess}
+        appRoles={appRoles}
         onError={setErrorMessage}
       />
     </>
   );
 }
 
-function CreateDocument({ roles, userRoles, onSuccess, onError }) {
+function CreateApp({ onSuccess, roles, appRoles, onError }) {
+  const location = useLocation();
+
   return (
     <>
-      <ModalTitle>{userRoles ? `Edit` : `New`} user</ModalTitle>
-      <DocumentForm
+      <ModalTitle>{location?.state?.id ? `Edit` : `Create`} app</ModalTitle>
+      <AppForm
+        app={location?.state}
         roles={roles}
-        userRoles={userRoles}
+        appRoles={appRoles}
         onSuccess={onSuccess}
         onError={onError}
-        submitButtonText={userRoles ? `Update` : `Create`}
+        submitButtonText={location?.state?.id ? `Update` : `Create`}
       />
     </>
   );
 }
 
-function DocumentForm({
+function AppForm({
+  app,
   roles,
-  userRoles,
   onSuccess,
+  appRoles,
   onError,
   submitButtonText = 'Submit',
   initialValues = {
-    id: '',
-    name: '',
-    email: '',
-    password: '',
-    roles: userRoles?.items?.map((role) => role.id),
+    id: app?.id,
+    name: app?.name,
+    roles: appRoles?.items?.map((role) => role.id),
   },
 }) {
   const history = useHistory();
@@ -111,15 +87,18 @@ function DocumentForm({
   const location = useLocation();
 
   function handleSubmit(values, actions) {
-    console.log(values);
     client
-      .post(`users`, values)
-      .then(() => {
+      .post(`apps`, values)
+      .then((res, err) => {
+        console.log(JSON.stringify(res.body));
+        values.secret = res.body.secret;
+        onSuccess(res.body.secret);
+        values.id = res.body.id;
         actions.setSubmitting(false);
         actions.resetForm();
-        onSuccess();
+        // onSuccess();
         addToast({
-          title: `User Created`,
+          title: `App Created`,
           content: 'Operation is successful',
         });
       })
@@ -131,7 +110,7 @@ function DocumentForm({
 
   initialValues.id = location?.state?.id;
   initialValues.name = location?.state?.name;
-  initialValues.email = location?.state?.email;
+  initialValues.description = location?.state?.description;
   initialValues.enabled = location?.state?.enabled;
 
   return (
@@ -143,33 +122,23 @@ function DocumentForm({
       >
         {({ isSubmitting, resetForm, values }) => (
           <FormikForm>
-            <TextField type="hidden" id="id" name="id" />
             <TextField
               type="text"
               id="name"
               label="Name"
-              placeholder="Full name"
+              placeholder="Name"
               name="name"
-              validate={required}
-            />
-            <TextField
-              type="text"
-              id="email"
-              label="Email"
-              placeholder="Email"
-              name="email"
               validate={required}
               disabled={
                 initialValues?.id !== null && initialValues?.id !== undefined
               }
             />
             <TextField
-              type="password"
-              id="password"
-              label="Password"
-              placeholder="Password"
-              name="password"
-              validate={values.roles ? null : required}
+              type="text"
+              id="description"
+              label="Description"
+              placeholder="Description"
+              name="description"
             />
             <Checkbox
               id="enabled"
@@ -207,7 +176,7 @@ function DocumentForm({
               submitDisabled={isSubmitting}
               onCancel={() => {
                 resetForm();
-                history.push('/settings/users');
+                history.push('/settings/apps');
               }}
             />
           </FormikForm>

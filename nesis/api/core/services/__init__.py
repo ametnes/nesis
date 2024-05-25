@@ -184,7 +184,6 @@ def authorized_resources(
         user_id=user_id,
     )
 
-    # If root, return all actions
     def get_enabled_datasources():
         return session.query(Datasource).filter(Datasource.enabled.is_(True)).all()
 
@@ -194,6 +193,7 @@ def authorized_resources(
     def get_enabled_apps():
         return session.query(App).filter(App.enabled.is_(True)).all()
 
+    # If root, return all actions
     if session_user is not None and session_user.get("root") or False:
         match resource_type:
             case ResourceType.DATASOURCES:
@@ -235,7 +235,10 @@ def authorized_resources(
     action_list = []
     dss = None
     tasks = None
+    apps = None
+    # If not root, return only actions permitted
     for role_action in query.all():
+        # If wildcard, then we return all resources
         if role_action.resource and role_action.resource.strip() == "*":
             match resource_type:
                 case ResourceType.DATASOURCES:
@@ -261,6 +264,18 @@ def authorized_resources(
                             role=None,
                         )
                         for ds in tasks
+                    ]
+                case ResourceType.APPS:
+                    if apps is None:
+                        apps = get_enabled_apps()
+                    action_list += [
+                        RoleAction(
+                            action=Action[role_action.action.name],
+                            resource_type=resource_type,
+                            resource=app.uuid,
+                            role=None,
+                        )
+                        for app in apps
                     ]
                 case _:
                     raise util.PermissionException("Unauthorized resource type")

@@ -82,7 +82,7 @@ async function logoutMicrosoft(config) {
         clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
         authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
         redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
-        postLogoutRedirectUri: 'http://localhost:3000/',
+        postLogoutRedirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
       },
     });
     await msalInstance.initialize();

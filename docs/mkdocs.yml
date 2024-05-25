@@ -44,10 +44,15 @@ nav:
       - 'installing/helm.md'
       - 'installing/ametnes.md'
   - 'Access Control': 'rbac.md'
+  - 'App Integration': 'apps/example.ipynb'
   - 'Development Guide':
       - 'Local Development': 'dev-guide/local.md'
       - 'Architecture': 'dev-guide/architecture.md'
       - 'Contributing': 'dev-guide/contributing.md'
+
+plugins:
+  - mkdocs-jupyter
+
 extra_css:
     - css/extra.css
 extra_javascript:
