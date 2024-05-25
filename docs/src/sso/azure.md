@@ -1,7 +1,7 @@
 # Setup SSO with Azure
 
 ## Register your application with Azure
-First register your application with Azure using the steps described <a href="https://learn.microsoft.com/en-us/azure/active-directory-b2c/client-credentials-grant-flow?pivots=b2c-user-flow" _blank>here</a>
+First register your application with Azure using the steps described <a href="https://learn.microsoft.com/en-us/azure/active-directory-b2c/client-credentials-grant-flow?pivots=b2c-user-flow" target="_blank">here</a>
 
 Take note of these;
 
