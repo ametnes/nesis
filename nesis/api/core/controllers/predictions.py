@@ -10,9 +10,6 @@ from nesis.api.core.util.common import (
     get_bearer_token,
 )
 
-from flasgger.utils import swag_from
-
-
 _LOG = logging.getLogger(__name__)
 
 

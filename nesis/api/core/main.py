@@ -4,7 +4,6 @@ import os
 import sys
 import logging
 
-from flasgger import Swagger
 import yaml
 from gevent.pywsgi import WSGIServer
 
