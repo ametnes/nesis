@@ -16,6 +16,58 @@ _LOG = logging.getLogger(__name__)
 
 @app.route("/v1/users", methods=[POST, GET])
 def operate_users():
+    """Operate on users.
+    ---
+    get:
+      summary: Get all users available.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema: UsersSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: UserReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: UserResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == POST:
@@ -39,6 +91,89 @@ def operate_users():
 
 @app.route("/v1/users/<user_id>", methods=[GET, DELETE, PUT])
 def operate_user(user_id):
+    """Operate on a user.
+    ---
+    get:
+      summary: Get a single user by userId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: The user id to get
+      responses:
+        200:
+          content:
+            application/json:
+              schema: UserResSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        404:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a single user by userId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: The user id to delete
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    put:
+      summary: Creates a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: UserReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: UserResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == GET:
@@ -117,7 +252,58 @@ def operate_user_role(user_id, role_id):
 # User role management
 @app.route("/v1/roles", methods=[POST, GET])
 def operate_roles():
-
+    """Operate on roles.
+    ---
+    get:
+      summary: Get all roles available.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema: RolesSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: RoleReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: RoleResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == POST:
@@ -141,6 +327,89 @@ def operate_roles():
 
 @app.route("/v1/roles/<role_id>", methods=[GET, DELETE, PUT])
 def operate_role(role_id):
+    """Operate on a role.
+    ---
+    get:
+      summary: Get a single role by roleId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: roleId
+          schema:
+            type: string
+          required: true
+          description: The role id to get
+      responses:
+        200:
+          content:
+            application/json:
+              schema: RoleResSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        404:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a single role by roleId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The role id to delete
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    put:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: RoleReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: RoleResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == GET:

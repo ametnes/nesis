@@ -1,0 +1,696 @@
+info:
+  description: Nesis API
+  version: 0.1.1
+  title: Nesis API
+paths:
+  /v1/apps:
+    get:
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Apps'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new app.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppPostRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/tasks:
+    get:
+      summary: Get all tasks available.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tasks'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/tasks/{task_id}:
+    get:
+      summary: Get a single task by taskId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: taskId
+        schema:
+          type: string
+        required: true
+        description: The task id to get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRes'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    delete:
+      summary: Delete a single task by taskId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: taskId
+        schema:
+          type: string
+        required: true
+        description: The task id to delete
+      responses:
+        '200':
+          description: OK
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    put:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/roles:
+    get:
+      summary: Get all roles available.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Roles'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/roles/{role_id}:
+    get:
+      summary: Get a single role by roleId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: roleId
+        schema:
+          type: string
+        required: true
+        description: The role id to get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleRes'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    delete:
+      summary: Delete a single role by roleId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: taskId
+        schema:
+          type: string
+        required: true
+        description: The role id to delete
+      responses:
+        '200':
+          description: OK
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    put:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/users:
+    get:
+      summary: Get all users available.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/users/{user_id}:
+    get:
+      summary: Get a single user by userId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: The user id to get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    delete:
+      summary: Delete a single user by userId.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+        description: The user id to delete
+      responses:
+        '200':
+          description: OK
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    put:
+      summary: Creates a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+openapi: 3.0.2
+components:
+  schemas:
+    AppReq:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    AppRes:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        enabled:
+          type: boolean
+        create_date:
+          type: string
+          format: null
+          pattern: null
+    Apps:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppRes'
+        count:
+          type: integer
+    TaskReq:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        type:
+          type: string
+        schedule:
+          type: string
+        parent_id:
+          type: string
+        definition:
+          type: object
+    TaskRes:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        type:
+          type: string
+        schedule:
+          type: string
+        parent_id:
+          type: string
+        definition:
+          type: object
+        id:
+          type: string
+        status:
+          type: string
+        create_date:
+          type: string
+          format: null
+          pattern: null
+        update_date:
+          type: string
+          format: null
+          pattern: null
+    Tasks:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRes'
+        count:
+          type: integer
+    PolicyAction:
+      type: object
+      properties: {}
+    RoleReq:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyAction'
+    RoleRes:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyAction'
+        id:
+          type: string
+        create_date:
+          type: string
+          format: null
+          pattern: null
+    Roles:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleRes'
+        count:
+          type: integer
+    UserReq:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+    UserRes:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        id:
+          type: string
+        status:
+          type: string
+        create_date:
+          type: string
+          format: null
+          pattern: null
+    Users:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRes'
+        count:
+          type: integer
+    Message:
+      type: object
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+    AppPostRes:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        enabled:
+          type: boolean
+        create_date:
+          type: string
+          format: null
+          pattern: null
+        secret:
+          type: string

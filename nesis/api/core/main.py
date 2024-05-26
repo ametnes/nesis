@@ -1,10 +1,10 @@
-#!/usr/bin/env python
-
 import argparse
 import json
 import os
 import sys
+import logging
 
+from flasgger import Swagger
 import yaml
 from gevent.pywsgi import WSGIServer
 
@@ -15,7 +15,6 @@ from nesis.api.core.controllers import api as cloud_ctrl
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.services import init_services as cloud_services
 from nesis.api.core.util.http import HttpClient
-import logging
 import nesis.api.core.util as util
 
 import nesis.api.core.config as settings

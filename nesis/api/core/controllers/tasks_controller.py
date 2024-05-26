@@ -16,6 +16,58 @@ _LOG = logging.getLogger(__name__)
 
 @app.route("/v1/tasks", methods=[controllers.POST, controllers.GET])
 def operate_tasks():
+    """Operate on tasks.
+    ---
+    get:
+      summary: Get all tasks available.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema: TasksSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: TaskReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: TaskResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         match request.method:
@@ -43,6 +95,89 @@ def operate_tasks():
     methods=[controllers.GET, controllers.DELETE, controllers.PUT],
 )
 def operate_task(task_id):
+    """Operate on a task.
+    ---
+    get:
+      summary: Get a single task by taskId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The task id to get
+      responses:
+        200:
+          content:
+            application/json:
+              schema: TaskResSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        404:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a single task by taskId.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: taskId
+          schema:
+            type: string
+          required: true
+          description: The task id to delete
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    put:
+      summary: Creates a new task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: TaskReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: TaskResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         match request.method:

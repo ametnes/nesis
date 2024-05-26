@@ -15,6 +15,57 @@ _LOG = logging.getLogger(__name__)
 
 @app.route("/v1/apps", methods=[controllers.POST, controllers.GET])
 def operate_apps():
+    """Operate apps.
+    ---
+    get:
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema: AppsSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new app.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: AppReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: AppPostResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         match request.method:
