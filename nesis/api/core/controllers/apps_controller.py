@@ -24,6 +24,7 @@ def operate_apps():
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
       responses:
         200:
           content:
@@ -41,6 +42,7 @@ def operate_apps():
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
       requestBody:
         required: true
         content:
