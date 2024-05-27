@@ -42,7 +42,7 @@ jobs:
           pip install -r docs/requirements.txt
       - name: Build with MkDocs
         run: |
-          cd docs && mkdocs build --clean --site-dir ../../_site && cd -
+          cd docs && mkdocs build --clean --site-dir ../_site && cd -
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 

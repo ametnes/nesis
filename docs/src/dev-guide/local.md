@@ -88,7 +88,7 @@ If you do not have `source`, you can activate the virtualenv with
 #### Start the RAG Engine
 Install dependencies
 ```bash
-pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-torch-cpu-x86.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
+pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
 ```
 
 Start the service
