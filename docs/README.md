@@ -15,3 +15,11 @@ We use mkdocs to create Nesis documentation.
     mkdocs serve
     ```
 3. The documentation should now be reachable at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+
+
+## Generating Swagger documentation
+At the root of the repository, run
+
+```commandline
+make swagger
+```

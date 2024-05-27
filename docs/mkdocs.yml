@@ -31,6 +31,8 @@ markdown_extensions:
   - attr_list
   - admonition
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -44,7 +46,9 @@ nav:
       - 'installing/helm.md'
       - 'installing/ametnes.md'
   - 'Access Control': 'rbac.md'
-  - 'App Integration': 'apps/example.ipynb'
+  - 'App Integration':
+      - 'API Reference': 'apps/swagger.md'
+      - 'Example': 'apps/example.ipynb'
   - 'Single Sign On':
       - 'sso/azure.md'
   - 'Development Guide':
@@ -54,8 +58,13 @@ nav:
 
 plugins:
   - mkdocs-jupyter
+  - search
+  - neoteroi.mkdocsoad:
+      use_pymdownx: true
 
 extra_css:
     - css/extra.css
+    - css/mkdocsoad.css
+
 extra_javascript:
   - scripts/menus.js

@@ -1,0 +1,4 @@
+apispec==6.6.1
+apispec[yaml]
+apispec-webframeworks
+apispec[marshmallow]
