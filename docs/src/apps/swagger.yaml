@@ -1003,8 +1003,8 @@ components:
           type: boolean
         schedule:
           type: string
-        endpoint:
-          type: string
+        connection:
+          type: object
     DatasourceRes:
       type: object
       properties:
@@ -1014,8 +1014,8 @@ components:
           type: boolean
         schedule:
           type: string
-        endpoint:
-          type: string
+        connection:
+          type: object
         id:
           type: string
         status:

@@ -6,7 +6,7 @@ class DatasourceReqSchema(Schema):
     name = fields.Str()
     enabled = fields.Boolean()
     schedule = fields.Str()
-    endpoint = fields.Str()
+    connection = fields.Dict()
 
 
 class DatasourceResSchema(DatasourceReqSchema):
