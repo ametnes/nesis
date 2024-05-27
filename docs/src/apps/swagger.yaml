@@ -1,5 +1,8 @@
 info:
-  description: Nesis API
+  description: Nesis API helps you extend your existing and legacy applications easily
+    giving them AI capabilities.First create a role for you App, then create an App
+    assigning the role to it. The API key returned can then be usedas the `Authorization`
+    token
   version: 0.1.1
   title: Nesis API
 paths:
