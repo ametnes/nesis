@@ -47,8 +47,8 @@ nav:
       - 'installing/ametnes.md'
   - 'Access Control': 'rbac.md'
   - 'App Integration':
-      - 'Example': 'apps/example.ipynb'
       - 'API Reference': 'apps/swagger.md'
+      - 'Example': 'apps/example.ipynb'
   - 'Single Sign On':
       - 'sso/azure.md'
   - 'Development Guide':

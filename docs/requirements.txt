@@ -6,3 +6,7 @@ mkdocs-bootswatch==1.1
 mkdocs-jupyter==0.24.7
 neoteroi-mkdocs==1.0.5
 pymdown-extensions==10.4
+apispec==6.6.1
+apispec[validation]
+apispec-webframeworks
+apispec[yaml]

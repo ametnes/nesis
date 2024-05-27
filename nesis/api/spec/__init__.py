@@ -23,11 +23,11 @@ spec = APISpec(
     version="0.1.1",
     openapi_version="3.0.2",
     info=dict(
-        description="Nesis API helps you extend your existing and legacy applications easily giving them AI capabilities powered by Nesis.\n\n"
-        "1. First create a role for you App, \n"
-        "2. then create an App assigning the role to it. The API key returned can then be used\n"
-        " as the `Authorization` token.\n\n"
-        "See the working example on how to use the API",
+        description="The Nesis API helps you extend your existing and legacy applications easily giving them AI capabilities powered by Nesis.\n\n"
+        "1. First create a role for your App, \n"
+        "2. Then create an App assigning the role to it. The API key returned can then be used\n"
+        " as the `Authorization` token for automating creating **Users**, **Roles**, **Datasources** and more.\n\n"
+        "See the working example on the left menu on how to use the API.",
         version="0.1.1",
     ),
     plugins=[FlaskPlugin(), MarshmallowPlugin()],
