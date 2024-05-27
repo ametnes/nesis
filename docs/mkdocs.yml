@@ -51,6 +51,7 @@ nav:
       - 'Example': 'apps/example.ipynb'
   - 'Single Sign On':
       - 'sso/azure.md'
+      - 'sso/google.md'
   - 'Development Guide':
       - 'Local Development': 'dev-guide/local.md'
       - 'Architecture': 'dev-guide/architecture.md'
