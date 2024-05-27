@@ -18,7 +18,8 @@ import client from '../../../utils/httpClient';
 import useConfirmationModal from '../../../components/useConfirmationModal';
 import useApiGet from '../../../utils/useApiGet';
 import { useAddToast } from '../../../ToasterContext';
-import { ReactComponent as RefreshIcon } from '../../../images/RefreshIcon.svg';
+// import { ReactComponent as RefreshIcon } from '../../../images/RefreshIcon.svg';
+import RefreshIcon from '../../../images/RefreshIcon.svg';
 import MessageRow from '../../../components/MessageRow';
 import { PlusSquare } from 'react-bootstrap-icons';
 import StatusIcon from '../../../components/StatusIcon';
@@ -30,7 +31,8 @@ import {
 import MobileListItem from '../../../components/layout/MobileListItem';
 import Spinner from '../../../components/Spinner';
 import AttributeField from '../../../components/layout/AttributeField';
-import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
+// import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
+import BinIcon from '../../../images/BinIcon.svg';
 import AppDetailPage from './AppDetailPage';
 
 const PageHeader = styled.div`
@@ -176,7 +178,8 @@ const Page = () => {
               onClick={() => appsActions.repeat()}
               style={{ marginRight: 12 }}
             >
-              <RefreshIcon />
+              {/* <RefreshIcon /> */}
+              <img src={RefreshIcon} />
               <RefreshText>Refresh</RefreshText>
             </RefreshButton>
             <ResponsiveAddButton
@@ -229,7 +232,9 @@ const Page = () => {
                         showConfirmModal();
                       }}
                     >
-                      <BinIcon /> Delete
+                      {/* <BinIcon /> */}
+                      <img src={BinIcon} />
+                       Delete
                     </DeleteButton>
                   </div>
                 }

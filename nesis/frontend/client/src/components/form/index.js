@@ -1,5 +1,6 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+// import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ErrorMessage, Field } from 'formik';
 import TextInput from '../inputs/TextInput';
 import ReactSelectStyled from '../inputs/Select';

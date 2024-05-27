@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactModal from 'react-modal';
-import styled from 'styled-components/macro';
-import { ReactComponent as CloseIcon } from '../images/CloseIcon.svg';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
+import CloseIcon from '../images/CloseIcon.svg';
+// import { ReactComponent as CloseIcon } from '../images/CloseIcon.svg';
 import { device } from '../utils/breakpoints';
 
 try {
@@ -10,7 +12,7 @@ try {
   //ignored
 }
 
-const StyledCloseIcon = styled(CloseIcon)`
+const StyledCloseIcon = styled.img`
   position: absolute;
   right: 30px;
   top: 30px;
@@ -72,7 +74,9 @@ export default function Modal({ isOpen, onRequestClose, children }) {
       onRequestClose={onRequestClose}
       style={customStyles}
     >
-      {onRequestClose && <StyledCloseIcon onClick={onRequestClose} />}
+      {onRequestClose && (
+        <StyledCloseIcon src={CloseIcon} onClick={onRequestClose} />
+      )}
       <ModalContent>{children}</ModalContent>
     </ReactModal>
   );

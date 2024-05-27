@@ -4,7 +4,8 @@ import {
   OutlinedSquareButton,
   EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
 import { device } from '../../../utils/breakpoints';
 import Table, { DeleteItemButton } from '../../../components/Table';
 import { useHistory, useRouteMatch, useLocation } from 'react-router-dom';
@@ -18,7 +19,8 @@ import client from '../../../utils/httpClient';
 import useConfirmationModal from '../../../components/useConfirmationModal';
 import useApiGet from '../../../utils/useApiGet';
 import { useAddToast } from '../../../ToasterContext';
-import { ReactComponent as RefreshIcon } from '../../../images/RefreshIcon.svg';
+// import { ReactComponent as RefreshIcon } from '../../../images/RefreshIcon.svg';
+import RefreshIcon from '../../../images/RefreshIcon.svg';
 import MessageRow from '../../../components/MessageRow';
 import { PlusSquare } from 'react-bootstrap-icons';
 import StatusIcon from '../../../components/StatusIcon';
@@ -31,7 +33,8 @@ import {
 import MobileListItem from '../../../components/layout/MobileListItem';
 import Spinner from '../../../components/Spinner';
 import AttributeField from '../../../components/layout/AttributeField';
-import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
+// import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
+import BinIcon from '../../../images/BinIcon.svg';
 import RoleDetailPage from './RoleDetailPage';
 
 const ActionButton = styled(LightSquareButton)`
@@ -178,7 +181,8 @@ const DocumentsGPTPage = () => {
               onClick={() => DocumentsActions.repeat()}
               style={{ marginRight: 12 }}
             >
-              <RefreshIcon />
+              {/* <RefreshIcon /> */}
+              <img src={RefreshIcon} />
               <RefreshText>Refresh</RefreshText>
             </RefreshButton>
             <ResponsiveAddButton
@@ -234,7 +238,9 @@ const DocumentsGPTPage = () => {
                         showConfirmModal();
                       }}
                     >
-                      <BinIcon /> Delete
+                      {/* <BinIcon /> */}
+                      <img src={BinIcon} />
+                      Delete
                     </DeleteButton>
                   </div>
                 }

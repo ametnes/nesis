@@ -1,10 +1,12 @@
-import styled from 'styled-components/macro';
-import { ReactComponent as AddIcon } from '../../images/AddIcon.svg';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
+// import { ReactComponent as AddIcon } from '../../images/AddIcon.svg';
+import AddIcon from '../../images/AddIcon.svg';
 import { device } from '../../utils/breakpoints';
 import SquareButton, { LightSquareButton } from '../inputs/SquareButton';
 import React from 'react';
 
-const StyledAddIcon = styled(AddIcon)`
+const StyledAddIcon = styled.img`
   display: none;
   fill: white;
 
@@ -28,7 +30,7 @@ const StyledButton = styled(LightSquareButton)`
 function ResponsiveAddButtonWithRef({ children, onClick, style }, ref) {
   return (
     <StyledButton onClick={onClick} ref={ref} style={style}>
-      <StyledAddIcon />
+      <StyledAddIcon src={AddIcon} />
       <Text>{children}</Text>
     </StyledButton>
   );

@@ -1,7 +1,11 @@
 import React from 'react';
-import styled, { css } from 'styled-components/macro';
+// import styled, { css } from 'styled-components/macro';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
+import { css } from 'styled-components';
 import useStateToggle from '../../utils/useStateToggle';
-import { ReactComponent as ChevronRight } from '../../images/ChevronRight.svg';
+import ChevronRight from '../../images/ChevronRight.svg';
+// import { ReactComponent as ChevronRight } from '../../images/ChevronRight.svg';
 import { device } from '../../utils/breakpoints';
 import {
   LightDangerSquareButton,
@@ -16,7 +20,7 @@ const Container = styled.div`
   border-radius: 10px;
 `;
 
-const ChevronLeft = styled(ChevronRight)`
+const ChevronLeft = styled.img`
   fill: ${(props) => props.theme.primary};
   opacity: 0.3;
   transform: rotate(180deg);
@@ -51,7 +55,7 @@ export default function MobileItem({
     <Container>
       <MobileMainInfo onClick={toggleExpanded}>
         {mainContent}
-        <ChevronLeft className={expanded ? 'open' : ''} />
+        <ChevronLeft src={ChevronRight} className={expanded ? 'open' : ''} />
       </MobileMainInfo>
       <MobileSubContent $expanded={expanded} $expandedHeight={expandedHeight}>
         {expandContent}

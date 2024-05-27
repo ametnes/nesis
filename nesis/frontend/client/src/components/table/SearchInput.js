@@ -1,7 +1,9 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
 import TextInput from '../inputs/TextInput';
-import { ReactComponent as SearchIcon } from './SearchIcon.svg';
+// import { ReactComponent as SearchIcon } from './SearchIcon.svg';
+import SearchIcon from './SearchIcon.svg';
 
 const Main = styled.div`
   width: 100%;
@@ -18,7 +20,8 @@ export default function SearchInput({
     <Main className={className}>
       <TextInput
         placeholder={placeholder}
-        preIcon={<SearchIcon />}
+        // preIcon={<SearchIcon />}
+        preIcon={<img src={SearchIcon} />}
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />

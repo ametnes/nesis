@@ -2,9 +2,12 @@ import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { PersonCircle, QuestionSquare } from 'react-bootstrap-icons';
 import { useCurrentSession, useSignOut } from '../SessionContext';
-import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
-import { ReactComponent as Logo } from '../images/Nesis.svg';
-import styled from 'styled-components/macro';
+import Hamburger from '../images/Hamburger.svg';
+import Logo from '../images/Nesis.svg';
+// import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
+// import { ReactComponent as Logo } from '../images/Nesis.svg';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
 import { useConfig } from '../ConfigContext';
@@ -27,7 +30,7 @@ const LogoContainer = styled.div`
   margin-left: 15px;
 `;
 
-const LogoFull = styled(Logo)`
+const LogoFull = styled.img`
   display: block;
   height: 105px;
   width: 105px;
@@ -88,10 +91,11 @@ export default function MenuHeader({ onMobileMenuClick }) {
     <>
       <Main>
         <MobileMenuTrigger onClick={onMobileMenuClick}>
-          <Hamburger />
+          <img src={Hamburger} alt="Hamburger" />
+          {/* <Hamburger /> */}
         </MobileMenuTrigger>
         <LogoContainer>
-          <LogoFull />
+          <LogoFull src={Logo} alt="Logo" />
         </LogoContainer>
         {session && (
           <UserControlsRow>

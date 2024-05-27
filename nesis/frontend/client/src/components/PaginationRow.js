@@ -1,5 +1,7 @@
-import styled from 'styled-components/macro';
-import { ReactComponent as ChevronRight } from '../images/ChevronRight.svg';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
+// import { ReactComponent as ChevronRight } from '../images/ChevronRight.svg';
+import ChevronRight from '../images/ChevronRight.svg';
 import React, { useMemo, useRef, useState } from 'react';
 import { countTotalPages, paginateList } from '../utils/paginationUtils';
 import { device } from '../utils/breakpoints';
@@ -59,16 +61,16 @@ const MobileButtonText = styled.span`
   }
 `;
 
-const ChevronLeftBlue = styled(ChevronRight)`
+const ChevronLeftBlue = styled.img`
   transform: rotate(180deg);
   fill: ${(props) => props.theme.primary};
 `;
 
-const ChevronRightBlue = styled(ChevronRight)`
+const ChevronRightBlue = styled.img`
   fill: ${(props) => props.theme.primary};
 `;
 
-const ChevronDownWhite = styled(ChevronRight)`
+const ChevronDownWhite = styled.img`
   transform: rotate(90deg);
   fill: ${(props) => props.theme.white};
 `;
@@ -159,7 +161,7 @@ export default function PaginationRow({ pages, active, onActiveChange }) {
         disabled={active <= 1}
         title="Previous Page"
       >
-        <ChevronLeftBlue />
+        <ChevronLeftBlue src={ChevronRight} />
         <MobileButtonText>Prev</MobileButtonText>
       </PaginationButton>
       {items}
@@ -168,7 +170,7 @@ export default function PaginationRow({ pages, active, onActiveChange }) {
         onClick={() => setDropdownOpen((prev) => !prev)}
       >
         {active}
-        <ChevronDownWhite />
+        <ChevronDownWhite src={ChevronRight} />
         {dropdownOpen && (
           <DropdownContent $items={pages}>{mobileItems}</DropdownContent>
         )}
@@ -179,7 +181,7 @@ export default function PaginationRow({ pages, active, onActiveChange }) {
         disabled={active === pages}
       >
         <MobileButtonText>Next</MobileButtonText>
-        <ChevronRightBlue />
+        <ChevronRightBlue src={ChevronRight} />
       </PaginationButton>
     </Pagination>
   );

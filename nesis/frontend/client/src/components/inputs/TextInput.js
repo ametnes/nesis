@@ -1,5 +1,6 @@
 import React from 'react';
-import styled, { css } from 'styled-components/macro';
+// import styled, { css } from 'styled-components/macro';
+import styled, { css } from 'styled-components';
 
 export const LabelPosition = {
   ON_INPUT_BORDER: 'ON_INPUT_BORDER',

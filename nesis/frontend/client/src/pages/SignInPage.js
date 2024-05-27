@@ -1,6 +1,8 @@
 import React, { useContext, useState } from 'react';
 import styled from 'styled-components';
-import { ReactComponent as Nesis } from '../images/NesisIcon.svg';
+//zindazed
+// import { ReactComponent as Nesis } from '../images/NesisIcon.svg';
+import Nesis from '../images/NesisIcon.svg';
 import { Formik, Form as FormikForm } from 'formik';
 import { TextField } from '../components/form';
 import { required } from '../components/form/validators';
@@ -43,7 +45,7 @@ const Heading2 = styled.h2`
   color: #8c52ff;
 `;
 
-const NosisLogo = styled(Nesis)`
+const NosisLogo = styled.img`
   width: 200px;
   height: 200px;
 `;
@@ -88,16 +90,20 @@ const FormRow = styled.div`
 
 const HTTP_STATUS_UNAUTHORIZED = 401;
 
-const SignInPage = () => {
+const SignInPage = ({ testazureAuthEnabled = false }) => {
   const [error, setError] = useState();
   const [toggleCreds, setToggleCreds] = useState(false);
   const { setSession } = useContext(SessionContext);
   const history = useHistory();
   const config = useConfig();
-  const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
+  const azureAuthEnabled = testazureAuthEnabled
+    ? true
+    : config?.auth?.OAUTH_AZURE_ENABLED;
+    
   const googleAuthEnabled =
     config?.auth?.OAUTH_GOOGLE_ENABLED &&
     config?.auth?.OAUTH_GOOGLE_CLIENT_ID !== undefined;
+
   const oauthEnabled = azureAuthEnabled || googleAuthEnabled;
 
   function submit(session, actions) {
@@ -130,7 +136,7 @@ const SignInPage = () => {
       <FullPageFormContainer>
         <div>
           <LogoContainer>
-            <NosisLogo />
+            <NosisLogo src={Nesis} alt="Nesis Logo" />
           </LogoContainer>
         </div>
         <div>

@@ -1,4 +1,5 @@
-import styled from 'styled-components/macro';
+// import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const SquareButton = styled.button`
   color: ${(props) => props.theme.white};

@@ -1,6 +1,7 @@
 import React from 'react';
 import SquareButton, { LightSquareButton } from './inputs/SquareButton';
-import styled from 'styled-components/macro';
+// import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../utils/breakpoints';
 
 const Container = styled.div`

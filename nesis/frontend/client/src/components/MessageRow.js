@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import styled from 'styled-components/macro';
-import { ReactComponent as AttentionSign } from '../images/AttentionSign.svg';
-import { ReactComponent as CloseMessageIcon } from '../images/CloseMessageIcon.svg';
+// import styled from 'styled-components/macro';
+import styled from 'styled-components';
+//zindazed
+// import { ReactComponent as AttentionSign } from '../images/AttentionSign.svg';
+import AttentionSign from '../images/AttentionSign.svg';
+// import { ReactComponent as CloseMessageIcon } from '../images/CloseMessageIcon.svg';
+import CloseMessageIcon from '../images/CloseMessageIcon.svg';
 import { device } from '../utils/breakpoints';
 
 export const MessageVariant = {
@@ -22,7 +26,7 @@ const colorByVariant = {
   [MessageVariant.SUCCESS]: '#ffffff',
 };
 
-const StyledAttentionSign = styled(AttentionSign)`
+const StyledAttentionSign = styled.img`
   margin-right: 13px;
   fill: ${(props) => colorByVariant[props.$variant]};
   flex-shrink: 0;
@@ -66,12 +70,13 @@ function BaseMessageRow({
   return (
     <Container $variant={variant} className={className}>
       <MessageText>
-        <StyledAttentionSign $variant={variant} />
+        <StyledAttentionSign src={AttentionSign} $variant={variant} />
         {children}
       </MessageText>
       {onClose && (
         <CloseButton $variant={variant} onClick={onClose} title="Close">
-          <CloseMessageIcon />
+          {/* <CloseMessageIcon /> */}
+          <img src={CloseMessageIcon} />
         </CloseButton>
       )}
     </Container>

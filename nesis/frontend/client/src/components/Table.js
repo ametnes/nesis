@@ -1,8 +1,10 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
+// import styled from 'styled-components/macro';
 import Spinner from './Spinner';
 import SortIndicator from './table/SortIndicator';
-import { ReactComponent as BinIcon } from '../images/BinIcon.svg';
+// import { ReactComponent as BinIcon } from '../images/BinIcon.svg';
+import BinIcon from '../images/BinIcon.svg';
 
 const StyledTable = styled.table`
   background: ${(props) => props.theme.white};
@@ -59,7 +61,8 @@ const DeleteButtonContainer = styled.button`
 export function DeleteItemButton({ onClick }) {
   return (
     <DeleteButtonContainer title="Delete" onClick={onClick}>
-      <BinIcon />
+      {/* <BinIcon /> */}
+      <img src={BinIcon} />
     </DeleteButtonContainer>
   );
 }
