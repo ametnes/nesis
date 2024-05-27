@@ -3,6 +3,210 @@ info:
   version: 0.1.1
   title: Nesis API
 paths:
+  /v1/sessions:
+    post:
+      summary: Creates a new user session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    delete:
+      summary: Delete a session.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/users:
+    get:
+      summary: Get all users available.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/users/{user_id}:
+    get:
+      summary: Get a single user by user_id.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+        description: The user id to get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    delete:
+      summary: Delete a single user by user_id.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+        description: The user id to delete
+      responses:
+        '200':
+          description: OK
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    put:
+      summary: Updates a new user.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
   /v1/apps:
     get:
       parameters:
@@ -24,6 +228,12 @@ paths:
                 $ref: '#/components/schemas/Message'
     post:
       summary: Creates a new app.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
       requestBody:
         required: true
         content:
@@ -122,15 +332,17 @@ paths:
                 $ref: '#/components/schemas/Message'
   /v1/tasks/{task_id}:
     get:
-      summary: Get a single task by taskId.
+      summary: Get a single task by task_id.
       parameters:
       - in: header
         name: Authorization
         schema:
           type: string
         required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       - in: path
-        name: taskId
+        name: task_id
         schema:
           type: string
         required: true
@@ -152,15 +364,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
     delete:
-      summary: Delete a single task by taskId.
+      summary: Delete a single task by task_id.
       parameters:
       - in: header
         name: Authorization
         schema:
           type: string
         required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       - in: path
-        name: taskId
+        name: task_id
         schema:
           type: string
         required: true
@@ -175,6 +389,12 @@ paths:
                 $ref: '#/components/schemas/Message'
     put:
       summary: Creates a new task.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
       requestBody:
         required: true
         content:
@@ -363,40 +583,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
-  /v1/users:
+  /v1/datasources:
     get:
-      summary: Get all users available.
+      summary: Get all datasources available.
       parameters:
       - in: header
         name: Authorization
         schema:
           type: string
         required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Users'
+                $ref: '#/components/schemas/Datasources'
         '401':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
     post:
-      summary: Creates a new user.
+      summary: Creates a new datasource.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserReq'
+              $ref: '#/components/schemas/DatasourceReq'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserRes'
+                $ref: '#/components/schemas/DatasourceRes'
         '400':
           content:
             application/json:
@@ -422,27 +652,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
-  /v1/users/{user_id}:
+  /v1/datasources/{datasource_id}:
     get:
-      summary: Get a single user by userId.
+      summary: Get a single datasource by datasource_id.
       parameters:
       - in: header
         name: Authorization
         schema:
           type: string
         required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       - in: path
-        name: userId
+        name: datasource_id
         schema:
           type: string
         required: true
-        description: The user id to get
+        description: The datasource id to get
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserRes'
+                $ref: '#/components/schemas/DatasourceRes'
         '401':
           content:
             application/json:
@@ -454,19 +686,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
     delete:
-      summary: Delete a single user by userId.
+      summary: Delete a single datasource by datasource_id.
       parameters:
       - in: header
         name: Authorization
         schema:
           type: string
         required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       - in: path
-        name: userId
+        name: datasource_id
         schema:
           type: string
         required: true
-        description: The user id to delete
+        description: The datasource id to delete
       responses:
         '200':
           description: OK
@@ -476,19 +710,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
     put:
-      summary: Creates a new user.
+      summary: Creates a new datasource.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserReq'
+              $ref: '#/components/schemas/DatasourceReq'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserRes'
+                $ref: '#/components/schemas/DatasourceRes'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+  /v1/modules/{module}/predictions:
+    get:
+      summary: Get all predictions available.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
+      - in: path
+        name: module
+        schema:
+          type: string
+        required: true
+        description: The module. Must be 'qanda'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Predictions'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    post:
+      summary: Creates a new prediction.
+      parameters:
+      - in: header
+        name: Authorization
+        schema:
+          type: string
+        required: true
+        description: The authentication token obtained from a POST /session or POST
+          /apps.
+      - in: header
+        name: X-Nesis-Request-UserKey
+        description: The user_id to inherit permissions from. This is useful when
+          the Authorization header is an app API token.
+        schema:
+          type: string
+        required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionReq'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionRes'
         '400':
           content:
             application/json:
@@ -670,6 +994,87 @@ components:
             $ref: '#/components/schemas/UserRes'
         count:
           type: integer
+    DatasourceReq:
+      type: object
+      properties:
+        name:
+          type: string
+        enabled:
+          type: boolean
+        schedule:
+          type: string
+        endpoint:
+          type: string
+    DatasourceRes:
+      type: object
+      properties:
+        name:
+          type: string
+        enabled:
+          type: boolean
+        schedule:
+          type: string
+        endpoint:
+          type: string
+        id:
+          type: string
+        status:
+          type: string
+        create_date:
+          type: string
+          format: null
+          pattern: null
+    Datasources:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasourceRes'
+        count:
+          type: integer
+    PredictionReq:
+      type: object
+      properties:
+        query:
+          type: string
+        save:
+          type: boolean
+    PredictionRes:
+      type: object
+      properties:
+        query:
+          type: string
+        save:
+          type: boolean
+        id:
+          type: string
+        data:
+          type: object
+    Predictions:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PredictionRes'
+        count:
+          type: integer
+    SessionReq:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    SessionRes:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
     Message:
       type: object
       properties:

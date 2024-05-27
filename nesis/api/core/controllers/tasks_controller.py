@@ -98,15 +98,16 @@ def operate_task(task_id):
     """Operate on a task.
     ---
     get:
-      summary: Get a single task by taskId.
+      summary: Get a single task by task_id.
       parameters:
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
         - in: path
-          name: taskId
+          name: task_id
           schema:
             type: string
           required: true
@@ -125,15 +126,16 @@ def operate_task(task_id):
             application/json:
               schema: MessageSchema
     delete:
-      summary: Delete a single task by taskId.
+      summary: Delete a single task by task_id.
       parameters:
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
         - in: path
-          name: taskId
+          name: task_id
           schema:
             type: string
           required: true
@@ -147,6 +149,12 @@ def operate_task(task_id):
               schema: MessageSchema
     put:
       summary: Creates a new task.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
       requestBody:
         required: true
         content:

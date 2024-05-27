@@ -16,6 +16,66 @@ _LOG = logging.getLogger(__name__)
 
 @app.route("/v1/datasources", methods=[controllers.POST, controllers.GET])
 def operate_datasources():
+    """Operate on datasources.
+    ---
+    get:
+      summary: Get all datasources available.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourcesSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new datasource.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: DatasourceReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourceResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         match request.method:
@@ -47,6 +107,98 @@ def operate_datasources():
     methods=[controllers.GET, controllers.DELETE, controllers.PUT],
 )
 def operate_datasource(datasource_id):
+    """Operate on a datasource.
+    ---
+    get:
+      summary: Get a single datasource by datasource_id.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: path
+          name: datasource_id
+          schema:
+            type: string
+          required: true
+          description: The datasource id to get
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourceResSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        404:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a single datasource by datasource_id.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: path
+          name: datasource_id
+          schema:
+            type: string
+          required: true
+          description: The datasource id to delete
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    put:
+      summary: Creates a new datasource.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: DatasourceReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourceResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
 
     try:

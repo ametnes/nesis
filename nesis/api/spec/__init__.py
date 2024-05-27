@@ -2,6 +2,17 @@ from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec_webframeworks.flask import FlaskPlugin
 from .schemas.apps import *
+from .schemas.datasources import (
+    DatasourceReqSchema,
+    DatasourceResSchema,
+    DatasourcesSchema,
+)
+from .schemas.predictions import (
+    PredictionReqSchema,
+    PredictionResSchema,
+    PredictionsSchema,
+)
+from .schemas.sessions import SessionReqSchema, SessionResSchema
 from .schemas.tasks import *
 from .schemas.roles import *
 from .schemas.users import *
@@ -43,6 +54,20 @@ spec.components.schema("Roles", schema=RolesSchema)
 spec.components.schema("UserReq", schema=UserReqSchema)
 spec.components.schema("UserRes", schema=UserResSchema)
 spec.components.schema("Users", schema=UsersSchema)
+
+# Datasources
+spec.components.schema("DatasourceReq", schema=DatasourceReqSchema)
+spec.components.schema("DatasourceRes", schema=DatasourceResSchema)
+spec.components.schema("Datasources", schema=DatasourcesSchema)
+
+# Predictions
+spec.components.schema("PredictionReq", schema=PredictionReqSchema)
+spec.components.schema("PredictionRes", schema=PredictionResSchema)
+spec.components.schema("Predictions", schema=PredictionsSchema)
+
+# Sessions
+spec.components.schema("SessionReq", schema=SessionReqSchema)
+spec.components.schema("SessionRes", schema=SessionResSchema)
 
 # Error
 spec.components.schema("Message", schema=MessageSchema)

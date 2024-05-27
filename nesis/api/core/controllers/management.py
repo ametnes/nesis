@@ -94,15 +94,16 @@ def operate_user(user_id):
     """Operate on a user.
     ---
     get:
-      summary: Get a single user by userId.
+      summary: Get a single user by user_id.
       parameters:
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
         - in: path
-          name: userId
+          name: user_id
           schema:
             type: string
           required: true
@@ -121,15 +122,16 @@ def operate_user(user_id):
             application/json:
               schema: MessageSchema
     delete:
-      summary: Delete a single user by userId.
+      summary: Delete a single user by user_id.
       parameters:
         - in: header
           name: Authorization
           schema:
             type: string
           required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
         - in: path
-          name: userId
+          name: user_id
           schema:
             type: string
           required: true
@@ -142,7 +144,14 @@ def operate_user(user_id):
             application/json:
               schema: MessageSchema
     put:
-      summary: Creates a new user.
+      summary: Updates a new user.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
       requestBody:
         required: true
         content:
@@ -453,6 +462,44 @@ def operate_role(role_id):
 
 @app.route("/v1/sessions", methods=[POST, DELETE])
 def operate_sessions():
+    """Operate on a user session.
+    ---
+    post:
+      summary: Creates a new user session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: SessionReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: SessionResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a session.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == POST:

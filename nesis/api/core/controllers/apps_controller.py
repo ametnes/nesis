@@ -35,6 +35,12 @@ def operate_apps():
               schema: MessageSchema
     post:
       summary: Creates a new app.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
       requestBody:
         required: true
         content:
@@ -93,6 +99,98 @@ def operate_apps():
     methods=[controllers.GET, controllers.DELETE, controllers.PUT],
 )
 def operate_app(app_id):
+    """Operate on a app.
+    ---
+    get:
+      summary: Get a single app by app_id.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: path
+          name: app_id
+          schema:
+            type: string
+          required: true
+          description: The app id to get
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourceResSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        404:
+          content:
+            application/json:
+              schema: MessageSchema
+    delete:
+      summary: Delete a single app by app_id.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: path
+          name: app_id
+          schema:
+            type: string
+          required: true
+          description: The app id to delete
+      responses:
+        200:
+            description: OK
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    put:
+      summary: Creates a new app.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: DatasourceReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatasourceResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         match request.method:

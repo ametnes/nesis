@@ -15,6 +15,78 @@ _LOG = logging.getLogger(__name__)
 
 @app.route("/v1/modules/<module>/predictions", methods=[GET, POST])
 def operate_module_predictions(module):
+    """Operate on predictions.
+    ---
+    get:
+      summary: Get all predictions available.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: path
+          name: module
+          schema:
+            type: string
+          required: true
+          description: The module. Must be 'qanda'
+      responses:
+        200:
+          content:
+            application/json:
+              schema: PredictionsSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+    post:
+      summary: Creates a new prediction.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          description: The authentication token obtained from a POST /session or POST /apps.
+        - in: header
+          name: X-Nesis-Request-UserKey
+          description: The user_id to inherit permissions from. This is useful when the Authorization header is an app API token.
+          schema:
+            type: string
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: PredictionReqSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: PredictionResSchema
+        400:
+          content:
+            application/json:
+              schema: MessageSchema
+        401:
+          content:
+            application/json:
+              schema: MessageSchema
+        403:
+          content:
+            application/json:
+              schema: MessageSchema
+        409:
+          content:
+            application/json:
+              schema: MessageSchema
+        500:
+          content:
+            application/json:
+              schema: MessageSchema
+    """
     token = get_bearer_token(request.headers.get("Authorization"))
     try:
         if request.method == GET:
