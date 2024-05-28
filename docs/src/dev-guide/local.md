@@ -60,7 +60,7 @@ docker-compose up
 
 ### Using your IDE
 
-#### Start supporting services
+## Start supporting services
 
 Supporting services include
 
@@ -84,8 +84,35 @@ If you do not have `source`, you can activate the virtualenv with
 ```bash
 . .venv/bin/activate
 ```
+### Windows Users
+If you are on Windows, here is what you have to follow:
 
-#### Start the RAG Engine
+1. Press the `[windows]` button and then type `PowerShell`.
+2. Run as Administrator.
+3. Copy and paste the following command and hit `[Enter]`:
+
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+    ```
+### Set Up Your Python Virtual Environment
+
+1. Navigate to the root of the nesis project.
+
+2. Run the following command to create a virtual environment:
+
+    ```bash
+    python -m venv .venv
+    ```
+
+3. Activate the virtual environment.
+
+    On Windows, use:
+
+    ```bash
+    .venv\Scripts\activate
+    ```
+
+## Start the RAG Engine
 Install dependencies
 ```bash
 pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
@@ -104,7 +131,91 @@ python nesis/rag/core/main.py
     The env variable `NESIS_RAG_EMBEDDING_DIMENSIONS` can be used to alter the dimention of embeddings
     to suit your needs.
 
-#### Start API Service
+#### On Windows
+
+1. **Check Python Version**
+
+   Make sure you are using Python version 3.8.1 to 3.11:
+
+   ```bash
+   python --version
+   ```
+
+   If your Python version is outside this range, consider downgrading it.
+
+2. **Install Microsoft Visual C++**
+
+   Ensure Microsoft Visual C++ 14.0 or greater is installed.
+
+3. **Install Dependencies**
+
+   ```bash
+   pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
+   ```
+
+4. **Install PyTorch**
+
+   Visit [PyTorch's official website](https://pytorch.org/) and get the appropriate installation command based on your OS. For example:
+
+   ```bash
+   cd nesis/rag
+   pip3 install torch torchvision torchaudio
+   ```
+
+5. **Set Environment Variables**
+
+   - **Command Prompt:**
+
+     ```bash
+     set NESIS_RAG_EMBEDDING_DIMENSIONS=384
+     set OPENAI_API_KEY=<your-openai-api-key>
+     ```
+
+   - **PowerShell:**
+
+     ```bash
+     $env:NESIS_RAG_EMBEDDING_DIMENSIONS = 384
+     $env:OPENAI_API_KEY = "<your-openai-api-key>"
+     ```
+
+6. **Set Up Relative Package Imports**
+
+   Follow the guidance from [this video](https://youtu.be/Mgp6-ZMEcE0?si=Zm7qXInv1ch_xXaH).
+
+   Create a `setup.py` file in the root directory with the following content:
+
+   ```python
+   from setuptools import setup, find_packages
+
+   setup(name='gusml', version='1.0', packages=find_packages())
+   ```
+
+   Then run:
+
+   ```bash
+   pip install -e .
+   ```
+
+7. **Install Additional Packages**
+
+   ```bash
+   pip install llama_index
+   pip install fastapi
+   pip install transformers
+   pip install unstructured
+   pip install pdfminer.six
+   pip install pillow_heif
+   pip install opencv-python
+   pip install pdf2image
+   ```
+
+8. **Start the RAG Engine**
+
+   ```bash
+   python nesis/rag/core/main.py
+   ```
+
+## Start API Service
 Install dependencies
 ```bash
 pip install -r nesis/api/requirements.txt
@@ -118,7 +229,54 @@ export NESIS_API_DATABASE_CREATE="true"
 python nesis/api/core/main.py
 ```
 
-#### Start the frontend
+### Starting API Service on Windows
+
+#### Step 1: Download and Install PostgreSQL
+
+Download PostgreSQL from the official website and follow the installation instructions. Make sure to remember the password you set during installation.
+
+#### Step 2: Create a PostgreSQL Database
+
+1. Open pgAdmin or use psql (command line) to create a database named eg `nesis_api_db` with password eg "&nbsp;&nbsp;"(two spaces).
+
+#### Step 3: Set Up Environment Variables
+These are set basing on your posgreSQL database configurations
+```powershell
+# Set PostgreSQL database URL for API connection
+$Env:NESIS_API_DATABASE_URL = "postgresql+psycopg2://postgres:  @localhost:5432/nesis_api_db"
+
+# Set PostgreSQL URL for tasks job stores (if applicable)
+$Env:NESIS_API_TASKS_JOB_STORES_URL = "postgresql+psycopg2://postgres:  @localhost:5432/nesis_api_db"
+
+# Verify if the environment variables are set correctly
+Get-Item Env:NESIS_API_DATABASE_URL
+Get-Item Env:NESIS_API_TASKS_JOB_STORES_URL
+```
+Ensure to Adjust the database URL (`$Env:NESIS_API_DATABASE_URL`) and task job stores URL (`$Env:NESIS_API_TASKS_JOB_STORES_URL`) according to your PostgreSQL configuration.
+
+##### Set admin email, password, and database creation flag
+```powershell
+# Set admin email, password, and database creation flag
+$Env:NESIS_ADMIN_EMAIL="some.email@domain.com"
+$Env:NESIS_ADMIN_PASSWORD="password"
+$Env:NESIS_API_DATABASE_CREATE="true"
+```
+#### Step 4: Install Python Dependencies
+
+Install the Python dependencies required for your API service:
+
+```bash
+pip install psycopg2
+pip install -r nesis/api/requirements.txt
+```
+#### Step 5: Start the API Service
+```bash
+python nesis/api/core/main.py
+```
+
+
+
+## Start the frontend
 Install dependencies
 ```bash
 cd nesis/frontend
