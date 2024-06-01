@@ -45,7 +45,10 @@ class UserSessionService(ServiceOperation):
         if value is not None:
             session_object = {"token": token, "user": value}
         else:
-            session_object = self._app_session_service.get(**kwargs)
+            try:
+                session_object = self._app_session_service.get(**kwargs)
+            except Exception as ex:
+                session_object = None
 
         if session_object is None:
             raise UnauthorizedAccess("Invalid token")
@@ -128,9 +131,8 @@ class UserSessionService(ServiceOperation):
         user_dict = db_user.to_dict()
         token = SG(r"[\l\d]{128}").render()
         session_token = self.__cache_user_key(token)
-        expiry = (
-            self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
-        )
+        expiry = self.__config["users"]["session"]["expiry"]
+
         if self.__cache.get(session_token) is None:
             self.__cache.set(session_token, user_dict, time=expiry)
         while self.__cache.get(session_token)["id"] != user_dict["id"]:

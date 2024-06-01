@@ -36,4 +36,7 @@ default = {
     "apps": {
         "session": {"expiry": os.environ.get("NESIS_API_APPS_SESSION_EXPIRY") or 1800}
     },
+    "users": {
+        "session": {"expiry": os.environ.get("NESIS_API_USERS_SESSION_EXPIRY") or 1800}
+    },
 }

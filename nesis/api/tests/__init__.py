@@ -69,6 +69,7 @@ config = {
         "executors": {"default_size": 30, "pool_size": 3},
     },
     "apps": {"session": {"expiry": 1800}},
+    "users": {"session": {"expiry": 1800}},
 }
 
 

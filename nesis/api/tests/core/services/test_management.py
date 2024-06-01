@@ -1,6 +1,6 @@
 import json
 import uuid
-
+from time import sleep
 import yaml
 
 import unittest as ut
@@ -13,11 +13,12 @@ import nesis.api.tests as tests
 import nesis.api.core.services as services
 from nesis.api.core.models import initialize_engine, DBSession
 from nesis.api.core.models.entities import Datasource
-from nesis.api.core.services import PermissionException
+from nesis.api.core.services import PermissionException, UnauthorizedAccess
 from nesis.api.tests.core.services import (
     create_user_session,
     create_role,
     assign_role_to_user,
+    UserSessionService,
 )
 
 
@@ -136,3 +137,49 @@ def test_datasource_permissions(http_client, tc):
         token=given_user_session.token,
     )
     assert role_record.id is not None
+
+
+def test_user_session_expiry(http_client, tc):
+    """
+    Test that the user token can expire after 5 seconds
+    """
+    tests.config["users"]["session"]["expiry"] = 5
+    admin_user = create_user_session(
+        service=services.user_session_service,
+        email=tests.admin_email,
+        password=tests.admin_password,
+    )
+    datasource: Datasource = create_datasource(token=admin_user.token)
+    assert datasource.id is not None
+    assert datasource.uuid is not None
+
+    a_given_user = {
+        "email": "testsome.user@somedomain.com",
+        "password": "testsome.password",
+        "name": "Some Name",
+    }
+    given_user_record = services.user_service.create(
+        user=a_given_user, token=admin_user.token
+    )
+    assert given_user_record.id is not None
+    assert given_user_record.uuid is not None
+
+    given_user_session = create_user_session(
+        service=services.user_session_service,
+        email=a_given_user["email"],
+        password=a_given_user["password"],
+    )
+
+    user_token = given_user_session.token
+    user_session_service: UserSessionService = UserSessionService(config=tests.config)
+    user_session = user_session_service.get(token=user_token)
+    assert user_session.get("token") is not None
+    assert user_session.get("user") is not None
+    assert user_session["user"].get("id") == given_user_record.uuid
+
+    # Sleep to simulate inactivity
+    sleep(10)
+
+    with pytest.raises(UnauthorizedAccess) as ex_info:
+        expired_user_session = user_session_service.get(token=user_token)
+        assert "Invalid token" in str(ex_info)
