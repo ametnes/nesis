@@ -49,17 +49,22 @@ To get started with Nesis,
 1. Obtain your **OPENAI_API_KEY** from https://platform.openai.com/api-keys:
       - and update the `compose.yml` file entry.
 
-2. Start all services locally with the provided docker compose file.
+2. Obtain your **YOUR-HUGGINGFACE-TOKEN** from https://huggingface.co:
+      - and update the `compose.yml` file entry.
+  
+3. Add environment variable **NESIS_RAG_LLM_MODE=mock** in the `nesis_rag` service in the docker compose
+
+4. Start all services locally with the provided docker compose file.
 
    ```commandline
    docker-compose -f compose.yml up
    ```
 
-2. Then connect to your instance via http://localhost:58000 with the following login credentials:
+5. Then connect to your instance via http://localhost:58000 with the following login credentials:
       - *email* = `some.email@domain.com`
       - *password* = `password`
 
-3. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
+6. Connect to your minio instance via http://localhost:59001/ with the following login credentials:
       - *username* = `your_username`
       - *password* = `your_password`
 
