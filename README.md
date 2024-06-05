@@ -52,7 +52,6 @@ To get started with Nesis,
 2. Obtain your **YOUR-HUGGINGFACE-TOKEN** from https://huggingface.co:
       - and update the `compose.yml` file entry.
   
-3. Add environment variable **NESIS_RAG_LLM_MODE=mock** in the `nesis_rag` service in the docker compose
 
 4. Start all services locally with the provided docker compose file.
 
