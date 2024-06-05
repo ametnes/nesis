@@ -54,7 +54,7 @@ nav:
       - 'sso/google.md'
   - 'Development Guide':
       - 'Local Development': 'dev-guide/local.md'
-      - 'Architecture': 'dev-guide/architecture.md'
+      - 'How it works': 'dev-guide/how-it-works.md'
       - 'Contributing': 'dev-guide/contributing.md'
 
 plugins:

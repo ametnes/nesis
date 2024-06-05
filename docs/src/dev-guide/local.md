@@ -1,7 +1,7 @@
 # Local Development Guide
 
 This guide walks you through how to start developing Nesis on your local workstation. You can
-get an overview of the components that make up Nesis and its architecture [here](./architecture.md).
+get an overview of the components that make up Nesis and its architecture [here](./how-it-works.md).
 
 ## Prerequisites
 1. We use docker and docker-compose to support our development process. If you don't have docker installed

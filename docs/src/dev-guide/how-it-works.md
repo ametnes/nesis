@@ -1,5 +1,5 @@
-# Nesis Architecture
-The Nessus project is divided into five components.
+# How Nesis Works
+The Nesis project is divided into five components.
 
 1. Frontend - This contains the ReactJS frontend and Node Express server (aka frontend-backend).
 2. API Backend - This is the backend API responsible for handling; 
