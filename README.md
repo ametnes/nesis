@@ -48,6 +48,7 @@ To get started with Nesis,
 ### Deploy with Docker Compose
 1. Obtain your **OPENAI_API_KEY** from https://platform.openai.com/api-keys:
       - and update the `compose.yml` file entry.
+      - If you do not have an OPEN_API_KEY, add environment variable **NESIS_RAG_LLM_MODE=mock** in the `nesis_rag` service in the docker compose
 
 2. Obtain your **YOUR-HUGGINGFACE-TOKEN** from https://huggingface.co:
       - and update the `compose.yml` file entry.
