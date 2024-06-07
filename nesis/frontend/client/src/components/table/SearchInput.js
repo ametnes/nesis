@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import TextInput from '../inputs/TextInput';
 import { ReactComponent as SearchIcon } from './SearchIcon.svg';
 
