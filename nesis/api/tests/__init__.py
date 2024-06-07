@@ -8,9 +8,7 @@ from sqlalchemy import text
 import os
 
 from nesis.api.core.models.entities import (
-    Rule,
     Prediction,
-    Model,
     Setting,
     Role,
     User,
@@ -42,7 +40,17 @@ config = {
         "debug": False,
         "create": True,
     },
-    "rag": {"endpoint": "http://localhost:8080"},
+    "rag": {
+        "endpoint": "http://localhost:8080",
+        "extractions": {
+            "store": {
+                "url": os.environ.get(
+                    "NESIS_API_DATABASE_URL",
+                    "postgresql://postgres:password@localhost:65432/nesis",
+                )
+            }
+        },
+    },
     "memcache": {
         "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
         "session": {"expiry": 0},
@@ -82,8 +90,6 @@ def get_header(token=None):
 
 
 def clear_database(session):
-    session.query(Rule).delete()
-    session.query(Model).delete()
     session.query(Prediction).delete()
     session.query(Setting).delete()
     session.query(User).delete()
