@@ -10,7 +10,6 @@ from nesis.api.core import util
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import (
     Prediction,
-    Model,
     Module,
     Action,
     RoleAction,
@@ -50,14 +49,6 @@ def _get_prediction(session, **kwargs):
         query = session.query(Prediction)
         if prediction_id:
             query = query.filter(Prediction.id == prediction_id)
-        elif model:
-            query = query.filter(Model.name == model).filter(
-                Prediction.model == Model.id
-            )
-        elif module and model:
-            query = query.filter(Prediction.module == module).filter(
-                Prediction.model == model
-            )
         elif module:
             query = query.filter(Prediction.module == module)
         else:
@@ -136,7 +127,6 @@ class QandaPredictionService(ServiceOperation):
         )
         prediction = Prediction(
             module=Module.qanda.name,
-            model=None,
             input=payload["query"],
             data=json.loads(response),
         )

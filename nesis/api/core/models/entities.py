@@ -35,91 +35,12 @@ class Module(enum.Enum):
     qanda = enum.auto()
 
 
-class Model(Base):
-    __tablename__ = "model"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(Unicode(255), nullable=False)
-    module = Column(Enum(Module, name="model_module"), nullable=False)
-    datasource = Column(Unicode(255), nullable=False)
-    dataobject = Column(Unicode(255), nullable=False)
-    target = Column(Unicode(255))
-    enabled = Column(Boolean, default=True, nullable=False)
-    attributes = Column(JSONB)
-
-    __table_args__ = (
-        Index("idx_model_name", "module", "name"),
-        UniqueConstraint("module", "name", name="uq_model_module_name"),
-    )
-
-    def __init__(self, name, module, datasource, dataobject, target, attributes=None):
-        self.name = name
-        self.module = module
-        self.datasource = datasource
-        self.dataobject = dataobject
-        self.target = target
-        self.attributes = attributes
-
-    def to_dict(self):
-        dict_value = {
-            "name": self.name,
-            "module": self.module.name,
-            "datasource": self.datasource,
-            "dataobject": self.dataobject,
-            "target": self.target,
-            "enabled": self.enabled,
-            "attributes": self.attributes,
-        }
-        return dict_value
-
-
-class Rule(Base):
-    __tablename__ = "model_rule"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(Unicode(255), unique=True)
-    model = Column(
-        BigInteger,
-        ForeignKey("model.id", ondelete="CASCADE", name="fk_model_rule_model"),
-        nullable=False,
-    )
-    description = Column(Unicode(255))
-    created_by = Column(Unicode(255))
-    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
-    value = Column(JSONB, nullable=False)
-    enabled = Column(Boolean, default=True, nullable=False)
-
-    rule_model = relationship("Model", foreign_keys=[model], lazy="subquery")
-
-    def __init__(
-        self, name, description, model, value, create_by=None, create_date=None
-    ):
-        self.name = name
-        self.model = model
-        self.description = description
-        self.created_by = create_by
-        self.value = value
-        self.create_date = create_date or dt.datetime.utcnow()
-
-    def to_dict(self):
-        dict_value = {
-            "id": self.id,
-            "name": self.name,
-            "model": {"id": self.model, "name": self.rule_model.name},
-            "description": self.description,
-            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
-            "created_by": self.created_by,
-            "value": self.value,
-            "enabled": self.enabled,
-        }
-        return dict_value
-
-
 class Prediction(Base):
     __tablename__ = "prediction"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     input = Column(JSONB)
     model = Column(
         BigInteger,
-        ForeignKey("model.id", ondelete="CASCADE", name="fk_rule_model"),
         nullable=True,
     )
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
@@ -127,11 +48,8 @@ class Prediction(Base):
     uid = Column(Unicode(4096), unique=True)
     module = Column(Unicode(4096))
 
-    prediction_model = relationship("Model", foreign_keys=[model], lazy="subquery")
-
-    def __init__(self, module, model, data, input, create_date=None, uid=None):
+    def __init__(self, module, data, input, create_date=None, uid=None):
         self.module = module
-        self.model = model
         self.input = input
         self.data = data
         self.uid = uid
