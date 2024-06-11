@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import Spinner from './Spinner';
 import SortIndicator from './table/SortIndicator';
 import { ReactComponent as BinIcon } from '../images/BinIcon.svg';

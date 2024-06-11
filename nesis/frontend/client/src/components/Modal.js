@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactModal from 'react-modal';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ReactComponent as CloseIcon } from '../images/CloseIcon.svg';
 import { device } from '../utils/breakpoints';
 

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
-import { ThemeProvider } from 'styled-components/macro';
+import { ThemeProvider } from 'styled-components';
 import theme from './utils/theme';
 import { SessionProvider } from './SessionContext';
 import { ToasterContextProvider } from './ToasterContext';
