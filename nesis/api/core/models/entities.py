@@ -394,7 +394,9 @@ class Task(Base):
     update_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("type", "schedule", name="uq_task_type_schedule"),
+        UniqueConstraint(
+            "parent_id", "type", "schedule", name="uq_task_parent_id_type_schedule"
+        ),
         Index("idx_task_type", "type"),
         Index("idx_task_parent", "parent_id"),
     )

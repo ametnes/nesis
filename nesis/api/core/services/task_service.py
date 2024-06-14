@@ -205,7 +205,7 @@ class TaskService(ServiceOperation):
             error_str = str(exc).lower()
 
             if ("unique constraint" in error_str) and (
-                "uq_task_type_schedule" in error_str
+                "uq_task_parent_id_type_schedule" in error_str
             ):
                 # valid failure
                 raise ConflictException("Task already scheduled on this type")
