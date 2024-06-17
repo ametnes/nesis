@@ -77,16 +77,18 @@ export function useSignOut(client, config) {
 
 async function logoutMicrosoft(config) {
   try {
-    const msalInstance = new PublicClientApplication({
-      auth: {
-        clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
-        authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
-        redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
-        postLogoutRedirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
-      },
-    });
-    await msalInstance.initialize();
-    await msalInstance.logoutRedirect();
+    if (config?.auth?.NESIS_OAUTH_AZURE_ENABLED) {
+      const msalInstance = new PublicClientApplication({
+        auth: {
+          clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
+          authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
+          redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+          postLogoutRedirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+        },
+      });
+      await msalInstance.initialize();
+      await msalInstance.logoutRedirect();
+    }
   } catch (e) {
     /* ignored */
   }
