@@ -4,9 +4,7 @@ from sqlalchemy import text
 import os
 
 from nesis.api.core.models.entities import (
-    Rule,
     Prediction,
-    Model,
     Setting,
     Role,
     User,
@@ -78,8 +76,6 @@ def get_header(token=None):
 
 
 def clear_database(session):
-    session.query(Rule).delete()
-    session.query(Model).delete()
     session.query(Prediction).delete()
     session.query(Setting).delete()
     session.query(User).delete()
