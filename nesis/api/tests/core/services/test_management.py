@@ -1,5 +1,6 @@
 import json
 import uuid
+from time import sleep
 
 import yaml
 
@@ -13,7 +14,12 @@ import nesis.api.tests as tests
 import nesis.api.core.services as services
 from nesis.api.core.models import initialize_engine, DBSession
 from nesis.api.core.models.entities import Datasource
-from nesis.api.core.services import PermissionException
+from nesis.api.core.services import (
+    PermissionException,
+    DatasourceService,
+    UserSessionService,
+    UnauthorizedAccess,
+)
 from nesis.api.tests.core.services import (
     create_user_session,
     create_role,
@@ -136,3 +142,29 @@ def test_datasource_permissions(http_client, tc):
         token=given_user_session.token,
     )
     assert role_record.id is not None
+
+
+def test_session_expiry(http_client, tc):
+    """
+    Test that the api token can expire
+    """
+
+    tests.config["memcache"]["session"]["expiry"] = 5
+    services.init_services(config=tests.config, http_client=http_client)
+
+    admin_user = create_user_session(
+        service=services.user_session_service,
+        email=tests.admin_email,
+        password=tests.admin_password,
+    )
+    datasource: Datasource = create_datasource(token=admin_user.token)
+    assert datasource.id is not None
+    assert datasource.uuid is not None
+
+    # Sleep to simulate inactivity
+    sleep(10)
+
+    # Token should have expired from the cache
+    with pytest.raises(UnauthorizedAccess) as ex_info:
+        create_datasource(token=admin_user.token)
+    assert "Invalid app token supplied" in str(ex_info)
