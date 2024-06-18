@@ -419,7 +419,10 @@ class AppSessionService(ServiceOperation):
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
 
-        encoded_secret = base64.b64decode(token).decode("utf-8")
+        try:
+            encoded_secret = base64.b64decode(token).decode("utf-8")
+        except UnicodeDecodeError:
+            raise UnauthorizedAccess("Invalid app token supplied")
         encoded_secret_parts = encoded_secret.split(":")
         if len(encoded_secret_parts) != 2:
             raise UnauthorizedAccess("Invalid app token supplied")

@@ -28,7 +28,7 @@ default = {
     },
     "memcache": {
         "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
-        "session": {"expiry": 0},
+        "session": {"expiry": os.environ.get("NESIS_API_MEMCACHE_SESSION_EXPIRY") or 0},
         "cache": {
             "timeout_default": 300,
         },
