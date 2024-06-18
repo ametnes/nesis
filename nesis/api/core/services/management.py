@@ -472,7 +472,7 @@ class RoleService(ServiceOperation):
             if len(role_action_list) == 0:
                 raise ServiceException("Invalid role. Policy not supplied")
 
-            role_record: Role = Role(name=name)
+            role_record: Role = Role(name=name, policy=role_policy)
             session.add(role_record)
             session.commit()
             session.refresh(role_record)
@@ -482,7 +482,7 @@ class RoleService(ServiceOperation):
                 session.add(role_action)
             session.commit()
 
-            role_record.policy = role_action_list
+            role_record.policy_items = role_action_list
 
             return role_record
         except Exception as exc:
