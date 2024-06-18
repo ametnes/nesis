@@ -261,13 +261,15 @@ class Role(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), unique=True, nullable=False)
     name = Column(Unicode(255), nullable=False)
+    policy = Column(JSONB)
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
 
     __table_args__ = (UniqueConstraint("name", name="uq_role_name"),)
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, policy: Dict[str, Any]) -> None:
         self.uuid = str(uuid.uuid4())
         self.name = name
+        self.policy = policy
         self.policy_items = []
 
     def to_dict(self, **kwargs) -> dict:
@@ -277,7 +279,9 @@ class Role(Base):
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
         }
 
-        if (
+        if self.policy is not None:
+            dict_value["policy"] = self.policy
+        elif (
             hasattr(self, "policy_items")
             and self.policy_items
             and len(self.policy_items) > 0
