@@ -4,7 +4,7 @@ import { PersonCircle, QuestionSquare } from 'react-bootstrap-icons';
 import { useCurrentSession, useSignOut } from '../SessionContext';
 import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
 import { ReactComponent as Logo } from '../images/Nesis.svg';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
 import { useConfig } from '../ConfigContext';

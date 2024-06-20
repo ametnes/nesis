@@ -12,7 +12,7 @@ import { ModalTitle } from '../../../components/Modal';
 import MessageRow from '../../../components/MessageRow';
 import FormRow, { Column } from '../../../components/layout/FormRow';
 import Table, { DeleteItemButton } from '../../../components/Table';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../../../utils/breakpoints';
 
 const EngineOptions = [

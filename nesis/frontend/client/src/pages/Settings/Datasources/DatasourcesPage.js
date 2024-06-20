@@ -4,7 +4,7 @@ import {
   OutlinedSquareButton,
   EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../../../utils/breakpoints';
 import Table, { DeleteItemButton } from '../../../components/Table';
 import { useHistory, useRouteMatch } from 'react-router-dom';

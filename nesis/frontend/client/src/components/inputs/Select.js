@@ -1,4 +1,4 @@
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import Select from 'react-select';
 import React from 'react';
 

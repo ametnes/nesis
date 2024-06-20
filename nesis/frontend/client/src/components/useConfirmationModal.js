@@ -4,7 +4,7 @@ import SquareButton, { DangerSquareButton } from './inputs/SquareButton';
 import Modal, { ButtonsContainer, ModalTitle } from './Modal';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import MessageRow from '../components/MessageRow';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const CancelButton = styled(SquareButton)`
   background-color: ${(props) => props.theme.primaryLight};

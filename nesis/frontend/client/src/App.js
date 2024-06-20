@@ -1,4 +1,4 @@
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import './App.css';
 import { Route, Switch } from 'react-router-dom';
 import SignInPage from './pages/SignInPage';
