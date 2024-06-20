@@ -11,7 +11,7 @@ import { useAddToast } from '../../../ToasterContext';
 import { ModalTitle } from '../../../components/Modal';
 import MessageRow from '../../../components/MessageRow';
 import Table from '../../../components/Table';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const StyledTable = styled(Table)``;
 

@@ -7,7 +7,7 @@ import UsersPage from './Users/UsersPage';
 import RolesPage from './Roles/RolesPage';
 import AppsPage from './Apps/AppsPage';
 import Nesis from '../../components/Menu';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const Heading = styled.h1`
   background-image: linear-gradient(to right, #089fdf 21%, #5dd375 100%);

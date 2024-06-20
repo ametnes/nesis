@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ReactComponent as Ascending } from './Ascending.svg';
 import { ReactComponent as Descending } from './Descending.svg';
 import { ReactComponent as NoSortedBy } from './NoSortedBy.svg';

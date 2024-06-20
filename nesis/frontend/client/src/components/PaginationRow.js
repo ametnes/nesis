@@ -1,4 +1,4 @@
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ReactComponent as ChevronRight } from '../images/ChevronRight.svg';
 import React, { useMemo, useRef, useState } from 'react';
 import { countTotalPages, paginateList } from '../utils/paginationUtils';
