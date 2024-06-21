@@ -23,7 +23,7 @@ jobs:
       - uses: psf/black@stable
         with:
           options: "--check --verbose"
-          src: "./nesis/api/"
+          src: "./nesis/rag/"
           version: "24.3.0"
 
   test:
