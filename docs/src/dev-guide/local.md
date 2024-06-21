@@ -58,40 +58,72 @@ docker-compose up
       1. Email: `some.email@domain.com`
       2. Password: `password`
 
-### Using your IDE
+# Using your IDE
 
 #### Start supporting services
 
-Supporting services include
+### Start Supporting Services
+
+Supporting services include:
 
 1. Postgres (for the backend database as well as the vector database).
 2. Memcached for caching and locking services.
 3. _Optional_ Minio for document storage.
 4. _Optional_ Samba for document storage.
 
-To start the supporting service, in a separate terminal, run
+To start the supporting services, in a separate terminal, run:
+
 ```bash
- docker-compose -f compose-dev.yml up
+docker-compose -f compose-dev.yml up
 ```
 
-Set up your python virtualenv
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
+### Set Up Your Python Virtual Environment
 
-If you do not have `source`, you can activate the virtualenv with
-```bash
-. .venv/bin/activate
-```
+#### On Linux or macOS
 
-#### Start the RAG Engine
-Install dependencies
+1. Create a virtual environment:
+    ```bash
+    python -m venv .venv
+    ```
+2. Activate the virtual environment:
+    ```bash
+    source .venv/bin/activate
+    ```
+
+If you do not have `source`, you can activate the virtualenv with:
+    ```bash
+    . .venv/bin/activate
+    ```
+
+#### On Windows
+
+1. Press the **Windows** button and type **PowerShell**.
+2. Run as Administrator.
+3. Set the execution policy to allow scripts to run:
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+    ```
+
+4. Navigate to the root of the nesis project.
+5. Create a virtual environment:
+    ```powershell
+    python -m venv .venv
+    ```
+6. Activate the virtual environment:
+    ```powershell
+    .venv\Scripts\activate
+    ```
+
+# Starting the RAG Engine
+
+### Install Dependencies
+
 ```bash
 pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
 ```
 
-Start the service
+### Start the Service
+
 ```bash
 export NESIS_RAG_EMBEDDING_DIMENSIONS=384 
 export OPENAI_API_KEY=<your-openai-api-key>
@@ -99,26 +131,105 @@ python nesis/rag/core/main.py
 ```
 
 !!! warning "Huggingface vs OpenAI's Embeddings"
-
     Huggingface embeddings use a dimension of 384 while OpenAI's default embeddings size varies.
-    The env variable `NESIS_RAG_EMBEDDING_DIMENSIONS` can be used to alter the dimention of embeddings
+    The env variable `NESIS_RAG_EMBEDDING_DIMENSIONS` can be used to alter the dimension of embeddings
     to suit your needs.
 
-#### Start API Service
-Install dependencies
+### <u>Starting the RAG Engine On Windows</u>
+
+### Check Python Version
+
+Make sure you are using Python version 3.8.1 to 3.11:
+
+```bash
+python --version
+```
+
+If your Python version is outside this range, consider downgrading it.
+
+### Install Microsoft Visual C++
+
+Ensure Microsoft Visual C++ 14.0 or greater is installed.
+
+### Install Dependencies
+
+```bash
+pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-huggingface.txt --default-timeout=1200
+```
+
+### Install PyTorch
+
+   Visit [PyTorch's official website](https://pytorch.org/) and get the appropriate installation command based on your OS. For example:
+
+```bash
+cd nesis/rag
+pip3 install torch torchvision torchaudio
+```
+
+### Set Environment Variables
+
+#### Command Prompt:
+
+```cmd
+set NESIS_RAG_EMBEDDING_DIMENSIONS=384
+set OPENAI_API_KEY=<your-openai-api-key>
+```
+
+#### PowerShell:
+
+```powershell
+$env:NESIS_RAG_EMBEDDING_DIMENSIONS = 384
+$env:OPENAI_API_KEY = "<your-openai-api-key>"
+```
+
+### Set PYTHONPATH in PowerShell
+
+Set the `PYTHONPATH` environment variable directly in PowerShell before running your script:
+
+```powershell
+# Place path to the root of the project, e.g., "E:\coding\new wave latest\nesis german\nesis-fork-3"
+$env:PYTHONPATH = "<your-project-absolute-path>"
+```
+
+Then run:
+
+```powershell
+python nesis/rag/core/main.py
+```
+
+# Start API Service
+
+Since the terminal of the rag engine will be occupied, you will need to open a new terminal and again set up your Python virtual environment there.
+
+Windows users after setting up your Python virtual environment dont forget to Set the `PYTHONPATH` environment variable directly in PowerShell before running your script:
+
+```powershell
+# Place path to the root of the project, e.g., "E:\coding\new wave latest\nesis german\nesis-fork-3"
+$env:PYTHONPATH = "<your-project-absolute-path>"
+```
+
+### 1. Install Dependencies
+
+With the virtual environment activated, install the required dependencies:
+
 ```bash
 pip install -r nesis/api/requirements.txt
 ```
 
-Start the service
+### 2. Configure and Start the Service
+
+Set up the necessary environment variables and start the service. Replace `<path-to-config.yml>` with the path to your actual `config.yml` file eg `--config=nesis/api/config.yml`.
+
 ```bash
 export NESIS_ADMIN_EMAIL="some.email@domain.com"
 export NESIS_ADMIN_PASSWORD="password"
 export NESIS_API_DATABASE_CREATE="true"
-python nesis/api/core/main.py
+python nesis/api/core/main.py --config=<path-to-config.yml>
 ```
 
-#### Start the frontend
+
+
+# Start the frontend
 Install dependencies
 ```bash
 cd nesis/frontend
