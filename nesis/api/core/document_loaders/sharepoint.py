@@ -257,7 +257,7 @@ def _sync_document(
 
             save_document(
                 document_id=file.unique_id,
-                filename=file.name,
+                filename=file.serverRelativeUrl,
                 base_uri=site_url,
                 rag_metadata=response_json,
                 store_metadata={

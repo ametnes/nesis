@@ -171,7 +171,9 @@ class Document(Base):
     store_metadata = Column(JSONB)
 
     __table_args__ = (
-        UniqueConstraint("uuid", "base_uri", name="uq_document_uuid_base_url"),
+        UniqueConstraint(
+            "uuid", "base_uri", "filename", name="uq_document_uuid_base_url_filename"
+        ),
     )
 
     def __init__(
