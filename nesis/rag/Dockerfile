@@ -31,7 +31,7 @@ RUN apt-get update \
     && apt-get clean \
     && addgroup --system --gid $GID $UNAME \
     && adduser --system --uid $UID --gid $GID --home /app --shell /bin/bash $UNAME \
-    && apt install ffmpeg tesseract-ocr -y
+    && apt install ffmpeg tesseract-ocr poppler-utils -y
 
 WORKDIR /app
 

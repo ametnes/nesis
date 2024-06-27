@@ -8,7 +8,7 @@ from llama_index.core.readers.base import BaseReader
 
 from nesis.rag import tests
 from nesis.rag.core.components.ingest.ingest_helper import IngestionHelper
-from nesis.rag.core.components.ingest.readers import TiffReader
+from nesis.rag.core.components.ingest.readers import TiffReader, PdfReader
 
 
 @pytest.mark.parametrize(

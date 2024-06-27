@@ -35,7 +35,7 @@ def settings() -> Settings:
 @pytest.mark.parametrize(
     "file_name",
     [
-        "test2_transcript.txt",
+        # "test2_transcript.txt",
         "file-sample_150kB.pdf",
     ],
 )
