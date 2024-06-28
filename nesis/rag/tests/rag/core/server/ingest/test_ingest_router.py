@@ -35,7 +35,10 @@ def settings() -> Settings:
 @pytest.mark.parametrize(
     "file_name",
     [
-        # "test2_transcript.txt",
+        # ascii
+        "rfc791.txt",
+        # utf-16
+        "test2_transcript.txt",
         "file-sample_150kB.pdf",
     ],
 )
