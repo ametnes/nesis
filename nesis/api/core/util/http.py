@@ -1,4 +1,8 @@
+import concurrent
+import concurrent.futures
 import json
+import multiprocessing
+import os
 import pathlib
 import base64
 from typing import Union
@@ -19,6 +23,13 @@ class HttpClient(object):
         self._config = config
         self._cache = memcache.Client(config["memcache"]["hosts"], debug=1)
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
+        try:
+            max_workers = self._config["http"]["workers"]["count"]
+        except KeyError:
+            max_workers = os.environ.get("NESIS_API_HTTP_WORKERS_COUNT", 10)
+        self._worker_executor_pool = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers
+        )
 
     def get(self, url, params=None, headers=None, cookies=None, auth=None) -> str:
         with req.session() as session:
@@ -52,6 +63,29 @@ class HttpClient(object):
             if response.ok:
                 return response.text
             raise Exception(response.text)
+
+    def deletes(self, urls, params=None, headers=None, cookies=None) -> None:
+        futures = []
+        for url in urls:
+            futures.append(
+                self._worker_executor_pool.submit(
+                    self.delete,
+                    url=url,
+                    params=params,
+                    headers=headers,
+                    cookies=cookies,
+                )
+            )
+        exceptions = []
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as ex:
+                exceptions.append(ex)
+
+        # Raise the first exception to show that some deletes failed.
+        if len(exceptions) > 0:
+            raise exceptions[0]
 
     def post(self, url, payload, headers=None, cookies=None) -> str:
         with req.Session() as s:
@@ -119,3 +153,7 @@ class HttpClient(object):
                 self._cache.delete(_lock_key)
         else:
             raise UserWarning(f"File {filepath} is already processing")
+
+    def __del__(self) -> None:
+        logging.info("Closing the worker pool")
+        self._worker_executor_pool.shutdown(wait=True)

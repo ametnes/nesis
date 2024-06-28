@@ -245,17 +245,20 @@ def _unsync_s3_documents(
             except minio.error.S3Error as ex:
                 str_ex = str(ex)
                 if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                    for document_data in rag_metadata.get("data") or []:
-                        try:
-                            http_client.delete(
-                                url=f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
-                            )
-                        except:
-                            _LOG.warn(
-                                f"Failed to delete document {document_data['doc_id']}"
-                            )
-                    _LOG.info(f"Deleting document {document.filename}")
-                    delete_document(document_id=document.id)
+                    try:
+                        http_client.deletes(
+                            urls=[
+                                f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
+                                for document_data in rag_metadata.get("data") or []
+                            ]
+                        )
+                        _LOG.info(f"Deleting document {document.filename}")
+                        delete_document(document_id=document.id)
+                    except:
+                        _LOG.warning(
+                            f"Failed to delete document {document.filename}",
+                            exc_info=True,
+                        )
                 else:
                     raise
 

@@ -297,19 +297,20 @@ def _unsync_samba_documents(connection, rag_endpoint, http_client):
             except smbprotocol.exceptions.SMBOSError as error:
                 if "No such file" not in str(error):
                     raise
-                for document_data in rag_metadata.get("data") or []:
-                    try:
-                        util.un_ingest_file(
-                            http_client=http_client,
-                            endpoint=rag_endpoint,
-                            doc_id=document_data["doc_id"],
-                        )
-                    except:
-                        _LOG.warn(
-                            f"Failed to delete document {document_data['doc_id']}"
-                        )
-                _LOG.info(f"Deleting document {document.filename}")
-                delete_document(document_id=document.id)
+                try:
+                    http_client.deletes(
+                        [
+                            f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
+                            for document_data in rag_metadata.get("data") or []
+                        ]
+                    )
+                    _LOG.info(f"Deleting document {document.filename}")
+                    delete_document(document_id=document.id)
+                except:
+                    _LOG.warning(
+                        f"Failed to delete document {document.filename}",
+                        exc_info=True,
+                    )
         _LOG.info(f"Completed unsyncing files from endpoint {rag_endpoint}")
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)
