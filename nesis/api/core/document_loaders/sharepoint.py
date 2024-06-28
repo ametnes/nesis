@@ -299,17 +299,20 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
             except ClientRequestException as e:
                 if e.response.status_code == 404:
                     # File no longer exists on sharepoint server so we need to delete from model
-                    for document_data in rag_metadata.get("data") or []:
-                        try:
-                            http_client.delete(
-                                url=f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
-                            )
-                        except:
-                            _LOG.warn(
-                                f"Failed to delete document {document_data['doc_id']}"
-                            )
-                    _LOG.info(f"Deleting document {document.filename}")
-                    delete_document(document_id=document.id)
+                    try:
+                        http_client.deletes(
+                            urls=[
+                                f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
+                                for document_data in rag_metadata.get("data") or []
+                            ]
+                        )
+                        _LOG.info(f"Deleting document {document.filename}")
+                        delete_document(document_id=document.id)
+                    except:
+                        _LOG.warning(
+                            f"Failed to delete document {document.filename}",
+                            exc_info=True,
+                        )
             except Exception as ex:
                 _LOG.warning(
                     f"Failed to retrieve file {file_url} from sharepoint - {ex}"

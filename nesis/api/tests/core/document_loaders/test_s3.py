@@ -281,11 +281,11 @@ def test_unsync_s3_documents(
         cache_client=cache,
     )
 
-    _, upload_kwargs = http_client.delete.call_args_list[0]
-    url = upload_kwargs["url"]
+    _, upload_kwargs = http_client.deletes.call_args_list[0]
+    urls = upload_kwargs["urls"]
 
     assert (
-        url
+        urls[0]
         == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
     )
     documents = session.query(Document).all()

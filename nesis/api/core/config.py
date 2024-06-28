@@ -24,7 +24,7 @@ default = {
         "executors": {"default_size": 30, "pool_size": 3},
     },
     "rag": {
-        "endpoint": os.environ.get("NESIS_API_RAG_ENDPOINT", "http://localhost:8080")
+        "endpoint": os.environ.get("NESIS_API_RAG_ENDPOINT", "http://localhost:8080"),
     },
     "memcache": {
         "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
@@ -37,5 +37,8 @@ default = {
     },
     "apps": {
         "session": {"expiry": os.environ.get("NESIS_API_APPS_SESSION_EXPIRY") or 1800}
+    },
+    "http": {
+        "workers": {"count": os.environ.get("NESIS_API_HTTP_WORKERS_COUNT", 10)},
     },
 }
