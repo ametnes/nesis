@@ -21,6 +21,7 @@ from sqlalchemy import (
     Unicode,
     Enum,
     ForeignKeyConstraint,
+    Text,
 )
 
 DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -517,3 +518,27 @@ class AppRole(Base):
         }
 
         return dict_value
+
+
+class DocumentExtract(Base):
+    __tablename__ = "document_extract"
+    id = Column("id", BigInteger, autoincrement=True, primary_key=True)
+    document_id = Column("document_id", Unicode(255), nullable=False, unique=True)
+    datasource_id = Column("datasource_id", Unicode(255), nullable=False)
+    extract_metadata = Column("extract_metadata", Text, nullable=False)
+    store_metadata = Column("store_metadata", JSONB, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ("datasource_id",),
+            [Datasource.uuid],
+            name="fk_extract_datasource_id",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __init__(self, document_id, store_metadata, datasource_id, extract_metadata):
+        self.document_id = document_id
+        self.datasource_id = datasource_id
+        self.extract_metadata = extract_metadata
+        self.store_metadata = store_metadata

@@ -3,7 +3,7 @@ import logging
 import memcache
 
 import nesis.api.core.document_loaders.google_drive as google_drive
-import nesis.api.core.document_loaders.minio as s3_documents
+import nesis.api.core.document_loaders.minio as minio
 import nesis.api.core.document_loaders.s3 as s3
 import nesis.api.core.document_loaders.samba as samba
 import nesis.api.core.document_loaders.sharepoint as sharepoint
@@ -35,15 +35,21 @@ def ingest_datasource(**kwargs) -> None:
         _LOG.warning(f"Datasource {datasource_param['id']} not found")
         raise ValueError(f'Invalid datasource {datasource_param["id"]}')
 
+    metadata = {"datasource": datasource.name}
+    rag_mode = config["rag"]["mode"]
+
     match datasource.type:
         case DatasourceType.MINIO:
-            s3_documents.fetch_documents(
-                connection=datasource.connection,
-                rag_endpoint=rag_endpoint,
+
+            minio_ingestor = minio.MinioProcessor(
+                config=config,
                 http_client=http_client,
                 cache_client=cache_client,
-                metadata={"datasource": datasource.name},
+                mode=rag_mode,
             )
+
+            minio_ingestor.run(datasource=datasource, metadata=metadata)
+
         case DatasourceType.SHAREPOINT:
             sharepoint.fetch_documents(
                 connection=datasource.connection,
