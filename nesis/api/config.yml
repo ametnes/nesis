@@ -2,18 +2,20 @@ database:
     url: postgresql://postgres:password@localhost:65432/nesis
     debug: false
 
-llm:
-    endpoint: "http://localhost:9080"
+rag:
+    endpoint: "http://localhost:8080"
+    mode: "ingest"
+    extractions:
+        store:
+            url: postgresql://postgres:password@localhost:65432/nesis
 
 service:
     port: 6000
     host: "0.0.0.0"
-    mlengine: {"exclude_datasources": ["web", "mindsdb"]}
 
 
 tasks:
-    fetch_documents:
-        enabled: true
-#      schedule: 2
-    generate_data_documents:
-        enabled: false
+    job:
+        stores:
+            url:  postgresql://postgres:password@localhost:65432/nesis
+

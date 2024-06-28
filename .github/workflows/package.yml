@@ -3,84 +3,120 @@ name: Package Nesis
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch'
-        required: true
-        default: main
       tag:
         description: 'Tag'
         required: true
-        default: latest
+      core:
+        description: 'Core'
+        required: true
+        default: cpu
+        type: choice
+        options:
+          - cpu
+          - cuda
 
 jobs:
   package_api:
-    name: API
+    name: Package ${{ github.event.inputs.tag }} API
     runs-on: ubuntu-latest
+    if: ${{ (github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
+        uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           file: ./nesis/api/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-api,ametnes/nesis:latest-api
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
 
   package_frontend:
-    name: Frontend
+    name: Package ${{ github.event.inputs.tag }} frontend
     runs-on: ubuntu-latest
+    if: ${{ (github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and push frontend Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           file: ./nesis/frontend/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-frontend, ametnes/nesis:latest-frontend
           build-args: |
             PUBLIC_URL=/
             PROFILE=PROD
+            NESIS_VERSION=${{ github.event.inputs.tag }}
 
-  package_rag:
-    name: RAG
+  package_rag_cpu:
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
     runs-on: ubuntu-latest
+    if: ${{ ((github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/')) && github.event.inputs.core == 'cpu' }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.dockerfile_branch }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and push RAG docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           file: ./nesis/rag/Dockerfile
-          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag, ametnes/nesis:latest-rag
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
+
+  package_rag_cuda:
+    name: Package ${{ github.event.inputs.tag }}-${{ github.event.inputs.core }} RAG Engine
+    runs-on: ubuntu-latest
+    if: ${{ ((github.ref == 'refs/heads/main') || startsWith(github.ref, 'refs/tags/')) && github.event.inputs.core == 'cuda' }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.dockerfile_branch }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and push core tagged RAG docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          file: ./nesis/rag/Dockerfile
+          tags: ametnes/nesis:${{ github.event.inputs.tag }}-rag-${{ github.event.inputs.core }}, ametnes/nesis:latest-rag-${{ github.event.inputs.core }}
+          build-args: |
+            NESIS_VERSION=${{ github.event.inputs.tag }}
+            CORE=${{ github.event.inputs.core }}

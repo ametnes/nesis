@@ -1,5 +1,6 @@
 import json
 import uuid
+from time import sleep
 
 import yaml
 
@@ -13,11 +14,16 @@ import nesis.api.tests as tests
 import nesis.api.core.services as services
 from nesis.api.core.models import initialize_engine, DBSession
 from nesis.api.core.models.entities import Datasource
-from nesis.api.core.services import PermissionException
+from nesis.api.core.services import (
+    PermissionException,
+    DatasourceService,
+    UserSessionService,
+    UnauthorizedAccess,
+)
 from nesis.api.tests.core.services import (
     create_user_session,
     create_role,
-    assign_role,
+    assign_role_to_user,
 )
 
 
@@ -48,10 +54,9 @@ def create_datasource(token: str, name: str = None) -> Datasource:
         "name": name or "finance6",
         "connection": {
             "user": "caikuodda",
-            "password": "password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -60,7 +65,7 @@ def create_datasource(token: str, name: str = None) -> Datasource:
 
 def test_datasource_permissions(http_client, tc):
     """
-    Test the prediction happy path
+    Test the datasource happy path
     """
 
     admin_user = create_user_session(
@@ -116,8 +121,8 @@ def test_datasource_permissions(http_client, tc):
     role_record = create_role(
         service=services.role_service, role=role, token=admin_user.token
     )
-    assign_role(
-        service=services.user_role_service,
+    assign_role_to_user(
+        service=services.user_service,
         token=admin_user.token,
         role=role_record.to_dict(),
         user_id=given_user_record.uuid,
@@ -137,3 +142,29 @@ def test_datasource_permissions(http_client, tc):
         token=given_user_session.token,
     )
     assert role_record.id is not None
+
+
+def test_session_expiry(http_client, tc):
+    """
+    Test that the api token can expire
+    """
+
+    tests.config["memcache"]["session"]["expiry"] = 5
+    services.init_services(config=tests.config, http_client=http_client)
+
+    admin_user = create_user_session(
+        service=services.user_session_service,
+        email=tests.admin_email,
+        password=tests.admin_password,
+    )
+    datasource: Datasource = create_datasource(token=admin_user.token)
+    assert datasource.id is not None
+    assert datasource.uuid is not None
+
+    # Sleep to simulate inactivity
+    sleep(10)
+
+    # Token should have expired from the cache
+    with pytest.raises(UnauthorizedAccess) as ex_info:
+        create_datasource(token=admin_user.token)
+    assert "Invalid app token supplied" in str(ex_info)

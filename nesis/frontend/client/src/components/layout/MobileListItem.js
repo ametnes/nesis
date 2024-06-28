@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { css } from 'styled-components/macro';
+import styled, { css } from 'styled-components';
 import useStateToggle from '../../utils/useStateToggle';
 import { ReactComponent as ChevronRight } from '../../images/ChevronRight.svg';
 import { device } from '../../utils/breakpoints';

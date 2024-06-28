@@ -15,10 +15,6 @@ _settings = settings()
 global_injector: Injector = create_application_injector(settings=_settings)
 app = create_app(global_injector, settings=_settings)
 
-# start a fastapi server with uvicorn
-
-
-# from private_gpt.settings.settings import settings
 
 # Set log_config=None to do not use the uvicorn logging configuration, and
 # use ours instead. For reference, see below:

@@ -17,7 +17,12 @@ class Request {
     this.predictionsByModel = [];
     this.models = [];
     this.dataobjects = [];
+    this.tasks = [];
+    this.apps = [];
+    this.taskById = {};
+    this.appById = {};
     this.targets = {};
+    this.azureUserData = {};
   }
   set(header, value) {
     this.headers[header] = value;
@@ -80,11 +85,29 @@ class Request {
           status: 200,
         };
         this.models.push(res.body);
+      } else if (this.url.endsWith('/tasks')) {
+        res = {
+          body: Object.assign({}, this.data, { id: util.guid() }),
+          status: 200,
+        };
+        this.tasks.push(res.body);
+      } else if (this.url.endsWith('/apps')) {
+        res = {
+          body: Object.assign({}, this.data, { id: util.guid() }),
+          status: 200,
+        };
+        this.apps.push(res.body);
       }
     } else if (this.method === 'PUT') {
       if (this.url.includes('/rules/')) {
         res = { body: this.data, status: 200 };
       } else if (this.url.includes('/predictions/')) {
+        res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/datasources/')) {
+        res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/tasks/')) {
+        res = { body: this.data, status: 200 };
+      } else if (this.url.includes('/apps/')) {
         res = { body: this.data, status: 200 };
       }
     } else if (this.method === 'GET') {
@@ -98,6 +121,16 @@ class Request {
         res = { body: this.datasources, status: 200 };
       } else if (this.url.includes('/datasources/')) {
         res = { body: this.datasourceByName, status: 200 };
+      } else if (this.url.endsWith('/tasks')) {
+        res = { body: this.tasks, status: 200 };
+      } else if (this.url.endsWith('/apps')) {
+        res = { body: this.apps, status: 200 };
+      } else if (this.url.includes('/tasks/')) {
+        res = { body: this.taskById, status: 200 };
+      } else if (this.url.includes('/apps/')) {
+        res = { body: this.appById, status: 200 };
+      } else if (this.url.endsWith('/v1.0/me')) {
+        res = { body: this.azureUserData, status: 200 };
       }
     } else if (this.method === 'DELETE') {
       res = { body: 'Deleted', status: 200 };

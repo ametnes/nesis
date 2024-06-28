@@ -7,7 +7,7 @@ const logger = require('./util/logger');
 const api = require('./api/index');
 
 const app = express();
-const config = require('./config');
+const config = require('./profile');
 const profile = config.profile[process.env.PROFILE] || config.profile.DEV;
 //Handles post requests
 const bodyParser = require('body-parser');
@@ -22,19 +22,15 @@ async function init() {
   logger.info(`Running server from ${home}`);
   app.use(express.static(home));
 
-  // Serve the static files from the React app
-  // const home = process.env.APP_HOME || __dirname + '../';
-  // logger.info(`Running server from ${home}`);
-  // app.use('/optim', express.static(path.join(home, '/client')));
-  // app.use(express.static(path.join(home, '/static-client')));
-
   const API = {
     SESSIONS: '/api/sessions',
     SETTINGS: '/api/:module/settings',
     ROLES: '/api/roles',
     USERS: '/api/users',
+    TASKS: '/api/tasks',
+    APPS: '/api/apps',
     DATA_SOURCES: '/api/datasources',
-    DATA_SOURCES_MODELS: '/api/models',
+    CONFIG: '/api/config',
     QANDA_PREDICTIONS: '/api/qanda/predictions',
   };
 
@@ -64,6 +60,19 @@ async function init() {
   app.post(API.USERS, api.users.post(requests, profile));
   app.delete(`${API.USERS}/:id`, api.users.delete(requests, profile));
 
+  //Tasks
+  app.get(`${API.TASKS}/:id`, api.tasks.getById(requests, profile));
+  app.get(API.TASKS, api.tasks.getAll(requests, profile));
+  app.post(API.TASKS, api.tasks.post(requests, profile));
+  app.delete(`${API.TASKS}/:id`, api.tasks.delete(requests, profile));
+
+  //Apps
+  app.get(`${API.APPS}/:id`, api.apps.getById(requests, profile));
+  app.get(API.APPS, api.apps.getAll(requests, profile));
+  app.get(`${API.APPS}/:id/roles`, api.apps.getRoles(requests, profile));
+  app.post(API.APPS, api.apps.post(requests, profile));
+  app.delete(`${API.APPS}/:id`, api.apps.delete(requests, profile));
+
   //Data source
   app.get(
     `${API.DATA_SOURCES}/:id`,
@@ -89,6 +98,7 @@ async function init() {
     `${API.QANDA_PREDICTIONS}/:id`,
     api.qanda_predictions.getById(requests, profile),
   );
+  app.get(`${API.CONFIG}`, api.config.get(requests, profile));
 
   app.get('/*', (req, res) => {
     res.sendFile(path.join(home, 'index.html'));

@@ -1,0 +1,71 @@
+site_name: Nesis - Your AI Powered Enterprise Knowledge Partner
+site_description: Your AI Powered Enterprise Knowledge Partner. Enables your enterprise to chat with your private documents.
+site_url: https://ametnes.github.io/nesis/
+repo_url: https://github.com/ametnes/nesis/
+repo_name: ametnes/nesis
+edit_uri: edit/main/docs/src/
+docs_dir: 'src'
+theme:
+  name: material
+  logo: 'images/NesisIcon.png'
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+nav:
+  - Home: 'index.md'
+  - 'Quick Start': 'quick-start.md'
+  - 'Installing':
+      - 'installing/compose.md'
+      - 'installing/helm.md'
+      - 'installing/ametnes.md'
+  - 'Access Control': 'rbac.md'
+  - 'App Integration':
+      - 'API Reference': 'apps/swagger.md'
+      - 'Example': 'apps/example.ipynb'
+  - 'Single Sign On':
+      - 'sso/azure.md'
+      - 'sso/google.md'
+  - 'Development Guide':
+      - 'Local Development': 'dev-guide/local.md'
+      - 'How it works': 'dev-guide/how-it-works.md'
+      - 'Contributing': 'dev-guide/contributing.md'
+
+plugins:
+  - mkdocs-jupyter
+  - search
+  - neoteroi.mkdocsoad:
+      use_pymdownx: true
+
+extra_css:
+    - css/extra.css
+    - css/mkdocsoad.css
+
+extra_javascript:
+  - scripts/menus.js

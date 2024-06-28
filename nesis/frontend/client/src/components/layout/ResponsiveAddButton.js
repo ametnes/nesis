@@ -1,4 +1,4 @@
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ReactComponent as AddIcon } from '../../images/AddIcon.svg';
 import { device } from '../../utils/breakpoints';
 import SquareButton, { LightSquareButton } from '../inputs/SquareButton';

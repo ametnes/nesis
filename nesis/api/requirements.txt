@@ -4,15 +4,14 @@ dateparser==1.1.1
 psycopg2-binary==2.9.9
 python-dateutil==2.8.2
 python-memcached==1.59
-pytz==2020.1
-PyYAML==6.0.0
+pytz==2024.1
+PyYAML==6.0.1
 requests==2.31.0
 simplejson==3.17.6
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.25
 StringGenerator==0.4.4
 urllib3~=2.2.0
 alembic==1.12.1
-scheduler==0.8.4
 more-itertools==10.1.0
 onnxruntime>=1.14.1
 gevent==23.9.1
@@ -22,7 +21,7 @@ smbprotocol==1.12.0
 flask==3.0.0
 boto3==1.34.75
 
-Werkzeug~=3.0.1
+Werkzeug>=3.0.3
 dropbox~=11.36.2
 
 # Document datasources
@@ -31,3 +30,5 @@ Office365-REST-Python-Client==2.5.5
 dropbox==11.36.2
 
 injector==0.21.0
+
+apscheduler==3.10.4

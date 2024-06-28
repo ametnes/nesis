@@ -5,8 +5,9 @@ import { GearFill } from 'react-bootstrap-icons';
 import DatasourcesPage from './Datasources/DatasourcesPage';
 import UsersPage from './Users/UsersPage';
 import RolesPage from './Roles/RolesPage';
-import Optim from '../../components/Menu';
-import styled from 'styled-components/macro';
+import AppsPage from './Apps/AppsPage';
+import Nesis from '../../components/Menu';
+import styled from 'styled-components';
 
 const Heading = styled.h1`
   background-image: linear-gradient(to right, #089fdf 21%, #5dd375 100%);
@@ -23,7 +24,7 @@ const SettingsPage = () => {
   const history = useHistory();
   const match = useRouteMatch();
   return (
-    <Optim>
+    <Nesis>
       <Heading>
         <GearFill size={25} className="mr-2" /> Settings
       </Heading>
@@ -34,6 +35,7 @@ const SettingsPage = () => {
         <RouterTab path="/settings/datasources">Datasources</RouterTab>
         <RouterTab path="/settings/users">Users</RouterTab>
         <RouterTab path="/settings/roles">Roles</RouterTab>
+        <RouterTab path="/settings/apps">Apps</RouterTab>
       </Tabs>
       <div style={{ padding: 8, marginLeft: 5 }}>
         <Switch>
@@ -47,6 +49,11 @@ const SettingsPage = () => {
             path={`${match.path}/datasources`}
             component={DatasourcesPage}
           />
+          <Route
+            exact
+            path={`${match.path}/datasources/:id/edit`}
+            component={DatasourcesPage}
+          />
           <Route exact path={`${match.path}/users/new`} component={UsersPage} />
           <Route
             exact
@@ -54,6 +61,7 @@ const SettingsPage = () => {
             component={UsersPage}
           />
           <Route exact path={`${match.path}/users`} component={UsersPage} />
+          {/* Roles settings */}
           <Route exact path={`${match.path}/roles/new`} component={RolesPage} />
           <Route
             exact
@@ -61,9 +69,17 @@ const SettingsPage = () => {
             component={RolesPage}
           />
           <Route exact path={`${match.path}/roles`} component={RolesPage} />
+          {/* Apps settings */}
+          <Route exact path={`${match.path}/apps/new`} component={AppsPage} />
+          <Route
+            exact
+            path={`${match.path}/apps/:id/edit`}
+            component={AppsPage}
+          />
+          <Route exact path={`${match.path}/apps`} component={AppsPage} />
         </Switch>
       </div>
-    </Optim>
+    </Nesis>
   );
 };
 

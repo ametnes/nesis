@@ -3,10 +3,11 @@ import { useHistory } from 'react-router-dom';
 import { PersonCircle, QuestionSquare } from 'react-bootstrap-icons';
 import { useCurrentSession, useSignOut } from '../SessionContext';
 import { ReactComponent as Hamburger } from '../images/Hamburger.svg';
-import { ReactComponent as Logo } from '../images/NosisIcon.svg';
-import styled from 'styled-components/macro';
+import { ReactComponent as Logo } from '../images/Nesis.svg';
+import styled from 'styled-components';
 import { device } from '../utils/breakpoints';
 import client from '../utils/httpClient';
+import { useConfig } from '../ConfigContext';
 import { LightSquareButton } from './inputs/SquareButton';
 
 const Main = styled.div`
@@ -28,8 +29,9 @@ const LogoContainer = styled.div`
 
 const LogoFull = styled(Logo)`
   display: block;
-  height: 35px;
-  width: 35px;
+  height: 105px;
+  width: 105px;
+  margin-right: 10px;
 `;
 
 const UserControlsRow = styled.div`
@@ -77,7 +79,8 @@ const HeaderToolBarIcon = styled.div`
 
 export default function MenuHeader({ onMobileMenuClick }) {
   const history = useHistory();
-  const signOut = useSignOut(client);
+  const config = useConfig();
+  const signOut = useSignOut(client, config);
   const session = useCurrentSession();
   const iconSize = 20;
 
@@ -88,12 +91,14 @@ export default function MenuHeader({ onMobileMenuClick }) {
           <Hamburger />
         </MobileMenuTrigger>
         <LogoContainer>
-          <LogoFull /> Nesis - Enterprise Knowledge
+          <LogoFull />
         </LogoContainer>
         {session && (
           <UserControlsRow>
             <HeaderToolBarIcon>
-              <QuestionSquare size={iconSize} className="help-icon" /> Help
+              <a href="https://ametnes.github.io/nesis/" target="_blank">
+                <QuestionSquare size={iconSize} className="help-icon" /> Help
+              </a>
             </HeaderToolBarIcon>
             <HeaderToolBarIcon>
               <PersonCircle size={iconSize} className="account-icon" />

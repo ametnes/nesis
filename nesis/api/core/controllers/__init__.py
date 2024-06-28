@@ -1,8 +1,15 @@
-GET = "GET"
-POST = "POST"
-DELETE = "DELETE"
-PUT = "PUT"
+GET: str = "GET"
+POST: str = "POST"
+DELETE: str = "DELETE"
+PUT: str = "PUT"
 
 from .api import app
 
-from . import datasources, predictions, settings, management
+from . import (
+    datasources,
+    predictions,
+    settings,
+    management,
+    tasks_controller,
+    apps_controller,
+)

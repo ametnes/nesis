@@ -10,6 +10,9 @@ import { clearToken } from './utils/tokenStorage';
 import { useHistory } from 'react-router-dom';
 import useSessionStorage from './utils/useSessionStorage';
 import apiClient from './utils/httpClient';
+import { PublicClientApplication } from '@azure/msal-browser';
+import { googleLogout } from '@react-oauth/google';
+
 const SessionContext = React.createContext({
   session: null,
   setSession: () => '',
@@ -24,7 +27,7 @@ SessionProvider.propTypes = {
 
 export default SessionContext;
 
-const SESSION_KEY = 'AMETNES_CURRENT_SESSION';
+const SESSION_KEY = 'NESIS_CURRENT_SESSION';
 
 export function SessionProvider({ children }) {
   const [session, setSession] = useSessionStorage(SESSION_KEY);
@@ -55,32 +58,47 @@ export function useCurrentUser() {
   return context && context.user;
 }
 
-export function useSignOut(client) {
+export function useSignOut(client, config) {
   const context = useContext(SessionContext);
   const setSession = context?.setSession;
   const history = useHistory();
   return useCallback(
     function () {
-      logoutFromGoogle();
-      logoutFromOptimAI(client);
+      logoutNesis(client);
       clearToken();
       setSession(null);
+      logoutMicrosoft(config);
+      logoutGoogle();
       history.push('/signin');
     },
     [setSession, history],
   );
 }
 
-function logoutFromGoogle() {
-  if (window.gapi && window.gapi.auth2) {
-    const auth2 = window.gapi.auth2.getAuthInstance();
-    if (auth2 != null) {
-      auth2.signOut().then(auth2.disconnect());
+async function logoutMicrosoft(config) {
+  try {
+    if (config?.auth?.NESIS_OAUTH_AZURE_ENABLED) {
+      const msalInstance = new PublicClientApplication({
+        auth: {
+          clientId: config?.auth?.OAUTH_AZURE_CLIENT_ID,
+          authority: config?.auth?.OAUTH_AZURE_AUTHORITY,
+          redirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+          postLogoutRedirectUri: config?.auth?.OAUTH_AZURE_REDIRECTURI,
+        },
+      });
+      await msalInstance.initialize();
+      await msalInstance.logoutRedirect();
     }
+  } catch (e) {
+    /* ignored */
   }
 }
 
-function logoutFromOptimAI(client) {
+async function logoutGoogle() {
+  googleLogout();
+}
+
+function logoutNesis(client) {
   if (!client) {
     return;
   }

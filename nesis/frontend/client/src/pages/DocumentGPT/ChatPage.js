@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useHistory, Route, Switch, useRouteMatch } from 'react-router-dom';
-import { GearFill } from 'react-bootstrap-icons';
-import Optim from '../../components/Menu';
-import styled from 'styled-components/macro';
+import Nesis from '../../components/Menu';
+import styled from 'styled-components';
 import { FileEarmarkPost } from 'react-bootstrap-icons';
 import {
   Box,
@@ -140,7 +139,7 @@ const ChatPage = () => {
   };
 
   return (
-    <Optim>
+    <Nesis>
       <Heading>
         <FileEarmarkPost size={25} color="white" className="mr-2" /> Chat with
         your Documents
@@ -220,7 +219,7 @@ const ChatPage = () => {
           </Box>
         </Container>
       </div>
-    </Optim>
+    </Nesis>
   );
 };
 

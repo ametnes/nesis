@@ -10,7 +10,6 @@ from nesis.api.core import util
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import (
     Prediction,
-    Model,
     Module,
     Action,
     RoleAction,
@@ -50,14 +49,6 @@ def _get_prediction(session, **kwargs):
         query = session.query(Prediction)
         if prediction_id:
             query = query.filter(Prediction.id == prediction_id)
-        elif model:
-            query = query.filter(Model.name == model).filter(
-                Prediction.model == Model.id
-            )
-        elif module and model:
-            query = query.filter(Prediction.module == module).filter(
-                Prediction.model == model
-            )
         elif module:
             query = query.filter(Prediction.module == module)
         else:
@@ -92,10 +83,14 @@ class QandaPredictionService(ServiceOperation):
     def create(self, **kwargs) -> Prediction:
         payload = kwargs["payload"]
         save_results = payload.get("save") or False
+        user_id = kwargs.get("user_id")
 
         session = DBSession()
         self.__authorized(
-            session=session, token=kwargs.get("token"), action=Action.CREATE
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.CREATE,
+            user_id=user_id,
         )
 
         authorized_datasources: list[RoleAction] = services.authorized_resources(
@@ -104,6 +99,7 @@ class QandaPredictionService(ServiceOperation):
             token=kwargs.get("token"),
             action=Action.READ,
             resource_type=ResourceType.DATASOURCES,
+            user_id=user_id,
         )
 
         datasources = [ds.resource for ds in authorized_datasources]
@@ -131,7 +127,6 @@ class QandaPredictionService(ServiceOperation):
         )
         prediction = Prediction(
             module=Module.qanda.name,
-            model=None,
             input=payload["query"],
             data=json.loads(response),
         )
@@ -152,13 +147,14 @@ class QandaPredictionService(ServiceOperation):
                     session.close()
         return prediction
 
-    def __authorized(self, session, token, action) -> dict:
+    def __authorized(self, session, token, action, user_id) -> dict:
         return services.authorized(
             session_service=self._session_service,
             session=session,
             token=token,
             action=action,
             resource_type=self._resource_type,
+            user_id=user_id,
         )
 
     def delete(self, **kwargs):

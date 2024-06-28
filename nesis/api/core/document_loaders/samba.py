@@ -1,6 +1,7 @@
 import uuid
 import pathlib
 import json
+import memcache
 from datetime import datetime
 from typing import Dict, Any
 
@@ -18,7 +19,7 @@ from nesis.api.core.services.util import (
     ValidationException,
     ingest_file,
 )
-from nesis.api.core.util import http
+from nesis.api.core.util import http, clean_control, isblank
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT, DEFAULT_SAMBA_PORT
 from nesis.api.core.util.dateutil import strptime
 
@@ -27,61 +28,66 @@ _LOG = logging.getLogger(__name__)
 
 def fetch_documents(
     connection: Dict[str, str],
-    llm_endpoint: str,
+    rag_endpoint: str,
     http_client: http.HttpClient,
+    cache_client: memcache.Client,
     metadata: Dict[str, Any],
 ) -> None:
     try:
-        _sync_samba_documents(connection, llm_endpoint, http_client, metadata)
+        _sync_samba_documents(
+            connection=connection,
+            rag_endpoint=rag_endpoint,
+            http_client=http_client,
+            metadata=metadata,
+            cache_client=cache_client,
+        )
     except:
         _LOG.exception(f"Error syncing documents")
 
     try:
-        _unsync_samba_documents(connection, llm_endpoint, http_client)
+        _unsync_samba_documents(
+            connection=connection, rag_endpoint=rag_endpoint, http_client=http_client
+        )
     except Exception as ex:
         _LOG.exception(f"Error unsyncing documents")
 
 
-def validate_connection_info(connection):
-    port = connection.get("port")
-    if port is None or not port:
-        connection["port"] = DEFAULT_SAMBA_PORT
-    elif not port.isnumeric():
-        raise ValidationException("Port value cannot be non numeric")
+def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
+    port = connection.get("port") or DEFAULT_SAMBA_PORT
+    _valid_keys = ["port", "endpoint", "user", "password", "dataobjects"]
+    if not str(port).isnumeric():
+        raise ValueError("Port value cannot be non numeric")
 
-    if connection.get("endpoint") is None or not connection.get("endpoint"):
-        raise ValidationException("Endpoint value cannot be null or empty")
-
-    if connection.get("user") is None or not connection.get("user"):
-        raise ValidationException("Username value cannot be null or empty")
-
-    if connection.get("password") is None or not connection.get("password"):
-        raise ValidationException("Password value cannot be null or empty")
+    assert not isblank(
+        connection.get("endpoint")
+    ), "A valid share address must be supplied"
 
     try:
         _connect_samba_server(connection)
-    except ValidationException as sb:
+    except Exception as ex:
         _LOG.exception(
             f"Failed to connect to samba server at {connection['endpoint']}",
-            stack_info=True,
         )
-        raise
-    return connection
+        raise ValueError(ex)
+    connection["port"] = port
+    return {
+        key: val
+        for key, val in connection.items()
+        if key in _valid_keys and not isblank(connection[key])
+    }
 
 
 def _connect_samba_server(connection):
-    username = connection["user"]
-    password = connection["password"]
-    endpoint = connection["endpoint"]
-    port = connection["port"]
-    try:
-        scandir(endpoint, username=username, password=password, port=port)
-    except Exception as ex:
-        _LOG.exception(f"Error while connecting to samba server {endpoint} - {ex}")
-        raise
+    username = connection.get("user")
+    password = connection.get("password")
+    endpoint = connection.get("endpoint")
+    port = connection.get("port")
+    next(scandir(endpoint, username=username, password=password, port=port))
 
 
-def _sync_samba_documents(connection, pgpt_endpoint, http_client, metadata):
+def _sync_samba_documents(
+    connection, rag_endpoint, http_client, metadata, cache_client
+):
 
     username = connection["user"]
     password = connection["password"]
@@ -109,22 +115,42 @@ def _sync_samba_documents(connection, pgpt_endpoint, http_client, metadata):
         ):
             continue
         try:
-            _process_file(
-                connection, file_share, work_dir, http_client, pgpt_endpoint, metadata
-            )
+            self_link = file_share.path
+            _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+
+            if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+                _metadata = {
+                    **(metadata or {}),
+                    "file_name": file_share.path,
+                    "self_link": self_link,
+                }
+                try:
+                    _process_file(
+                        connection=connection,
+                        file_share=file_share,
+                        work_dir=work_dir,
+                        http_client=http_client,
+                        rag_endpoint=rag_endpoint,
+                        metadata=_metadata,
+                    )
+                finally:
+                    cache_client.delete(_lock_key)
+            else:
+                _LOG.info(f"Document {self_link} is already processing")
         except:
             _LOG.warn(
                 f"Error fetching and updating documents from shared_file share {file_share.path} - ",
                 exc_info=True,
             )
+
     _LOG.info(
         f"Completed syncing files from samba server {endpoint} "
-        f"to endpoint {pgpt_endpoint}"
+        f"to endpoint {rag_endpoint}"
     )
 
 
 def _process_file(
-    connection, file_share, work_dir, http_client, pgpt_endpoint, metadata
+    connection, file_share, work_dir, http_client, rag_endpoint, metadata
 ):
     username = connection["user"]
     password = connection["password"]
@@ -138,7 +164,12 @@ def _process_file(
             )
             for dir_file in dir_files:
                 _process_file(
-                    connection, dir_file, work_dir, http_client, pgpt_endpoint, metadata
+                    connection=connection,
+                    file_share=dir_file,
+                    work_dir=work_dir,
+                    http_client=http_client,
+                    rag_endpoint=rag_endpoint,
+                    metadata=metadata,
                 )
         return
 
@@ -149,12 +180,6 @@ def _process_file(
     try:
         file_path = f"{work_dir}/{file_share.name}"
         file_unique_id = f"{uuid.uuid5(uuid.NAMESPACE_DNS, file_share.path)}"
-
-        _metadata = {
-            **(metadata or {}),
-            "file_name": file_share.path,
-            "self_link": file_share.path,
-        }
 
         _LOG.info(
             f"Starting syncing shared_file {file_name} in shared directory share {file_share.path}"
@@ -195,7 +220,7 @@ def _process_file(
                     try:
                         util.un_ingest_file(
                             http_client=http_client,
-                            endpoint=pgpt_endpoint,
+                            endpoint=rag_endpoint,
                             doc_id=document_data["doc_id"],
                         )
                     except:
@@ -223,8 +248,8 @@ def _process_file(
         try:
             response = ingest_file(
                 http_client=http_client,
-                endpoint=pgpt_endpoint,
-                metadata=_metadata,
+                endpoint=rag_endpoint,
+                metadata=metadata,
                 file_path=file_path,
             )
         except UserWarning:
@@ -234,7 +259,7 @@ def _process_file(
 
         save_document(
             document_id=file_unique_id,
-            filename=file_name,
+            filename=file_share.path,
             base_uri=endpoint,
             rag_metadata=response_json,
             store_metadata=file_metadata,
@@ -247,11 +272,11 @@ def _process_file(
             exc_info=True,
         )
     _LOG.info(
-        f"Completed syncing files from shared_file share {file_share.path} to endpoint {pgpt_endpoint}"
+        f"Completed syncing files from shared_file share {file_share.path} to endpoint {rag_endpoint}"
     )
 
 
-def _unsync_samba_documents(connection, pgpt_endpoint, http_client):
+def _unsync_samba_documents(connection, rag_endpoint, http_client):
     try:
         username = connection["user"]
         password = connection["password"]
@@ -272,19 +297,20 @@ def _unsync_samba_documents(connection, pgpt_endpoint, http_client):
             except smbprotocol.exceptions.SMBOSError as error:
                 if "No such file" not in str(error):
                     raise
-                for document_data in rag_metadata.get("data") or []:
-                    try:
-                        util.un_ingest_file(
-                            http_client=http_client,
-                            endpoint=pgpt_endpoint,
-                            doc_id=document_data["doc_id"],
-                        )
-                    except:
-                        _LOG.warn(
-                            f"Failed to delete document {document_data['doc_id']}"
-                        )
-                _LOG.info(f"Deleting document {document.filename}")
-                delete_document(document_id=document.id)
-        _LOG.info(f"Completed unsyncing files from endpoint {pgpt_endpoint}")
+                try:
+                    http_client.deletes(
+                        [
+                            f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
+                            for document_data in rag_metadata.get("data") or []
+                        ]
+                    )
+                    _LOG.info(f"Deleting document {document.filename}")
+                    delete_document(document_id=document.id)
+                except:
+                    _LOG.warning(
+                        f"Failed to delete document {document.filename}",
+                        exc_info=True,
+                    )
+        _LOG.info(f"Completed unsyncing files from endpoint {rag_endpoint}")
     except:
         _LOG.warn("Error fetching and updating documents", exc_info=True)

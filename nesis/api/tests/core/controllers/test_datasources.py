@@ -25,6 +25,11 @@ def client():
     return cloud_app.test_client()
 
 
+@pytest.fixture
+def tc():
+    return ut.TestCase()
+
+
 def get_admin_session(client):
     admin_data = {
         "name": "s3 documents",
@@ -37,7 +42,7 @@ def get_admin_session(client):
     ).json
 
 
-def test_datasources(client):
+def test_create_datasource_invalid_input(client, tc):
     # Get the prediction
     payload = {
         "type": "minio",
@@ -45,9 +50,8 @@ def test_datasources(client):
         "connection": {
             "user": "caikuodda",
             "password": "some.password",
-            "host": "localhost",
-            "port": "5432",
-            "database": "initdb",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
         },
     }
 
@@ -94,7 +98,85 @@ def test_datasources(client):
     )
     assert 400 == response.status_code, response.json
 
-    assert 400 == response.status_code, response.json
+
+def test_create_datasource(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Duplicate datasource name should be rejected as a conflict
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 409 == response.status_code
+    assert "exists" in response.json["message"]
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    print(response.json)
+    assert 1 == len(response.json["items"])
+
+    # Retrieve the datasource by id
+    datasource_id = response.json["items"][0]["id"]
+    response = client.get(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+    print(response.json)
+    assert response.json.get("connection") is not None
+
+    # When we delete the datasource, is it really gone?
+    response = client.delete(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+
+    response = client.get(
+        f"/v1/datasources/{datasource_id}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 404 == response.status_code, response.json
+
+
+def test_update_datasource(client, tc):
+    # Create a datasource
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+    }
+
+    admin_session = get_admin_session(client=client)
+
     response = client.post(
         f"/v1/datasources",
         headers=tests.get_header(token=admin_session["token"]),
@@ -103,8 +185,6 @@ def test_datasources(client):
     assert 200 == response.status_code, response.json
     assert response.json.get("connection") is not None
     print(json.dumps(response.json["connection"]))
-
-    print(yaml.dump(tests.config))
 
     response = client.get(
         "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
@@ -120,12 +200,20 @@ def test_datasources(client):
         headers=tests.get_header(token=admin_session["token"]),
     )
     assert 200 == response.status_code, response.json
-    print(response.json)
-    assert response.json.get("connection") is not None
 
-    response = client.delete(
+    datasource = response.json
+
+    datasource["connection"] = {
+        "user": "root",
+        "password": "some.password",
+        "endpoint": "some.other.host.tld",
+        "dataobjects": "initdb",
+    }
+
+    response = client.put(
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(datasource),
     )
     assert 200 == response.status_code, response.json
 
@@ -133,4 +221,169 @@ def test_datasources(client):
         f"/v1/datasources/{datasource_id}",
         headers=tests.get_header(token=admin_session["token"]),
     )
-    assert 404 == response.status_code, response.json
+
+    # Datasource password is never emitted so we skip it
+    tc.assertDictEqual(
+        response.json["connection"],
+        {k: v for k, v in datasource["connection"].items() if k != "password"},
+    )
+
+
+def test_create_datasource_schedule(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+        "schedule": "Some invalid schedule",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 400 == response.status_code, response.json
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])
+
+    payload["schedule"] = "*/5 * * * *"
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+
+def test_update_datasource_schedule(client, tc):
+    # Get the prediction
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+        "schedule": "*/5 * * * *",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.json
+
+    # We update the schedule
+    datasource = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    ).json["items"][0]
+
+    datasource["schedule"] = "*/10 * * * *"
+
+    response = client.put(
+        f"/v1/datasources/{datasource['id']}",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(datasource),
+    )
+    assert 200 == response.status_code, response.json
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+    assert response.json["items"][0]["schedule"] == datasource["schedule"]
+
+
+def test_delete_datasource_schedule(client, tc):
+    # This test focuses on the delete functionality. We want to ensure that when a datasource is deleted, all
+    # corresponding tasks are delete too
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+        },
+        "schedule": "*/5 * * * *",
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.text
+    datasource = response.json
+
+    # Test that we have only the one datasource
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 1 == len(response.json["items"])
+
+    #
+    # Delete the datasource
+    response = client.delete(
+        f"/v1/datasources/{datasource['id']}",
+        headers=tests.get_header(token=admin_session["token"]),
+    )
+    assert 200 == response.status_code, response.json
+
+    response = client.get(
+        "/v1/datasources", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])
+
+    # Test that we have only the one task
+    response = client.get(
+        "/v1/tasks", headers=tests.get_header(token=admin_session["token"])
+    )
+    assert 200 == response.status_code, response.json
+    assert 0 == len(response.json["items"])

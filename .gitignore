@@ -143,4 +143,6 @@ dist
 *.pyc
 videos
 screenshots
-*.mp4
+#*.mp4
+
+site

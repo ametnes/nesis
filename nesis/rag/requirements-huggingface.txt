@@ -1,2 +1,3 @@
-# Required for local embeddings model
+# Use pytorch@cpu
 llama-index-embeddings-huggingface==0.1.3
+

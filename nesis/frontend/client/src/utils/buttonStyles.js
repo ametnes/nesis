@@ -1,5 +1,5 @@
 import { device } from './breakpoints';
-import { css } from 'styled-components/macro';
+import { css } from 'styled-components';
 
 export const ButtonColor = {
   Primary: {

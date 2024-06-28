@@ -1,5 +1,5 @@
 {
-  "name": "nosis",
+  "name": "nesis",
   "version": "0.0.1",
   "description": "Nesis",
   "main": "main.js",
@@ -16,21 +16,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@https://github.com/ametnes/nosis.git"
+    "url": "git+ssh://git@https://github.com/ametnes/nesis.git"
   },
   "author": "Nesis Contributors",
   "license": "ISC",
-  "homepage": "https://https://github.com/ametnes/nosis#readme",
+  "homepage": "https://github.com/ametnes/nesis#readme",
   "bugs": {
-    "url": "https://https://github.com/ametnes/nosis/issues"
+    "url": "https://github.com/ametnes/nesis/issues"
   },
   "dependencies": {
+    "@azure/msal-browser": "^3.14.0",
+    "@azure/msal-react": "^2.0.16",
     "app-root-path": "^3.1.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "google-auth-library": "^9.10.0",
     "jsonwebtoken": "^9.0.2",
-    "mindsdb-js-sdk": "^2.2.2",
     "superagent": "^8.1.2",
     "winston": "^3.10.0"
   },

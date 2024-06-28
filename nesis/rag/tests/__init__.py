@@ -4,9 +4,7 @@ from sqlalchemy import text
 import os
 
 from nesis.api.core.models.entities import (
-    Rule,
     Prediction,
-    Model,
     Setting,
     Role,
     User,
@@ -36,18 +34,8 @@ config = {
         "debug": False,
         "create": True,
     },
-    "mlengine": {
-        "endpoint": os.environ.get("ML_ENGINE_URL", "http://localhost:47334"),
-        "username": "iqtjoobbkr",
-        "password": "LMM6DcIlrwQWrK5wKiJs",
-        "exclude_datasources": ["web", "files"],
-    },
     "modules": {
-        "data": {
-            "llm": {
-                # "model_path": "/Users/michael.sekamanya/Projects/privateGPT/local_data/private_gpt/models/mistral-7b-instruct-v0.1.Q2_K.gguf"
-            }
-        },
+        "data": {"llm": {}},
         "qanda": {"endpoint": "http://localhost:9080"},
     },
     "datasource": {
@@ -61,7 +49,7 @@ config = {
         "db": "nesis",
     },
     "memcache": {
-        "hosts": [os.environ.get("NESIS_MEMCACHED_HOSTS", "127.0.0.1:11211")],
+        "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
         "session": {"expiry": 0},
         "cache": {
             "timeout_default": 300,
@@ -78,8 +66,6 @@ def get_header(token=None):
 
 
 def clear_database(session):
-    session.query(Rule).delete()
-    session.query(Model).delete()
     session.query(Prediction).delete()
     session.query(Setting).delete()
     session.query(User).delete()

@@ -1,9 +1,10 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   display: flex;
   align-items: center;
+  margin-top: 8px;
 `;
 
 const StyledInput = styled.input`

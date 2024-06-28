@@ -4,3 +4,6 @@ module.exports.qanda_predictions = require('./chatbot/qanda');
 module.exports.settings = require('./settings');
 module.exports.roles = require('./roles');
 module.exports.users = require('./users');
+module.exports.tasks = require('./tasks');
+module.exports.config = require('./config');
+module.exports.apps = require('./apps');

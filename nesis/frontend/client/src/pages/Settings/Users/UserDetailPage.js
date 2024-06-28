@@ -11,7 +11,7 @@ import { ModalTitle } from '../../../components/Modal';
 import MessageRow from '../../../components/MessageRow';
 import FormRow, { Column } from '../../../components/layout/FormRow';
 import Table, { DeleteItemButton } from '../../../components/Table';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../../../utils/breakpoints';
 import { Field } from 'formik';
 
@@ -147,6 +147,7 @@ function DocumentForm({
             <TextField
               type="text"
               id="name"
+              label="Name"
               placeholder="Full name"
               name="name"
               validate={required}
@@ -154,18 +155,28 @@ function DocumentForm({
             <TextField
               type="text"
               id="email"
+              label="Email"
               placeholder="Email"
               name="email"
               validate={required}
+              disabled={
+                initialValues?.id !== null && initialValues?.id !== undefined
+              }
             />
             <TextField
               type="password"
               id="password"
+              label="Password"
               placeholder="Password"
               name="password"
               validate={values.roles ? null : required}
             />
-            <Checkbox id="enabled" name="enabled" label="Enabled" />
+            <Checkbox
+              id="enabled"
+              name="enabled"
+              label="Enabled"
+              style={{ paddingTop: '12px' }}
+            />
             <StyledTable>
               <thead>
                 <tr>

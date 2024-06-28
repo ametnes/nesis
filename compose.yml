@@ -25,6 +25,7 @@ services:
     environment:
       NESIS_API_PORT: "6000"
       NESIS_API_DATABASE_URL: "postgresql://postgres:password@database:5432/nesis"
+      NESIS_API_TASKS_JOB_STORES_URL: "postgresql://postgres:password@database:5432/nesis"
       NESIS_ADMIN_EMAIL: "some.email@domain.com"
       NESIS_ADMIN_PASSWORD: "password"
       NESIS_MEMCACHE_HOSTS: memcached:11211
@@ -32,6 +33,9 @@ services:
     networks:
       - nesis
     depends_on:
+      database:
+        condition: service_healthy
+    links:
       - database
       - memcached
       - nesis_rag
@@ -42,12 +46,17 @@ services:
     environment:
       NESIS_RAG_SERVER_PORT: "8080"
       NESIS_RAG_PGVECTOR_URL: postgresql://postgres:password@database:5432/nesis
-      # local mode uses hugging face. Other options
-      # 1. openai - for OpenAI Embeddings
-      # 2. sagemaker - for Sagemaker
+      HF_TOKEN: <your-huggingface-token>
+      # 1. local mode uses hugging face. Other options
       NESIS_RAG_EMBEDDING_MODE: local
+      NESIS_RAG_EMBEDDING_DIMENSIONS: "384"
+
+      # 2. openai - for OpenAI Embeddings
+      # NESIS_RAG_EMBEDDING_MODE: openai
+      # NESIS_RAG_EMBEDDING_DIMENSIONS: "1536"
+
+      # 3. sagemaker - for Sagemaker
       OPENAI_API_KEY: <your-api-key>
-      NESIS_RAG_EMBEDDING_DIMENSIONS: "1536"
 #      OPENAI_API_BASE: <your-api-base>
     networks:
       - nesis
@@ -59,18 +68,18 @@ services:
       - "11211:11211"
     networks:
       - nesis
-#  samba:
-#    image: andyzhangx/samba:win-fix
-#    command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
-#    ports:
-#      - '2445:445'
-#    networks:
-#      - nesis
-#    volumes:
-#      - 'samba_data2:/smbshare'
-#    environment:
-#      - USERNAME=username
-#      - PASSWORD=password
+  samba:
+    image: andyzhangx/samba:win-fix
+    command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
+    ports:
+      - '2445:445'
+    networks:
+      - nesis
+    volumes:
+      - 'samba_data2:/smbshare'
+    environment:
+      - USERNAME=username
+      - PASSWORD=password
   minio:
       image: docker.io/bitnami/minio:2022
       ports:
@@ -95,6 +104,11 @@ services:
     volumes:
       - database_data:/var/lib/postgresql/data
     restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - nesis
 volumes:

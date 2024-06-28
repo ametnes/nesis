@@ -10,7 +10,6 @@ from llama_index.readers.file import (
     DocxReader,
     EpubReader,
     HWPReader,
-    ImageReader,
     IPYNBReader,
     MarkdownReader,
     MboxReader,
@@ -20,12 +19,20 @@ from llama_index.readers.file import (
     VideoAudioReader,
 )  # pants: no-infer-dep
 
+from nesis.rag.core.components.ingest.readers import (
+    ExcelReader,
+    TiffReader,
+    OdsReader,
+    ImageReader,
+    PdfReader,
+)
+
 logger = logging.getLogger(__name__)
 
 
 FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".hwp": HWPReader,
-    ".pdf": PDFReader,
+    ".pdf": PdfReader,
     ".doc": DocxReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
@@ -42,7 +49,10 @@ FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".mbox": MboxReader,
     ".ipynb": IPYNBReader,
     ".json": JSONReader,
-    ".xlsx": JSONReader,
+    ".xls": ExcelReader,
+    ".xlsx": ExcelReader,
+    ".ods": OdsReader,
+    ".tiff": TiffReader,
 }
 
 
@@ -68,7 +78,7 @@ class IngestionHelper:
     def _load_file_to_documents(file_name: str, file_data: Path) -> list[Document]:
         logger.debug("Transforming file_name=%s into documents", file_name)
         extension = Path(file_name).suffix
-        reader_cls = FILE_READER_CLS.get(extension)
+        reader_cls = FILE_READER_CLS.get(extension.lower())
         if reader_cls is None:
             logger.debug(
                 "No reader found for extension=%s, using default string reader",

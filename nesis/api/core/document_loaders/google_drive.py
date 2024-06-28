@@ -13,16 +13,16 @@ from nesis.api.core.services.util import save_document
 _LOG = logging.getLogger(__name__)
 
 
-def fetch_documents(connection, llm_endpoint, http_client) -> None:
+def fetch_documents(connection, rag_endpoint, http_client) -> None:
     try:
-        _sync_google_documents(connection, llm_endpoint, http_client)
-        # _unsync_google_documents(settings, llm_endpoint, http_client)
+        _sync_google_documents(connection, rag_endpoint, http_client)
+        # _unsync_google_documents(settings, rag_endpoint, http_client)
     except Exception as ex:
         _LOG.exception(f"Error fetching google documents - {ex}")
         raise
 
 
-def _sync_google_documents(connection, llm_endpoint, http_client):
+def _sync_google_documents(connection, rag_endpoint, http_client):
     # The authorization approach is the server to server 2 legged authentication
     # we will need to find a way of saving each user's service.json file that has their credentials
     # this is the uninterrupted path but poses a risk of storing user service account details within the application
@@ -69,7 +69,7 @@ def _sync_google_documents(connection, llm_endpoint, http_client):
                         upload_document=document,
                         file_metadata=file_metadata,
                         http_client=http_client,
-                        llm_endpoint=llm_endpoint,
+                        rag_endpoint=rag_endpoint,
                     )
 
                     # If the document has been successfully uploaded to LLM we save details in document database
@@ -94,4 +94,4 @@ def _sync_google_documents(connection, llm_endpoint, http_client):
                 f"Error when loading google files from  {folder_id} - {ex}",
                 exc_info=True,
             )
-    _LOG.info(f"Completed syncing to endpoint {llm_endpoint}")
+    _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")

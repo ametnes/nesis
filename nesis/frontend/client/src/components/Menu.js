@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { NavLink } from 'react-router-dom';
 import { device } from '../utils/breakpoints';
 import { useSignOut } from '../SessionContext';
+import { useConfig } from '../ConfigContext';
 import MenuHeader from './MenuHeader';
 import { GearFill, FileEarmarkPost, ArrowBarLeft } from 'react-bootstrap-icons';
+import client from '../utils/httpClient';
 
 const sideMenuWidth = 300;
 
@@ -56,7 +58,7 @@ const MainContainer = styled.div`
   flex-direction: column;
 `;
 
-function Optim({ children, className }) {
+function Nesis({ children, className }) {
   const [mobileModalVisible, setModalVisible] = useState(false);
   const background = 'white';
 
@@ -133,7 +135,8 @@ const MenuTitle = styled.div`
 `;
 
 function SideMenu({ onClose }) {
-  const signOut = useSignOut();
+  const config = useConfig();
+  const signOut = useSignOut(client, config);
 
   function closeMenu() {
     if (onClose) {
@@ -170,4 +173,4 @@ function SideMenu({ onClose }) {
   );
 }
 
-export default Optim;
+export default Nesis;

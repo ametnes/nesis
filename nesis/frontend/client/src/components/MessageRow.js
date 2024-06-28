@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { ReactComponent as AttentionSign } from '../images/AttentionSign.svg';
 import { ReactComponent as CloseMessageIcon } from '../images/CloseMessageIcon.svg';
 import { device } from '../utils/breakpoints';

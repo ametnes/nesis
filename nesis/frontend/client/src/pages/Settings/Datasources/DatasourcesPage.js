@@ -2,8 +2,9 @@ import React from 'react';
 import {
   LightSquareButton,
   OutlinedSquareButton,
+  EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../../../utils/breakpoints';
 import Table, { DeleteItemButton } from '../../../components/Table';
 import { useHistory, useRouteMatch } from 'react-router-dom';
@@ -34,10 +35,11 @@ import { ReactComponent as BinIcon } from '../../../images/BinIcon.svg';
 import DatasourcesDetailPage from './DatasourcesDetailPage';
 
 const TypeOptions = {
-  minio: 'S3 Compatible',
+  minio: 'MinIO',
   windows_share: 'Windows Share',
   sharepoint: 'Sharepoint',
   google_drive: 'Google Drive',
+  s3: 'S3 Bucket',
 };
 
 const ActionButton = styled(LightSquareButton)`
@@ -137,6 +139,7 @@ const DatasourcesPage = () => {
 
   const match = useRouteMatch();
   const isNew = match.url?.endsWith('/datasources/new');
+  const isEdit = match.url?.endsWith('/edit');
   const history = useHistory();
   const [searchText, setSearchText] = React.useState();
   const [currentSort, setCurrentSort] = React.useState(null);
@@ -170,14 +173,32 @@ const DatasourcesPage = () => {
         content: 'Operation is successful',
       });
     },
-    'All related documents will be deleted. Are you sure you want to continue?',
   );
+
+  const [confirmIngest, showConfirmIngest, setCurrentIngestItem] =
+    useConfirmationModal(async (id) => {
+      await client.post('tasks', {
+        parent_id: id,
+        type: 'ingest_datasource',
+        definition: {
+          datasource: {
+            id: id,
+          },
+        },
+      });
+      datasourcesActions.repeat();
+      addToast({
+        title: `Datasource ingestion created`,
+        content: 'Operation successful',
+      });
+    }, 'Do you want to run start the ingestion process?');
 
   return (
     <>
       {confirmModal}
+      {confirmIngest}
       <EditOrCreateModal
-        visible={!!isNew}
+        visible={!!isNew || !!isEdit}
         onSuccess={() => {
           setSearchText('');
           datasourcesActions.repeat();
@@ -222,8 +243,8 @@ const DatasourcesPage = () => {
                     <DatasourceIndex>{datasource.id}</DatasourceIndex>{' '}
                     <div>
                       <span>
-                        <StatusIcon status={datasource.enabled} />
-                        {datasource.enabled ? 'ONLINE' : 'OFFLINE'}
+                        <StatusIcon status={datasource.status} />
+                        {datasource.status}
                       </span>
                       <DatasourceTitle>{datasource.name}</DatasourceTitle>
                     </div>
@@ -245,6 +266,14 @@ const DatasourcesPage = () => {
                       }
                     >
                       Edit
+                    </EditButton>
+                    <EditButton
+                      onClick={() => {
+                        setCurrentIngestItem(datasource.id);
+                        showConfirmIngest();
+                      }}
+                    >
+                      Ingest
                     </EditButton>
                     <DeleteButton
                       onClick={() => {
@@ -313,10 +342,29 @@ const DatasourcesPage = () => {
                         datasource?.connection?.host}
                     </td>
                     <td>
-                      <StatusIcon status={datasource.enabled} />
-                      {datasource.enabled ? 'True' : 'False'}
+                      <StatusIcon status={datasource.status} />
+                      {datasource.status}
                     </td>
                     <td style={{ display: 'flex' }}>
+                      <EditOutlinedSquareButton
+                        onClick={() =>
+                          history.push({
+                            pathname: `/settings/datasources/${datasource.id}/edit`,
+                            state: datasource,
+                          })
+                        }
+                      >
+                        Edit
+                      </EditOutlinedSquareButton>
+                      <EditOutlinedSquareButton
+                        onClick={() => {
+                          setCurrentIngestItem(datasource.id);
+                          showConfirmIngest();
+                        }}
+                      >
+                        Ingest
+                      </EditOutlinedSquareButton>
+
                       <DeleteItemButton
                         onClick={() => {
                           setCurrentItem(datasource.id);

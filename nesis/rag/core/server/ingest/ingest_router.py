@@ -1,6 +1,9 @@
 import json
 import logging
+import pathlib
+import tempfile
 from typing import Literal
+from nesis.rag.core.utils.strings import file_encoding
 
 
 from fastapi import APIRouter, HTTPException, Request, UploadFile, Form
@@ -64,9 +67,28 @@ def ingest_file(
         _logger.exception(error)
         raise HTTPException(400, error)
     try:
-        ingested_documents = service.ingest_bin_data(
-            file.filename, file.file, metadata=_metadata
-        )
+        if file.content_type.startswith("text"):
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                try:
+                    with open(tmp_file.name, "wb") as file_descriptor:
+                        file_descriptor.write(file.file.read())
+
+                    encoding = file_encoding(tmp_file.name)
+                    text = pathlib.Path(tmp_file.name).read_text(
+                        encoding=encoding, errors="replace"
+                    )
+                    ingested_documents = service.ingest_text(
+                        file.filename, text, metadata=_metadata
+                    )
+
+                finally:
+                    tmp_file.close()
+
+        else:
+            ingested_documents = service.ingest_bin_data(
+                file.filename, file.file, metadata=_metadata
+            )
+
     except ServiceException as se:
         _logger.exception(f"Error ingesting file {file.filename}")
         raise HTTPException(400, str(se))

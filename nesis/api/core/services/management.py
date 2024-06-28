@@ -1,8 +1,10 @@
 import json
-from typing import Optional
+import os
+from typing import Optional, List, Dict, Any
 
 import bcrypt
 import memcache
+from sqlalchemy.orm import Session
 from strgen import StringGenerator as SG
 
 import logging
@@ -10,6 +12,7 @@ import nesis.api.core.services as services
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.objects import ResourceType, UserSession
 from nesis.api.core.models.entities import User, Role, RoleAction, UserRole, Action
+from nesis.api.core.services.app_service import AppSessionService
 from nesis.api.core.services.util import (
     ServiceOperation,
     ServiceException,
@@ -27,34 +30,42 @@ class UserSessionService(ServiceOperation):
 
     def __init__(self, config):
         self.__config = config
-        self.__enable_user_verification = config.get("verify_users", False)
-        self.__verify_users_override = config.get("verify_users_override", False)
+        self._app_session_service = AppSessionService(config=config)
         self.__cache = memcache.Client(config["memcache"]["hosts"], debug=1)
         self.__LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
-    def get(self, **kwargs):
+    def get(self, **kwargs) -> Dict[str, Any]:
         token = kwargs.get("token")
         if token is None:
             raise UnauthorizedAccess("Token not supplied")
 
-        key = self.__cache_key(token)
+        key = self.__cache_user_key(token)
         value = self.__cache.get(key)
 
-        if value is None:
+        if value is not None:
+            session_object = {"token": token, "user": value}
+        else:
+            session_object = self._app_session_service.get(**kwargs)
+
+        if session_object is None:
             raise UnauthorizedAccess("Invalid token")
 
-        return {"token": token, "user": value}
+        return session_object
 
     def delete(self, **kwargs):
         token = kwargs["token"]
         session = self.get(**kwargs)
         if session["token"] != token:
             raise UnauthorizedAccess("Invalid session token")
-        self.__cache.delete(self.__cache_key(token))
+        self.__cache.delete(self.__cache_user_key(token))
 
     @staticmethod
-    def __cache_key(key):
+    def __cache_user_key(key):
         return f"sessions/{key}"
+
+    @staticmethod
+    def __cache_app_key(key):
+        return f"application/{key}"
 
     def create(self, **kwargs) -> UserSession:
         user_session = kwargs["session"]
@@ -65,51 +76,96 @@ class UserSessionService(ServiceOperation):
         email = user_session.get("email")
         password = user_session.get("password")
 
-        if not all([email, password]):
-            # invalid auth case
-            # fail-safe. should never reach here.
-            raise UnauthorizedAccess("Missing email and password")
+        # Hard code these to make it easier to test
+        session_oauth_token_value = user_session.get(
+            os.environ.get("NESIS_OAUTH_TOKEN_KEY") or "___nesis_oauth_token_key___"
+        )
+        oauth_token_value = (
+            os.environ.get("NESIS_OAUTH_TOKEN_VALUE") or "___nesis_oauth_token_value___"
+        )
 
         try:
 
-            users = session.query(User).filter_by(email=email).all()
-            if len(users) != 1:
-                raise UnauthorizedAccess("User not found")
-            user_dict = users[0].to_dict()
-            attributes = user_dict["attributes"]
+            if all([email, password]):
+                users = session.query(User).filter_by(email=email).all()
+                if len(users) != 1:
+                    raise UnauthorizedAccess("User not found")
+                user_dict = users[0].to_dict()
+                attributes = user_dict["attributes"]
 
-            # password based auth
-            db_pass = users[0].password
-            user_password = password.encode("utf-8")
-            if not bcrypt.checkpw(user_password, db_pass):
-                raise UnauthorizedAccess("Invalid email/password")
+                # password based auth
+                db_pass = users[0].password
+                user_password = password.encode("utf-8")
+                if not bcrypt.checkpw(user_password, db_pass):
+                    raise UnauthorizedAccess("Invalid email/password")
+                db_user = users[0]
 
-            # update last login details.
-            db_user = users[0]
-            # session.add(db_user)
-            # session.commit()
+                return self.__create_user_session(db_user)
+            elif all([email, session_oauth_token_value, oauth_token_value]):
+                if session_oauth_token_value != oauth_token_value:
+                    raise UnauthorizedAccess("Invalid oauth token value")
+                secrets = SG(r"[\l\d]{30}").render_list(1, unique=True)
 
-            token = SG("[\l\d]{128}").render()
-            session_token = self.__cache_key(token)
-            expiry = (
-                self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
-            )
-            if self.__cache.get(session_token) is None:
-                self.__cache.set(session_token, user_dict, time=expiry)
-
-            while self.__cache.get(session_token)["id"] != user_dict["id"]:
-                token = SG("[\l\d]{128}").render()
-                session_token = self.__cache_key(token)
-                self.__cache.set(session_token, user_dict, time=expiry)
-
-            return UserSession(token=token, expiry=expiry, user=db_user)
+                try:
+                    entity = _create_user(
+                        root=False,
+                        session=session,
+                        user={**user_session, "password": secrets[0]},
+                    )
+                    # update last login details.
+                    db_user = entity
+                except ConflictException:
+                    db_user = session.query(User).filter_by(email=email).first()
+                return self.__create_user_session(db_user)
+            else:
+                raise UnauthorizedAccess("Missing email and password")
 
         finally:
             if session:
                 session.close()
 
+    def __create_user_session(self, db_user: User):
+        user_dict = db_user.to_dict()
+        token = SG(r"[\l\d]{128}").render()
+        session_token = self.__cache_user_key(token)
+        expiry = (
+            self.__config["memcache"].get("session", {"expiry": 0}).get("expiry", 0)
+        )
+        if self.__cache.get(session_token) is None:
+            self.__cache.set(session_token, user_dict, time=expiry)
+        while self.__cache.get(session_token)["id"] != user_dict["id"]:
+            token = SG(r"[\l\d]{128}").render()
+            session_token = self.__cache_user_key(token)
+            self.__cache.set(session_token, user_dict, time=expiry)
+        return UserSession(token=token, expiry=expiry, user=db_user)
+
     def update(self, **kwargs):
         raise NotImplementedError("Invalid operation on datasource")
+
+
+def _create_user(session: Session, user: dict, root: bool):
+    name = user.get("name")
+    email = user.get("email")
+    password = user.get("password")
+    if not all([email, password, name]):
+        raise ServiceException("name, email and password must be supplied")
+    password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    entity = User(name=name, email=email, password=password, root=root)
+    session.add(entity)
+
+    try:
+        session.commit()
+        session.refresh(entity)
+    except Exception as exc:
+        session.rollback()
+        error_str = str(exc).lower()
+
+        if ("unique constraint" in error_str) and ("uq_user_email" in error_str):
+            # valid failure
+            raise ConflictException("User already exists")
+        else:
+            raise
+    return entity
 
 
 class UserService(ServiceOperation):
@@ -117,13 +173,14 @@ class UserService(ServiceOperation):
     Manage system users
     """
 
-    def __init__(
-        self, config: dict, session_service: UserSessionService, user_role_service
-    ) -> None:
+    def __init__(self, config: dict, session_service: UserSessionService) -> None:
         self._config = config
         self._resource_type = ResourceType.USERS
         self._session_service = session_service
-        self._user_role_service = user_role_service
+        self._user_role_service = UserRoleService(
+            config, session_service=session_service
+        )
+
         self._LOG = logging.getLogger(self.__module__ + "." + self.__class__.__name__)
 
         self._LOG.info("Initializing service...")
@@ -154,19 +211,7 @@ class UserService(ServiceOperation):
                     resource_type=self._resource_type,
                 )
 
-            name = user.get("name")
-            email = user.get("email")
-            password = user.get("password")
-
-            if not all([email, password, name]):
-                raise ServiceException("name, email and password must be supplied")
-
-            password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-
-            entity = User(name=name, email=email, password=password, root=root)
-            session.add(entity)
-            session.commit()
-            session.refresh(entity)
+            entity = _create_user(root=root, session=session, user=user)
 
             if not root:
                 for user_role in user.get("roles") or []:
@@ -175,15 +220,6 @@ class UserService(ServiceOperation):
                     )
 
             return entity
-        except Exception as exc:
-            session.rollback()
-            error_str = str(exc).lower()
-
-            if ("unique constraint" in error_str) and ("uq_user_email" in error_str):
-                # valid failure
-                raise ConflictException("User already exists")
-            else:
-                raise
         finally:
             if session:
                 session.close()
@@ -305,13 +341,15 @@ class UserService(ServiceOperation):
             session.merge(user_record)
             session.commit()
 
-            self._user_role_service.delete(**{**kwargs, "user_id": uuid})
+            user_roles = user.get("roles")
+            if user_roles is not None:
+                self._user_role_service.delete(**{**kwargs, "user_id": uuid})
 
-            for user_role in user.get("roles") or []:
-                try:
-                    self._user_role_service.create(**kwargs, role={"id": user_role})
-                except ConflictException as ex:
-                    self._LOG.info(ex)
+                for user_role in user.get("roles") or []:
+                    try:
+                        self._user_role_service.create(**kwargs, role={"id": user_role})
+                    except ConflictException as ex:
+                        self._LOG.info(ex)
 
             return user_record
         except Exception as e:
@@ -321,6 +359,38 @@ class UserService(ServiceOperation):
         finally:
             if session:
                 session.close()
+
+    def get_roles(self, **kwargs):
+        uuid = kwargs["user_id"]
+
+        session = DBSession()
+
+        services.authorized(
+            session_service=self._session_service,
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.READ,
+            resource_type=self._resource_type,
+            resource=self.__get_rbac_resource(user_id=uuid),
+        )
+
+        return self._user_role_service.get(**kwargs)
+
+    def delete_role(self, **kwargs):
+        uuid = kwargs["user_id"]
+
+        session = DBSession()
+
+        services.authorized(
+            session_service=self._session_service,
+            session=session,
+            token=kwargs.get("token"),
+            action=Action.DELETE,
+            resource_type=self._resource_type,
+            resource=self.__get_rbac_resource(user_id=uuid),
+        )
+
+        return self._user_role_service.delete(**kwargs)
 
 
 class RoleService(ServiceOperation):
@@ -363,6 +433,9 @@ class RoleService(ServiceOperation):
                 except ValueError:
                     raise ServiceException("Invalid role policy")
 
+            if not isinstance(role_policy, dict):
+                raise ServiceException("Invalid policy document")
+
             role_action_list = []
 
             try:
@@ -374,28 +447,32 @@ class RoleService(ServiceOperation):
 
             for action in role_actions:
                 action_resource: Optional[str] = action.get("resource")
+                action_resources: Optional[List[str]] = action.get("resources") or []
+                if action_resource:
+                    action_resources.append(action_resource)
                 action_action: Optional[str] = action.get("action")
 
-                if not any([action_resource, action_action]):
+                if action_action is None or len(action_resources) == 0:
                     raise ServiceException("resource or resources must be supplied")
 
-                action_resource_parts = action_resource.split("/")
-                resource_type = action_resource_parts[0]
-                resource_item = None
-                if len(action_resource_parts) > 1:
-                    resource_item = action_resource_parts[1]
-                role_action = RoleAction(
-                    action=Action[action_action.upper()],
-                    role=None,
-                    resource=resource_item,
-                    resource_type=ResourceType[resource_type.upper()],
-                )
-                role_action_list.append(role_action)
+                for action_resource in action_resources:
+                    action_resource_parts = action_resource.split("/")
+                    resource_type = action_resource_parts[0]
+                    resource_item = None
+                    if len(action_resource_parts) > 1:
+                        resource_item = action_resource_parts[1]
+                    role_action = RoleAction(
+                        action=Action[action_action.upper()],
+                        role=None,
+                        resource=resource_item,
+                        resource_type=ResourceType[resource_type.upper()],
+                    )
+                    role_action_list.append(role_action)
 
             if len(role_action_list) == 0:
                 raise ServiceException("Invalid role. Policy not supplied")
 
-            role_record: Role = Role(name=name)
+            role_record: Role = Role(name=name, policy=role_policy)
             session.add(role_record)
             session.commit()
             session.refresh(role_record)
@@ -405,13 +482,18 @@ class RoleService(ServiceOperation):
                 session.add(role_action)
             session.commit()
 
-            role_record.policy = role_action_list
+            role_record.policy_items = role_action_list
 
             return role_record
-        except Exception as e:
+        except Exception as exc:
             session.rollback()
-            self.__LOG.exception(f"Error when creating role")
-            raise
+            error_str = str(exc).lower()
+
+            if ("unique constraint" in error_str) and ("uq_role_name" in error_str):
+                # valid failure
+                raise ConflictException("Role name already exists")
+            else:
+                raise
         finally:
             if session:
                 session.close()
@@ -510,6 +592,9 @@ class RoleService(ServiceOperation):
             else:
                 role_actions: Optional[dict] = {}
 
+            if not isinstance(role_actions, dict):
+                raise ServiceException("Invalid policy document")
+
             role_action_items = []
             for action in role_actions.get("items") or []:
                 action_resource: Optional[str] = action.get("resource")
@@ -553,10 +638,15 @@ class RoleService(ServiceOperation):
 
             return role_record
 
-        except Exception as e:
+        except Exception as exc:
             session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
+            error_str = str(exc).lower()
+
+            if ("unique constraint" in error_str) and ("uq_role_name" in error_str):
+                # valid failure
+                raise ConflictException("Role name already exists")
+            else:
+                raise
         finally:
             if session:
                 session.close()
@@ -564,7 +654,9 @@ class RoleService(ServiceOperation):
 
 class UserRoleService(ServiceOperation):
     """
-    Manage user roles
+    Manage user roles. This is a function of the user service. Permissions are part of the user function.
+    Whatever a user is permitted to do on a user, they are permitted to do on the user role.
+    For this reason, we don't check/test permissions in the user role service as it is called only in the user service.
     """
 
     def __init__(self, config: dict, session_service: UserSessionService):
@@ -575,21 +667,13 @@ class UserRoleService(ServiceOperation):
 
         self.__LOG.info("Initializing service...")
 
-    def create(self, **kwargs) -> Role:
+    def create(self, **kwargs) -> UserRole:
         user_id: str = kwargs["user_id"]
         user_role: dict = kwargs["role"]
 
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.CREATE,
-                resource_type=self.__resource_type,
-            )
 
             role: Role = (
                 session.query(Role).filter(Role.uuid == user_role["id"]).first()
@@ -623,19 +707,11 @@ class UserRoleService(ServiceOperation):
             if session:
                 session.close()
 
-    def get(self, **kwargs) -> list[Role]:
+    def get(self, **kwargs) -> list[UserRole]:
         user_id = kwargs.get("user_id")
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.READ,
-                resource_type=self.__resource_type,
-            )
 
             return (
                 session.query(Role)
@@ -657,14 +733,6 @@ class UserRoleService(ServiceOperation):
         session = DBSession()
         try:
             session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.DELETE,
-                resource_type=self.__resource_type,
-            )
 
             if uuid is None:
                 query = (
@@ -690,57 +758,5 @@ class UserRoleService(ServiceOperation):
             if session:
                 session.close()
 
-    def update(self, **kwargs) -> Role:
-        role_uuid = kwargs["id"]
-        role: dict = kwargs["role"]
-
-        session = DBSession()
-        try:
-            session.expire_on_commit = False
-
-            services.authorized(
-                session_service=self.__session_service,
-                session=session,
-                token=kwargs.get("token"),
-                action=Action.UPDATE,
-                resource_type=self.__resource_type,
-            )
-
-            role_record = session.query(Role).filter(Role.uuid == role_uuid)
-            session.query(UserRole).filter(Role.uuid == role_uuid).filter(
-                UserRole.role == Role.id
-            ).delete()
-
-            role_actions: Optional[dict] = role.get("policy")
-
-            for action in role_actions:
-                action_resource: Optional[str] = action.get("resource")
-                action_actions: Optional[set[str]] = action.get("policy")
-                action_resources: Optional[set[str]] = action.get("resources") or set()
-
-                if not any([action_resource, action_resources]):
-                    raise ServiceException("resource or resources must be supplied")
-
-                if action_resource:
-                    action_resources.add(action_resource)
-
-                for action_resource in action_resources:
-                    for action_actions_action in action_actions:
-                        role_action = RoleAction(
-                            action=action_actions_action,
-                            role=role_record.id,
-                            resource=action_resource,
-                        )
-                        session.add(role_action)
-
-            session.commit()
-
-            return role_record
-
-        except Exception as e:
-            session.rollback()
-            self.__LOG.exception(f"Error when updating user")
-            raise
-        finally:
-            if session:
-                session.close()
+    def update(self, **kwargs) -> UserRole:
+        raise NotImplementedError("Invalid operation on user role service")

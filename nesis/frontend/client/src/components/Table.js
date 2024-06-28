@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import Spinner from './Spinner';
 import SortIndicator from './table/SortIndicator';
 import { ReactComponent as BinIcon } from '../images/BinIcon.svg';
@@ -46,7 +46,8 @@ const DeleteButtonContainer = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  margin-left: 16px;
+  margin-left: 8px;
+  margin-right: 8px;
 
   fill: ${(props) => props.theme.danger2};
 

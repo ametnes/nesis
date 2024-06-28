@@ -1,5 +1,5 @@
 const api = require('./datasources');
-const config = require('../config');
+const config = require('../profile');
 const sinon = require('sinon');
 const { Request } = require('../util/test-util');
 
@@ -39,6 +39,48 @@ describe('Datasources', () => {
       requests.url,
     );
     sinon.assert.match('POST', requests.method);
+    sinon.assert.match(
+      request.headers.authorization,
+      requests.headers['Authorization'],
+    );
+  });
+
+  it('can be updated', () => {
+    const requests = new Request();
+    const post = api.post(requests, config.profile.DEV);
+    const request = {
+      headers: {
+        authorization: 'Usdz3323233eeewe',
+      },
+      body: {
+        id: '89lio',
+        name: 'Test',
+        engine: 'sqlserver',
+        dataobjects: 'customer',
+        connection: {
+          host: 'host.name',
+          user: 'user',
+          password: 'password',
+        },
+      },
+    };
+
+    const responseStab = sinon.stub();
+    const statusStab = sinon.stub().returns({ send: responseStab });
+    const response = {
+      status: statusStab,
+    };
+
+    post(request, response);
+    sinon.assert.calledWith(statusStab, 200);
+    sinon.assert.called(responseStab);
+    const args = responseStab.getCall(0).args[0];
+    sinon.assert.match(args, request.body);
+    sinon.assert.match(
+      `${config.profile.DEV.SERVICE_ENDPOINT}/datasources/89lio`,
+      requests.url,
+    );
+    sinon.assert.match('PUT', requests.method);
     sinon.assert.match(
       request.headers.authorization,
       requests.headers['Authorization'],

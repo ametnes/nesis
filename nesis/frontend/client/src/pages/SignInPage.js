@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import styled from 'styled-components';
-import { ReactComponent as Nesis } from '../images/NosisIcon.svg';
+import { ReactComponent as Nesis } from '../images/NesisIcon.svg';
 import { Formik, Form as FormikForm } from 'formik';
 import { TextField } from '../components/form';
 import { required } from '../components/form/validators';
@@ -9,9 +9,15 @@ import FullPageFormContainer from '../components/layout/FullPageFormContainer';
 import client from '../utils/httpClient';
 import parseApiErrorMessage from '../utils/parseApiErrorMessage';
 import SessionContext from '../SessionContext';
+import { useConfig } from '../ConfigContext';
 import { useHistory } from 'react-router-dom';
 import { setToken } from '../utils/tokenStorage';
 import MessageRow from '../components/MessageRow';
+import { Col, Container, Row, Form } from 'react-bootstrap';
+import classes from '../styles/SignInPage.module.css';
+import AzureButton from '../components/AzureButton';
+import { Toggles } from 'react-bootstrap-icons';
+import GoogleButton from '../components/GoogleButton';
 
 const LogoContainer = styled.div`
   margin-top: 32px;
@@ -84,8 +90,15 @@ const HTTP_STATUS_UNAUTHORIZED = 401;
 
 const SignInPage = () => {
   const [error, setError] = useState();
+  const [toggleCreds, setToggleCreds] = useState(false);
   const { setSession } = useContext(SessionContext);
   const history = useHistory();
+  const config = useConfig();
+  const azureAuthEnabled = config?.auth?.OAUTH_AZURE_ENABLED;
+  const googleAuthEnabled =
+    config?.auth?.OAUTH_GOOGLE_ENABLED &&
+    config?.auth?.OAUTH_GOOGLE_CLIENT_ID !== undefined;
+  const oauthEnabled = azureAuthEnabled || googleAuthEnabled;
 
   function submit(session, actions) {
     client
@@ -124,42 +137,76 @@ const SignInPage = () => {
           <Heading1>Nesis</Heading1>
           <Heading2>Your Enterprise Knowledge Partner</Heading2>
           <MessageRow variant="danger">{error}</MessageRow>
-          <Formik
-            initialValues={{
-              email: '',
-              password: '',
-            }}
-            onSubmit={submit}
-          >
-            {({ isSubmitting, resetForm }) => (
-              <FormikForm>
-                <FormRow>
-                  <TextField
-                    type="name"
-                    id="email"
-                    placeholder="enter your email"
-                    name="email"
-                    validate={required}
+
+          <Container fluid>
+            <Row>
+              <Col className={`${classes.colsign} px-1`} lg={10}>
+                {azureAuthEnabled && !toggleCreds && (
+                  <AzureButton onFailure={setError} onSuccess={handleSuccess} />
+                )}
+              </Col>
+            </Row>
+            <Row>
+              <Col className={`${classes.colsign} px-1`} lg={10}>
+                {googleAuthEnabled && !toggleCreds && (
+                  <GoogleButton
+                    onFailure={setError}
+                    onSuccess={handleSuccess}
                   />
-                </FormRow>
-                <FormRow>
-                  <TextField
-                    type="password"
-                    id="password"
-                    placeholder="**********"
-                    name="password"
-                    validate={required}
-                  />
-                </FormRow>
-                <StyledButtonWrapper>
-                  <ActionButton disabled={isSubmitting} type="submit">
-                    Log In
-                    <BsArrowRightShort />
-                  </ActionButton>
-                </StyledButtonWrapper>
-              </FormikForm>
-            )}
-          </Formik>
+                )}
+              </Col>
+            </Row>
+          </Container>
+          {(!oauthEnabled || toggleCreds) && (
+            <div>
+              <Formik
+                initialValues={{
+                  email: '',
+                  password: '',
+                }}
+                onSubmit={submit}
+              >
+                {({ isSubmitting, resetForm }) => (
+                  <FormikForm>
+                    <FormRow>
+                      <TextField
+                        type="name"
+                        id="email"
+                        placeholder="enter your email"
+                        name="email"
+                        validate={required}
+                      />
+                    </FormRow>
+                    <FormRow>
+                      <TextField
+                        type="password"
+                        id="password"
+                        placeholder="**********"
+                        name="password"
+                        validate={required}
+                      />
+                    </FormRow>
+                    <StyledButtonWrapper>
+                      <ActionButton disabled={isSubmitting} type="submit">
+                        Log In
+                        <BsArrowRightShort />
+                      </ActionButton>
+                    </StyledButtonWrapper>
+                  </FormikForm>
+                )}
+              </Formik>
+            </div>
+          )}
+          {oauthEnabled && (
+            <div className={classes.toggleCredsDiv}>
+              <span
+                className={classes.toggleCreds}
+                onClick={() => setToggleCreds(!toggleCreds)}
+              >
+                Use {!toggleCreds ? 'password' : 'Azure'}
+              </span>
+            </div>
+          )}
         </div>
       </FullPageFormContainer>
     </Page>

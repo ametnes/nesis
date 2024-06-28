@@ -1,4 +1,4 @@
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 const SquareButton = styled.button`
   color: ${(props) => props.theme.white};
@@ -74,6 +74,12 @@ export const OutlinedSquareButton = styled(SquareButton)`
     color: #089fdf;
     border-color: #089fdf;
   }
+`;
+
+export const EditOutlinedSquareButton = styled(OutlinedSquareButton)`
+  min-width: 50px;
+  margin-left: 8px;
+  margin-right: 8px;
 `;
 
 export default SquareButton;

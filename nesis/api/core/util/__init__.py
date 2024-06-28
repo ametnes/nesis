@@ -1,4 +1,5 @@
 import hashlib
+import re
 
 from sqlalchemy import text
 
@@ -23,6 +24,10 @@ def merge(source, destination):
     return destination
 
 
+def clean_control(value: str) -> str:
+    return re.sub(r"[ \\/,:.]+", "", value)
+
+
 def uid(value: str) -> str:
     h = hashlib.sha3_512()
     h.update(value.encode("utf-8"))
@@ -34,3 +39,7 @@ def run_sql(engine, path):
         with open(path) as file:
             query = text(file.read())
             con.execute(query)
+
+
+def isblank(item: str) -> bool:
+    return item is None or item == "" or str(item).isspace()

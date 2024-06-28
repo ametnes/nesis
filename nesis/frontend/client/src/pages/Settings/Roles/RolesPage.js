@@ -2,8 +2,9 @@ import React from 'react';
 import {
   LightSquareButton,
   OutlinedSquareButton,
+  EditOutlinedSquareButton,
 } from '../../../components/inputs/SquareButton';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import { device } from '../../../utils/breakpoints';
 import Table, { DeleteItemButton } from '../../../components/Table';
 import { useHistory, useRouteMatch, useLocation } from 'react-router-dom';
@@ -200,18 +201,18 @@ const DocumentsGPTPage = () => {
           </MessageRow> */}
           <MobileList>
             {DocumentsLoading && <Spinner />}
-            {paginatedDocuments.map((Roles, index) => (
+            {paginatedDocuments.map((role, index) => (
               <MobileListItem
-                key={Roles.name}
+                key={role.name}
                 mainContent={
                   <DocumentsMobileHeader>
                     <DocumentsIndex>{index + 1}</DocumentsIndex>{' '}
                     <div>
                       <span>
-                        <StatusIcon status={Roles.enabled} />
-                        {Roles.enabled ? 'ONLINE' : 'OFFLINE'}
+                        <StatusIcon status={role.enabled} />
+                        {role.enabled ? 'ONLINE' : 'OFFLINE'}
                       </span>
-                      <DocumentsTitle>{Roles.name}</DocumentsTitle>
+                      <DocumentsTitle>{role.name}</DocumentsTitle>
                     </div>
                   </DocumentsMobileHeader>
                 }
@@ -220,8 +221,8 @@ const DocumentsGPTPage = () => {
                     <EditButton
                       onClick={() =>
                         history.push({
-                          pathname: `/settings/roles/${Roles.id}/edit`,
-                          state: Roles,
+                          pathname: `/settings/roles/${role.id}/edit`,
+                          state: role,
                         })
                       }
                     >
@@ -229,7 +230,7 @@ const DocumentsGPTPage = () => {
                     </EditButton>
                     <DeleteButton
                       onClick={() => {
-                        setCurrentItem(Roles.id);
+                        setCurrentItem(role.id);
                         showConfirmModal();
                       }}
                     >
@@ -275,27 +276,27 @@ const DocumentsGPTPage = () => {
                     </td>
                   </tr>
                 )}
-                {paginatedDocuments.map((Roles) => (
-                  <tr key={Roles.id}>
-                    <td>{Roles.name}</td>
-                    <td>{Roles?.create_date}</td>
+                {paginatedDocuments.map((role) => (
+                  <tr key={role.id}>
+                    <td>{role.name}</td>
+                    <td>{role?.create_date}</td>
                     <td style={{ display: 'flex' }}>
-                      <DeleteItemButton
-                        onClick={() => {
-                          setCurrentItem(Roles.id);
-                          showConfirmModal();
-                        }}
-                      />
-                      <OutlinedSquareButton
+                      <EditOutlinedSquareButton
                         onClick={() =>
                           history.push({
-                            pathname: `/settings/roles/${Roles.id}/edit`,
-                            state: Roles,
+                            pathname: `/settings/roles/${role.id}/edit`,
+                            state: role,
                           })
                         }
                       >
                         Edit
-                      </OutlinedSquareButton>
+                      </EditOutlinedSquareButton>
+                      <DeleteItemButton
+                        onClick={() => {
+                          setCurrentItem(role.id);
+                          showConfirmModal();
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

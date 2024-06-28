@@ -2,7 +2,7 @@ import copy
 import uuid
 import enum
 import datetime as dt
-from typing import Optional
+from typing import Optional, Dict, Any
 import nesis.api.core.models.objects as objects
 
 from sqlalchemy.orm import relationship
@@ -21,6 +21,7 @@ from sqlalchemy import (
     Unicode,
     Enum,
     ForeignKeyConstraint,
+    Text,
 )
 
 DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -35,91 +36,12 @@ class Module(enum.Enum):
     qanda = enum.auto()
 
 
-class Model(Base):
-    __tablename__ = "model"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(Unicode(255), nullable=False)
-    module = Column(Enum(Module, name="model_module"), nullable=False)
-    datasource = Column(Unicode(255), nullable=False)
-    dataobject = Column(Unicode(255), nullable=False)
-    target = Column(Unicode(255))
-    enabled = Column(Boolean, default=True, nullable=False)
-    attributes = Column(JSONB)
-
-    __table_args__ = (
-        Index("idx_model_name", "module", "name"),
-        UniqueConstraint("module", "name", name="uq_model_module_name"),
-    )
-
-    def __init__(self, name, module, datasource, dataobject, target, attributes=None):
-        self.name = name
-        self.module = module
-        self.datasource = datasource
-        self.dataobject = dataobject
-        self.target = target
-        self.attributes = attributes
-
-    def to_dict(self):
-        dict_value = {
-            "name": self.name,
-            "module": self.module.name,
-            "datasource": self.datasource,
-            "dataobject": self.dataobject,
-            "target": self.target,
-            "enabled": self.enabled,
-            "attributes": self.attributes,
-        }
-        return dict_value
-
-
-class Rule(Base):
-    __tablename__ = "model_rule"
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(Unicode(255), unique=True)
-    model = Column(
-        BigInteger,
-        ForeignKey("model.id", ondelete="CASCADE", name="fk_model_rule_model"),
-        nullable=False,
-    )
-    description = Column(Unicode(255))
-    created_by = Column(Unicode(255))
-    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
-    value = Column(JSONB, nullable=False)
-    enabled = Column(Boolean, default=True, nullable=False)
-
-    rule_model = relationship("Model", foreign_keys=[model], lazy="subquery")
-
-    def __init__(
-        self, name, description, model, value, create_by=None, create_date=None
-    ):
-        self.name = name
-        self.model = model
-        self.description = description
-        self.created_by = create_by
-        self.value = value
-        self.create_date = create_date or dt.datetime.utcnow()
-
-    def to_dict(self):
-        dict_value = {
-            "id": self.id,
-            "name": self.name,
-            "model": {"id": self.model, "name": self.rule_model.name},
-            "description": self.description,
-            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
-            "created_by": self.created_by,
-            "value": self.value,
-            "enabled": self.enabled,
-        }
-        return dict_value
-
-
 class Prediction(Base):
     __tablename__ = "prediction"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     input = Column(JSONB)
     model = Column(
         BigInteger,
-        ForeignKey("model.id", ondelete="CASCADE", name="fk_rule_model"),
         nullable=True,
     )
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
@@ -127,11 +49,8 @@ class Prediction(Base):
     uid = Column(Unicode(4096), unique=True)
     module = Column(Unicode(4096))
 
-    prediction_model = relationship("Model", foreign_keys=[model], lazy="subquery")
-
-    def __init__(self, module, model, data, input, create_date=None, uid=None):
+    def __init__(self, module, data, input, create_date=None, uid=None):
         self.module = module
-        self.model = model
         self.input = input
         self.data = data
         self.uid = uid
@@ -191,11 +110,13 @@ class DatasourceType(enum.Enum):
     SHAREPOINT = enum.auto()
     MYSQL = enum.auto()
     DROPBOX = enum.auto()
+    S3 = enum.auto()
 
 
 class DatasourceStatus(enum.Enum):
     ONLINE = enum.auto()
     OFFLINE = enum.auto()
+    INGESTING = enum.auto()
 
 
 class Datasource(Base):
@@ -203,10 +124,12 @@ class Datasource(Base):
     id = Column(BigInteger, primary_key=True, nullable=False)
     uuid = Column(Unicode(255), unique=True, nullable=False)
     type = Column(Enum(DatasourceType, name="datasource_type"), nullable=False)
-    name = Column(Unicode(255), nullable=False, unique=True)
+    name = Column(Unicode(255), nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     status = Column(Enum(DatasourceStatus, name="datasource_status"), nullable=False)
     connection = Column(JSONB, nullable=False)
+
+    __table_args__ = (UniqueConstraint("name", name="uq_datasource_name"),)
 
     def __init__(
         self,
@@ -223,7 +146,9 @@ class Datasource(Base):
 
     def to_dict(self, **kwargs) -> dict:
         connection = copy.deepcopy(self.connection or {})
-        connection.pop("password", None)
+        secret_keys = ["password", "certificate", "thumbprint"]
+        for secret_key in secret_keys:
+            connection.pop(secret_key, None)
         dict_value = {
             "id": self.uuid,
             "name": self.name,
@@ -247,7 +172,9 @@ class Document(Base):
     store_metadata = Column(JSONB)
 
     __table_args__ = (
-        UniqueConstraint("uuid", "base_uri", name="uq_document_uuid_base_url"),
+        UniqueConstraint(
+            "uuid", "base_uri", "filename", name="uq_document_uuid_base_url_filename"
+        ),
     )
 
     def __init__(
@@ -337,13 +264,15 @@ class Role(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), unique=True, nullable=False)
     name = Column(Unicode(255), nullable=False)
+    policy = Column(JSONB)
     create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
 
     __table_args__ = (UniqueConstraint("name", name="uq_role_name"),)
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, policy: Dict[str, Any]) -> None:
         self.uuid = str(uuid.uuid4())
         self.name = name
+        self.policy = policy
         self.policy_items = []
 
     def to_dict(self, **kwargs) -> dict:
@@ -353,7 +282,9 @@ class Role(Base):
             "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
         }
 
-        if (
+        if self.policy is not None:
+            dict_value["policy"] = self.policy
+        elif (
             hasattr(self, "policy_items")
             and self.policy_items
             and len(self.policy_items) > 0
@@ -444,3 +375,170 @@ class RoleAction(Base):
         }
 
         return dict_value
+
+
+class Task(Base):
+    """
+    This entity represents a background task to be run on schedule
+    """
+
+    __tablename__ = "task"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    type = Column(Enum(objects.TaskType, name="task_type"), nullable=False)
+    schedule = Column(Unicode(255), nullable=False)
+    """
+    This basically the entity that this task operates on if any. For example a datasource.
+    We cannot put a foreign on this field since the parent could be of different entity/object types.
+    Having a parent id here helps us find all the tasks related to a parent. For example if a parent is deleted,
+    all related tasks should be deleted.
+    """
+    parent_id = Column(Unicode(255))
+    definition = Column(JSONB, nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    status = Column(Enum(objects.TaskStatus, name="task_status"), nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    update_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "parent_id", "type", "schedule", name="uq_task_parent_id_type_schedule"
+        ),
+        Index("idx_task_type", "type"),
+        Index("idx_task_parent", "parent_id"),
+    )
+
+    def __init__(
+        self,
+        task_type: objects.TaskType,
+        schedule: str,
+        definition: Dict[str, Any],
+        status: objects.TaskStatus = objects.TaskStatus.CREATED,
+        create_date: dt.datetime = dt.datetime.utcnow(),
+        parent_id: Optional[str] = None,
+    ):
+        self.uuid = str(uuid.uuid4())
+        self.type = task_type
+        self.status = status
+        self.schedule = schedule
+        self.definition = definition
+        self.create_date = create_date
+        self.parent_id = parent_id
+
+    def to_dict(self, **kwargs):
+        return {
+            "id": self.uuid,
+            "type": self.type.name,
+            "schedule": self.schedule,
+            "enabled": self.enabled,
+            "status": self.status.name,
+            "parent_id": self.parent_id,
+            "definition": self.definition,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+            "update_date": self.update_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }
+
+
+class App(Base):
+    """
+    An app integration
+    """
+
+    __tablename__ = "app"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    name = Column(Unicode(255))
+    description = Column(Unicode(255))
+    secret = Column(LargeBinary, nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    attributes = Column(JSONB)
+    enabled = Column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (UniqueConstraint("name", name="uq_app_name"),)
+
+    def __init__(
+        self,
+        name: str,
+        secret: bytes,
+        description: str,
+        create_date: dt.datetime = dt.datetime.utcnow(),
+    ):
+        self.uuid = str(uuid.uuid4())
+        self.name = name
+        self.secret = secret
+        self.description = description
+        self.create_date = create_date
+        self.roles = []
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        result = {
+            "id": self.uuid,
+            "name": self.name,
+            "description": self.description,
+            "enabled": self.enabled,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }
+        if isinstance(self.secret, str) and "secret" in (kwargs.get("include") or []):
+            result["secret"] = self.secret
+        if hasattr(self, "roles") and self.roles:
+            result["roles"] = [role.to_dict() for role in self.roles or []]
+
+        return result
+
+
+class AppRole(Base):
+    __tablename__ = "app_role"
+    id = Column(BigInteger, primary_key=True, nullable=False)
+    uuid = Column(Unicode(255), unique=True, nullable=False)
+    role = Column(BigInteger, nullable=False)
+    app = Column(BigInteger, nullable=False)
+    create_date = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("app", "role", name="uq_app_role_app_role"),
+        ForeignKeyConstraint(
+            ("role",), [Role.id], name="fk_app_role_role", ondelete="CASCADE"
+        ),
+        ForeignKeyConstraint(
+            ("app",), [App.id], name="fk_app_role_app", ondelete="CASCADE"
+        ),
+    )
+
+    def __init__(self, role: Role, app: App):
+        self.uuid = str(uuid.uuid4())
+        self.role = role.id
+        self.app = app.id
+
+    def to_dict(self, **kwargs) -> dict:
+        dict_value = {
+            "id": self.uuid,
+            "role": self.role,
+            "app": self.app,
+            "create_date": self.create_date.strftime(DEFAULT_DATETIME_FORMAT),
+        }
+
+        return dict_value
+
+
+class DocumentExtract(Base):
+    __tablename__ = "document_extract"
+    id = Column("id", BigInteger, autoincrement=True, primary_key=True)
+    document_id = Column("document_id", Unicode(255), nullable=False, unique=True)
+    datasource_id = Column("datasource_id", Unicode(255), nullable=False)
+    extract_metadata = Column("extract_metadata", Text, nullable=False)
+    store_metadata = Column("store_metadata", JSONB, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ("datasource_id",),
+            [Datasource.uuid],
+            name="fk_extract_datasource_id",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __init__(self, document_id, store_metadata, datasource_id, extract_metadata):
+        self.document_id = document_id
+        self.datasource_id = datasource_id
+        self.extract_metadata = extract_metadata
+        self.store_metadata = store_metadata
