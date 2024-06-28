@@ -111,3 +111,35 @@ def test_fetch_documents(
             "self_link": "https://s3.endpoint/buckets/SomeName",
         },
     )
+
+
+@mock.patch("nesis.api.core.document_loaders.minio.Minio")
+def test_validate_connection_info(
+    minio_instance: mock.MagicMock, cache: mock.MagicMock, session: Session
+) -> None:
+
+    connection = {
+        "endpoint": "https://s3.endpoint",
+        "user": "",
+        "password": "",
+        "dataobjects": "bucketname",
+    }
+
+    # Test missing endpoint
+    with pytest.raises(AssertionError) as ex_info:
+        minio.validate_connection_info(connection={})
+        assert "An endpoint must be supplied" in str(ex_info)
+
+    # Test missing bucket
+    with pytest.raises(AssertionError) as ex_info:
+        minio.validate_connection_info(connection={"endpoint": "some.endpoint"})
+        assert "One or more buckets must be supplied" in str(ex_info)
+
+    # Test connection to minio
+    minio_client = mock.MagicMock()
+    minio_instance.return_value = minio_client
+    minio_client.list_objects.side_effect = Exception("Connection failed")
+
+    with pytest.raises(ValueError) as ex_info:
+        minio.validate_connection_info(connection=connection)
+        assert "Failed to connect to minio instance" in str(ex_info)
