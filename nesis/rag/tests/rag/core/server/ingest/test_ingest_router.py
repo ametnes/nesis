@@ -38,7 +38,7 @@ def settings() -> Settings:
         # ascii
         "rfc791.txt",
         # utf-16
-        "test2_transcript.txt",
+        "utf16_transcript.txt",
         "file-sample_150kB.pdf",
     ],
 )
