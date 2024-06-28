@@ -23,6 +23,7 @@ from nesis.rag.core.components.ingest.readers import TiffReader, PdfReader
         ("website-traffic-dashboard.xlsx", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.pdf", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.jpg", ["web", "traffic", "dashboard"]),
+        ("website-traffic-dashboard.JPEG", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.png", ["web", "traffic", "dashboard"]),
         ("website-traffic-dashboard.tiff", ["web", "traffic", "dashboard"]),
         ("introduction-to-nesis.mp3", ["canada", "england"]),

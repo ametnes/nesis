@@ -78,7 +78,7 @@ class IngestionHelper:
     def _load_file_to_documents(file_name: str, file_data: Path) -> list[Document]:
         logger.debug("Transforming file_name=%s into documents", file_name)
         extension = Path(file_name).suffix
-        reader_cls = FILE_READER_CLS.get(extension)
+        reader_cls = FILE_READER_CLS.get(extension.lower())
         if reader_cls is None:
             logger.debug(
                 "No reader found for extension=%s, using default string reader",
