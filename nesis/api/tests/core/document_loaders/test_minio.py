@@ -16,9 +16,12 @@ from nesis.api.core.models import DBSession
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.models.entities import (
     Datasource,
+    Document,
+)
+
+from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
-    Document,
 )
 from nesis.api.core.util import http
 

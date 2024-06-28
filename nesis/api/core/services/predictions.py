@@ -10,9 +10,12 @@ from nesis.api.core import util
 from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import (
     Prediction,
-    Module,
     Action,
     RoleAction,
+)
+
+from nesis.api.core.models.objects import (
+    Module,
 )
 from nesis.api.core.models.objects import ResourceType
 from nesis.api.core.services.util import ServiceOperation, ServiceException

@@ -15,9 +15,12 @@ from nesis.api.core.models import initialize_engine
 import nesis.api.core.services as services
 from nesis.api.core.models.entities import (
     Datasource,
+    Document,
+)
+
+from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
-    Document,
 )
 
 

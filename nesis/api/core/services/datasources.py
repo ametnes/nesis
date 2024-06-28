@@ -8,10 +8,12 @@ from nesis.api.core.models import DBSession
 from nesis.api.core.models.entities import (
     Action,
     Datasource,
-    DatasourceStatus,
-    DatasourceType,
     RoleAction,
     Task,
+)
+from nesis.api.core.models.objects import (
+    DatasourceStatus,
+    DatasourceType,
 )
 from nesis.api.core.services.util import (
     ServiceOperation,

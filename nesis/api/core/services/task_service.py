@@ -23,6 +23,8 @@ from nesis.api.core.models.entities import (
     Action,
     Datasource,
     Task,
+)
+from nesis.api.core.models.objects import (
     DatasourceStatus,
 )
 from nesis.api.core.models.objects import TaskType, TaskStatus

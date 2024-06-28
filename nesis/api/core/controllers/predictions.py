@@ -2,7 +2,7 @@ from flask import request, jsonify
 from . import GET, POST, DELETE, PUT
 from .api import app, error_message
 
-from nesis.api.core.models.entities import Module
+from nesis.api.core.models.objects import Module
 import logging
 import nesis.api.core.services as services
 import nesis.api.core.services.util as util

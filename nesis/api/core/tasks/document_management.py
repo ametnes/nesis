@@ -7,7 +7,8 @@ import nesis.api.core.document_loaders.minio as minio
 import nesis.api.core.document_loaders.s3 as s3
 import nesis.api.core.document_loaders.samba as samba
 import nesis.api.core.document_loaders.sharepoint as sharepoint
-from nesis.api.core.models.entities import Datasource, DatasourceType
+from nesis.api.core.models.entities import Datasource
+from nesis.api.core.models.objects import DatasourceType
 from nesis.api.core.services.datasources import DatasourceService
 from nesis.api.core.util import http
 

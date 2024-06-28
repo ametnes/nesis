@@ -29,13 +29,6 @@ DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 from . import Base
 
 
-class Module(enum.Enum):
-    anomaly = enum.auto()
-    insights = enum.auto()
-    data = enum.auto()
-    qanda = enum.auto()
-
-
 class Prediction(Base):
     __tablename__ = "prediction"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -101,41 +94,25 @@ class Setting(Base):
         return dict_value
 
 
-class DatasourceType(enum.Enum):
-    MINIO = enum.auto()
-    POSTGRES = enum.auto()
-    WINDOWS_SHARE = enum.auto()
-    SQL_SERVER = enum.auto()
-    GOOGLE_DRIVE = enum.auto()
-    SHAREPOINT = enum.auto()
-    MYSQL = enum.auto()
-    DROPBOX = enum.auto()
-    S3 = enum.auto()
-
-
-class DatasourceStatus(enum.Enum):
-    ONLINE = enum.auto()
-    OFFLINE = enum.auto()
-    INGESTING = enum.auto()
-
-
 class Datasource(Base):
     __tablename__ = "datasource"
     id = Column(BigInteger, primary_key=True, nullable=False)
     uuid = Column(Unicode(255), unique=True, nullable=False)
-    type = Column(Enum(DatasourceType, name="datasource_type"), nullable=False)
+    type = Column(Enum(objects.DatasourceType, name="datasource_type"), nullable=False)
     name = Column(Unicode(255), nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
-    status = Column(Enum(DatasourceStatus, name="datasource_status"), nullable=False)
+    status = Column(
+        Enum(objects.DatasourceStatus, name="datasource_status"), nullable=False
+    )
     connection = Column(JSONB, nullable=False)
 
     __table_args__ = (UniqueConstraint("name", name="uq_datasource_name"),)
 
     def __init__(
         self,
-        source_type: DatasourceType,
+        source_type: objects.DatasourceType,
         name: str,
-        status: DatasourceStatus = DatasourceStatus.ONLINE,
+        status: objects.DatasourceStatus = objects.DatasourceStatus.ONLINE,
         connection: Optional[dict] = None,
     ):
         self.type = source_type
@@ -166,10 +143,16 @@ class Document(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
     # This is likely the endpoint e.g. hostname, URL, SambaShare e.t.c
-    base_uri = Column(Unicode(255), nullable=False)
-    filename = Column(Unicode(255), nullable=False)
-    rag_metadata = Column(JSONB, nullable=False)
+    base_uri = Column(Unicode(4096), nullable=False)
+    filename = Column(Unicode(4096), nullable=False)
+    rag_metadata = Column(JSONB)
+    extract_metadata = Column("extract_metadata", JSONB)
     store_metadata = Column(JSONB)
+    status = Column(
+        Enum(objects.DocumentStatus, name="document_status"), nullable=False
+    )
+    last_processed = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    last_processed_message = Column(Text)
 
     __table_args__ = (
         UniqueConstraint(
@@ -518,27 +501,3 @@ class AppRole(Base):
         }
 
         return dict_value
-
-
-class DocumentExtract(Base):
-    __tablename__ = "document_extract"
-    id = Column("id", BigInteger, autoincrement=True, primary_key=True)
-    document_id = Column("document_id", Unicode(255), nullable=False, unique=True)
-    datasource_id = Column("datasource_id", Unicode(255), nullable=False)
-    extract_metadata = Column("extract_metadata", Text, nullable=False)
-    store_metadata = Column("store_metadata", JSONB, nullable=False)
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ("datasource_id",),
-            [Datasource.uuid],
-            name="fk_extract_datasource_id",
-            ondelete="CASCADE",
-        ),
-    )
-
-    def __init__(self, document_id, store_metadata, datasource_id, extract_metadata):
-        self.document_id = document_id
-        self.datasource_id = datasource_id
-        self.extract_metadata = extract_metadata
-        self.store_metadata = store_metadata
