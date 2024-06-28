@@ -32,13 +32,22 @@ def settings() -> Settings:
     return settings(overrides={"llm": {"mode": "mock"}})
 
 
-def test_ingest_supported(injector, client):
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        # ascii
+        "rfc791.txt",
+        # utf-16
+        "utf16_transcript.txt",
+        "file-sample_150kB.pdf",
+    ],
+)
+def test_ingest_supported(injector, client, file_name):
     """
     Tests the ingestion happy path
     """
     file_path: pathlib.Path = (
-        pathlib.Path(tests.__file__).parent.absolute()
-        / "resources/file-sample_150kB.pdf"
+        pathlib.Path(tests.__file__).parent.absolute() / "resources" / file_name
     )
 
     metadata = {"datasource": "documents"}

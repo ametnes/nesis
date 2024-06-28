@@ -52,7 +52,7 @@ def upgrade() -> None:
     # ### end Alembic commands ###
 
     # Upgrade the document_status type
-    op.execute("ALTER TYPE datasource_status ADD VALUE 'INGESTING';")
+    op.execute("ALTER TYPE datasource_status ADD VALUE IF NOT EXISTS 'INGESTING';")
 
 
 def downgrade() -> None:

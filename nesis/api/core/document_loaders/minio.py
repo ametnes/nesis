@@ -178,14 +178,14 @@ def _sync_document(
                             doc_id=document_data["doc_id"],
                         )
                     except:
-                        _LOG.warn(
+                        _LOG.warning(
                             f"Failed to delete document {document_data['doc_id']}"
                         )
 
                 try:
                     delete_document(document_id=item.etag)
                 except:
-                    _LOG.warn(
+                    _LOG.warning(
                         f"Failed to delete document {item.object_name}'s record. Continuing anyway..."
                     )
 
@@ -207,7 +207,7 @@ def _sync_document(
 
         save_document(
             document_id=item.etag,
-            filename=item.object_name,
+            filename=f"{item.bucket_name}/{item.object_name}",
             base_uri=endpoint,
             rag_metadata=response_json,
             store_metadata={

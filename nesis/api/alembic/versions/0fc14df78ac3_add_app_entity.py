@@ -54,7 +54,7 @@ def upgrade() -> None:
     )
 
     # ### end Alembic commands ###
-    op.execute("ALTER TYPE role_action_resource_type ADD VALUE 'APP';")
+    op.execute("ALTER TYPE role_action_resource_type ADD VALUE IF NOT EXISTS 'APP';")
 
 
 def downgrade() -> None:

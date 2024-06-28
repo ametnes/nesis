@@ -259,7 +259,7 @@ def _process_file(
 
         save_document(
             document_id=file_unique_id,
-            filename=file_name,
+            filename=file_share.path,
             base_uri=endpoint,
             rag_metadata=response_json,
             store_metadata=file_metadata,
