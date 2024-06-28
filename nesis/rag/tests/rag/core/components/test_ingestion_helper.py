@@ -5,6 +5,7 @@ from typing import List
 import pytest
 from llama_index.core import Document
 from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import PDFReader
 
 from nesis.rag import tests
 from nesis.rag.core.components.ingest.ingest_helper import IngestionHelper
@@ -139,3 +140,34 @@ def test_ingestion_default_metadata_exclusion():
         len([doc for doc in document_list if "file_directory" in doc.metadata.keys()])
         == 0
     )
+
+
+def test_ingestion_mixed_pdf():
+    """
+    Test to ensure that mixed pdfs will have text extracted the images (using OCR) and text.
+    """
+    file_path: pathlib.Path = (
+        pathlib.Path(tests.__file__).parent.absolute()
+        / "resources"
+        / "mixed-image-and-text.pdf"
+    )
+
+    reader: BaseReader = PdfReader()
+
+    document_list: list[Document] = reader.load_data(
+        file=file_path,
+        extra_info={
+            "file_name": str(file_path.absolute()),
+            "datasource": "rfc-documents",
+        },
+    )
+
+    invoice_page_docs = [
+        doc for doc in document_list if "invoicepage" in doc.text.lower()
+    ]
+    project_page_docs = [doc for doc in document_list if "textpage" in doc.text.lower()]
+
+    # Invoice would have been OCR'd
+    assert len(invoice_page_docs) > 0
+
+    assert len(project_page_docs) > 0

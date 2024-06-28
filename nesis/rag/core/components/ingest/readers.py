@@ -211,6 +211,8 @@ class PdfReader(BaseReader):
 
         for element in elements:
             element_dict = element.to_dict()
+            if element_dict["text"] == "":
+                continue
             element_text = element_dict["text"]
             metadata = _clean_metadata(
                 {
