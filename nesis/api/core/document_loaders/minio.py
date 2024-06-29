@@ -12,7 +12,7 @@ from minio import Minio
 
 import nesis.api.core.util.http as http
 from nesis.api.core.document_loaders.stores import SqlDocumentStore
-from nesis.api.core.models.entities import Document, Datasource
+from nesis.api.core.models.entities import Document, Datasource, DocumentObject
 from nesis.api.core.services.util import (
     save_document,
     get_document,
@@ -20,6 +20,7 @@ from nesis.api.core.services.util import (
     get_documents,
 )
 from nesis.api.core.util import clean_control, isblank
+from nesis.api.core.util.concurrency import IOBoundPool, as_completed
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 from nesis.api.core.util.dateutil import strptime
 
@@ -101,19 +102,19 @@ class ExtractRunner(RagRunner):
         Here we check if this file has been updated.
         If the file has been updated, we delete it from the vector store and re-ingest the new updated file
         """
-        document: Document = self._extraction_store.get(document_id=document_id)
+        document: DocumentObject = self._extraction_store.get(document_id=document_id)
 
         if document.last_modified < last_modified:
             return False
         try:
-            self.delete(document_id=document_id)
+            self.delete(document=document)
         except:
             _LOG.warning(
                 f"Failed to delete document {document_id}'s record. Continuing anyway..."
             )
         return True
 
-    def save(self, **kwargs) -> Document:
+    def save(self, **kwargs) -> DocumentObject:
         return self._extraction_store.save(
             document_id=kwargs["document_id"],
             datasource_id=kwargs["datasource_id"],
@@ -314,38 +315,56 @@ class MinioProcessor(object):
                 except:
                     _LOG.warning(f"Failed to list objects in bucket {bucket_name}")
                     continue
-                for item in bucket_objects:
-                    endpoint = connection["endpoint"]
-                    self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
-                    _metadata = {
-                        **(metadata or {}),
-                        "file_name": f"{bucket_name}/{item.object_name}",
-                        "self_link": self_link,
-                    }
 
-                    """
-                    We use memcache's add functionality to implement a shared lock to allow for multiple instances
-                    operating 
-                    """
-                    _lock_key = clean_control(f"{__name__}/locks/{self_link}")
-                    if self._cache_client.add(
-                        key=_lock_key, val=_lock_key, time=30 * 60
-                    ):
+                for item in bucket_objects:
+                    futures = [
+                        IOBoundPool.submit(
+                            self._process_object,
+                            bucket_name,
+                            client,
+                            connection,
+                            datasource,
+                            item,
+                            metadata,
+                        )
+                    ]
+                    for future in as_completed(futures):
                         try:
-                            self._sync_document(
-                                client=client,
-                                datasource=datasource,
-                                metadata=_metadata,
-                                bucket_name=bucket_name,
-                                item=item,
-                            )
-                        finally:
-                            self._cache_client.delete(_lock_key)
-                    else:
-                        _LOG.info(f"Document {self_link} is already processing")
+                            future.result()
+                        except:
+                            _LOG.warning(future.exception())
 
         except:
             _LOG.warning("Error fetching and updating documents", exc_info=True)
+
+    def _process_object(
+        self, bucket_name, client, connection, datasource, item, metadata
+    ):
+        endpoint = connection["endpoint"]
+        self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
+        _metadata = {
+            **(metadata or {}),
+            "file_name": f"{bucket_name}/{item.object_name}",
+            "self_link": self_link,
+        }
+        """
+                        We use memcache's add functionality to implement a shared lock to allow for multiple instances
+                        operating 
+                        """
+        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+        if self._cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+            try:
+                self._sync_document(
+                    client=client,
+                    datasource=datasource,
+                    metadata=_metadata,
+                    bucket_name=bucket_name,
+                    item=item,
+                )
+            finally:
+                self._cache_client.delete(_lock_key)
+        else:
+            _LOG.info(f"Document {self_link} is already processing")
 
     def _sync_document(
         self,
