@@ -142,7 +142,7 @@ def test_extract_documents(
             "dataobjects": "buckets",
             "mode": "extract",
             "destination": {
-                "sql": {"url": "postgresql://postgres:password@localhost:65432/nesis"},
+                "sql": {"url": tests.config["database"]["url"]},
             },
         },
     }
