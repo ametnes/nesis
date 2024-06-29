@@ -92,9 +92,6 @@ def test_ingest_datasource_minio(
 
     _, kwargs_fetch_documents = ingestor.return_value.run.call_args_list[0]
     tc.assertDictEqual(
-        kwargs_fetch_documents["datasource"].connection, datasource.connection
-    )
-    tc.assertDictEqual(
         kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
     )
 

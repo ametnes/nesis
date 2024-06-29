@@ -140,7 +140,12 @@ def test_extract_documents(
             "access_key": "",
             "secret_key": "",
             "dataobjects": "buckets",
-            "destination": {"store": {"url": tests.config["database"]["url"]}},
+            "mode": "extract",
+            "destination": {
+                "sql": {
+                    "url": "postgresql://postgres:password@localhost:65432/nesis_migrate"
+                },
+            },
         },
     }
 
@@ -173,9 +178,14 @@ def test_extract_documents(
         config=tests.config,
         http_client=http_client,
         cache_client=cache,
-        mode="extract",
         datasource=datasource,
     )
+
+    extract_store = SqlDocumentStore(
+        url=data["connection"]["destination"]["sql"]["url"]
+    )
+    with Session(extract_store._engine) as session:
+        initial_count = len(session.query(Document).filter().all())
 
     minio_ingestor.run(
         metadata={"datasource": "documents"},
@@ -197,8 +207,5 @@ def test_extract_documents(
         },
     )
 
-    extract_store = SqlDocumentStore(
-        url=data["connection"]["destination"]["store"]["url"]
-    )
     with Session(extract_store._engine) as session:
-        assert len(session.query(Document).filter().all()) == 1
+        assert len(session.query(Document).filter().all()) == initial_count + 1

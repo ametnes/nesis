@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy import DateTime
 from sqlalchemy.orm import registry, Session
 
-from nesis.api.core.models.entities import Document
+from nesis.api.core.models.entities import Document, DocumentObject
 
 _LOG = logging.getLogger(__name__)
 
@@ -50,22 +50,22 @@ class SqlDocumentStore(object):
         mapper_registry = registry()
 
         try:
-            mapper_registry.map_declaratively(Document)
+            mapper_registry.map_declaratively(DocumentObject)
 
-        except sa.exc.ArgumentError:
+        except sa.exc.ArgumentError as ex:
             # Table is already mapped
             pass
         mapper_registry.metadata.create_all(self._engine)
 
-    def get(self, document_id) -> Document:
+    def get(self, document_id) -> DocumentObject:
         with Session(self._engine) as session:
             return (
                 session.query(Document)
-                .filter(Document.document_id == document_id)
+                .filter(DocumentObject.document_id == document_id)
                 .first()
             )
 
-    def save(self, **kwargs) -> Document:
+    def save(self, **kwargs) -> DocumentObject:
         with Session(self._engine) as session:
             session.expire_on_commit = False
             store_record = Document(
@@ -86,8 +86,8 @@ class SqlDocumentStore(object):
     def delete(self, document_id):
         with Session(self._engine) as session:
             store_record = (
-                session.query(Document)
-                .filter(Document.document_id == document_id)
+                session.query(DocumentObject)
+                .filter(DocumentObject.document_id == document_id)
                 .first()
             )
             session.delete(store_record)

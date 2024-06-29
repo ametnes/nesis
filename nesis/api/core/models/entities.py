@@ -138,7 +138,7 @@ class Datasource(Base):
         return dict_value
 
 
-class Document(Base):
+class DocumentObject:
     __tablename__ = "document"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
@@ -204,6 +204,11 @@ class Document(Base):
         }
 
         return dict_value
+
+
+class Document(Base, DocumentObject):
+    def __init__(self, **kwargs):
+        DocumentObject.__init__(self, **kwargs)
 
 
 # RBAC

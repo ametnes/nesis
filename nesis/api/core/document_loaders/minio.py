@@ -62,7 +62,7 @@ class ExtractRunner(RagRunner):
 
         if destination is None:
             raise ValueError("Destination for the extraction is missing")
-        _sql_extraction_store = destination["store"]
+        _sql_extraction_store = destination["sql"]
 
         self._extraction_store = SqlDocumentStore(**_sql_extraction_store)
         self._rag_endpoint = (self._config.get("rag") or {}).get("endpoint")
@@ -238,24 +238,31 @@ class MinioProcessor(object):
         http_client: http.HttpClient,
         cache_client: memcache.Client,
         datasource: Datasource,
-        mode: str = "ingest",
     ):
         self._config = config
         self._http_client = http_client
         self._cache_client = cache_client
         self._datasource = datasource
 
+        _extract_runner = None
+        _ingest_runner = IngestRunner(config=config, http_client=http_client)
+        if self._datasource.connection.get("destination") is not None:
+            _extract_runner = ExtractRunner(
+                config=config,
+                http_client=http_client,
+                destination=self._datasource.connection.get("destination"),
+            )
+        self._ingest_runners = []
+
+        self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
+
+        mode = self._datasource.connection.get("mode") or "ingest"
+
         match mode:
             case "ingest":
-                self._ingest_runner: RagRunner = IngestRunner(
-                    config=config, http_client=http_client
-                )
+                self._ingest_runners: list[RagRunner] = [_ingest_runner]
             case "extract":
-                self._ingest_runner: RagRunner = ExtractRunner(
-                    config=config,
-                    http_client=http_client,
-                    destination=self._datasource.connection.get("destination"),
-                )
+                self._ingest_runners: list[RagRunner] = [_extract_runner]
             case _:
                 raise ValueError(f"Invalid mode {mode}. Expected 'ingest' or 'extract'")
 
@@ -372,41 +379,43 @@ class MinioProcessor(object):
             document: Document = get_document(document_id=item.etag)
             document_id = None if document is None else document.uuid
 
-            try:
-                response_json = self._ingest_runner.run(
-                    file_path=file_path,
-                    metadata=metadata,
-                    document_id=document_id,
-                    last_modified=item.last_modified.replace(tzinfo=None).replace(
-                        microsecond=0
-                    ),
-                    datasource=datasource,
-                )
-            except ValueError:
-                _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
-                response_json = {}
-            except UserWarning:
-                _LOG.debug(f"File {file_path} is already processing")
-                return
+            for _ingest_runner in self._ingest_runners:
 
-            self._ingest_runner.save(
-                document_id=item.etag,
-                datasource_id=datasource.uuid,
-                filename=item.object_name,
-                base_uri=endpoint,
-                rag_metadata=response_json,
-                store_metadata={
-                    "bucket_name": item.bucket_name,
-                    "object_name": item.object_name,
-                    "etag": item.etag,
-                    "size": item.size,
-                    "last_modified": item.last_modified.strftime(
-                        DEFAULT_DATETIME_FORMAT
-                    ),
-                    "version_id": item.version_id,
-                },
-                last_modified=item.last_modified,
-            )
+                try:
+                    response_json = _ingest_runner.run(
+                        file_path=file_path,
+                        metadata=metadata,
+                        document_id=document_id,
+                        last_modified=item.last_modified.replace(tzinfo=None).replace(
+                            microsecond=0
+                        ),
+                        datasource=datasource,
+                    )
+                except ValueError:
+                    _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
+                    response_json = {}
+                except UserWarning:
+                    _LOG.debug(f"File {file_path} is already processing")
+                    return
+
+                _ingest_runner.save(
+                    document_id=item.etag,
+                    datasource_id=datasource.uuid,
+                    filename=item.object_name,
+                    base_uri=endpoint,
+                    rag_metadata=response_json,
+                    store_metadata={
+                        "bucket_name": item.bucket_name,
+                        "object_name": item.object_name,
+                        "etag": item.etag,
+                        "size": item.size,
+                        "last_modified": item.last_modified.strftime(
+                            DEFAULT_DATETIME_FORMAT
+                        ),
+                        "version_id": item.version_id,
+                    },
+                    last_modified=item.last_modified,
+                )
 
             _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")
         except Exception as ex:
@@ -439,7 +448,7 @@ class MinioProcessor(object):
                     str_ex = str(ex)
                     if "NoSuchKey" in str_ex and "does not exist" in str_ex:
                         self._ingest_runner.delete(
-                            document_id=document.id, rag_metadata=rag_metadata
+                            document=document, rag_metadata=rag_metadata
                         )
                     else:
                         raise

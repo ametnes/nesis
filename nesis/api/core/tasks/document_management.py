@@ -37,7 +37,6 @@ def ingest_datasource(**kwargs) -> None:
         raise ValueError(f'Invalid datasource {datasource_param["id"]}')
 
     metadata = {"datasource": datasource.name}
-    rag_mode = config["rag"]["mode"]
 
     match datasource.type:
         case DatasourceType.MINIO:
@@ -46,11 +45,10 @@ def ingest_datasource(**kwargs) -> None:
                 config=config,
                 http_client=http_client,
                 cache_client=cache_client,
-                mode=rag_mode,
                 datasource=datasource,
             )
 
-            minio_ingestor.run(datasource=datasource, metadata=metadata)
+            minio_ingestor.run(metadata=metadata)
 
         case DatasourceType.SHAREPOINT:
             sharepoint.fetch_documents(
