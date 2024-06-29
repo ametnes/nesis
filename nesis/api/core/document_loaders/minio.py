@@ -466,9 +466,10 @@ class MinioProcessor(object):
                 except minio.error.S3Error as ex:
                     str_ex = str(ex)
                     if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                        self._ingest_runner.delete(
-                            document=document, rag_metadata=rag_metadata
-                        )
+                        for _ingest_runner in self._ingest_runners:
+                            _ingest_runner.delete(
+                                document=document, rag_metadata=rag_metadata
+                            )
                     else:
                         raise
 
