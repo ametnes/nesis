@@ -270,6 +270,7 @@ def _sync_document(
                         DEFAULT_DATETIME_FORMAT
                     ),
                 },
+                last_modified=file.time_last_modified,
             )
             _LOG.info(f"Done syncing object {file.name} in at {file.serverRelativeUrl}")
         except Exception as ex:

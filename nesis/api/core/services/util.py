@@ -64,15 +64,20 @@ class ObjectNotFound(ServiceException):
 
 
 def save_document(**kwargs) -> Document:
-    document = Document(
-        document_id=kwargs["document_id"],
-        filename=kwargs["filename"],
-        rag_metadata=kwargs["rag_metadata"],
-        store_metadata=kwargs["store_metadata"],
-        base_uri=kwargs["base_uri"],
-    )
+    document = kwargs.get("document")
+    if document is None:
+        document = Document(
+            document_id=kwargs["document_id"],
+            filename=kwargs["filename"],
+            rag_metadata=kwargs["rag_metadata"],
+            store_metadata=kwargs["store_metadata"],
+            base_uri=kwargs["base_uri"],
+            last_modified=kwargs["last_modified"],
+        )
 
-    session = DBSession()
+    session = kwargs.get("session")
+    if session is None:
+        session = DBSession()
     try:
         session.expire_on_commit = False
         session.add(document)

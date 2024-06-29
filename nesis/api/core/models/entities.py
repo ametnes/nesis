@@ -146,13 +146,15 @@ class Document(Base):
     base_uri = Column(Unicode(4096), nullable=False)
     filename = Column(Unicode(4096), nullable=False)
     rag_metadata = Column(JSONB)
-    extract_metadata = Column("extract_metadata", JSONB)
+    extract_metadata = Column(JSONB)
+    datasource_id = Column(Unicode(255))
     store_metadata = Column(JSONB)
     status = Column(
         Enum(objects.DocumentStatus, name="document_status"),
         nullable=False,
         default=objects.DocumentStatus.PROCESSING,
     )
+    last_modified = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
     last_processed = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
     last_processed_message = Column(Text)
 
@@ -166,22 +168,39 @@ class Document(Base):
         self,
         document_id: str,
         filename: str,
-        rag_metadata: dict,
-        store_metadata: dict,
+        rag_metadata: Dict[str, Any],
+        store_metadata: Dict[str, Any],
         base_uri: str,
+        last_modified: dt.datetime,
+        datasource_id: str = None,
+        extract_metadata: Dict[str, Any] = None,
     ) -> None:
         self.uuid = document_id
         self.base_uri = base_uri
         self.filename = filename
         self.rag_metadata = rag_metadata
         self.store_metadata = store_metadata
+        self.datasource_id = datasource_id
+        self.last_modified = last_modified
+        self.extract_metadata = extract_metadata
 
     def to_dict(self, **kwargs) -> dict:
+        exclude = kwargs.get("exclude") or []
         dict_value = {
             "id": self.uuid,
             "filename": self.filename,
-            "rag_metadata": self.rag_metadata,
-            "store_metadata": self.store_metadata,
+            "rag_metadata": None if "rag_metadata" in exclude else self.rag_metadata,
+            "store_metadata": (
+                None if "store_metadata" in exclude else self.store_metadata
+            ),
+            "datasource_id": self.datasource_id,
+            "last_modified": self.last_modified,
+            "status": self.status.name,
+            "extract_metadata": (
+                None if "extract_metadata" in exclude else self.extract_metadata
+            ),
+            "last_processed": self.last_processed,
+            "last_processed_message": self.last_processed_message,
         }
 
         return dict_value

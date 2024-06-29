@@ -40,7 +40,7 @@ class RagRunner(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def save(self, **kwargs) -> Union[Document, SqlDocumentStore.Document]:
+    def save(self, **kwargs) -> Document:
         pass
 
     @abc.abstractmethod
@@ -50,12 +50,19 @@ class RagRunner(abc.ABC):
 
 class ExtractRunner(RagRunner):
 
-    def __init__(self, config, http_client):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        destination: Dict[str, Any],
+        http_client: http.HttpClient,
+    ):
         self._config = config
         self._http_client = http_client
         self._endpoint = self._config
 
-        _sql_extraction_store = self._config["rag"]["extractions"]["store"]
+        if destination is None:
+            raise ValueError("Destination for the extraction is missing")
+        _sql_extraction_store = destination["store"]
 
         self._extraction_store = SqlDocumentStore(**_sql_extraction_store)
         self._rag_endpoint = (self._config.get("rag") or {}).get("endpoint")
@@ -94,9 +101,7 @@ class ExtractRunner(RagRunner):
         Here we check if this file has been updated.
         If the file has been updated, we delete it from the vector store and re-ingest the new updated file
         """
-        document: SqlDocumentStore.Document = self._extraction_store.get(
-            document_id=document_id
-        )
+        document: Document = self._extraction_store.get(document_id=document_id)
 
         if document.last_modified < last_modified:
             return False
@@ -108,13 +113,16 @@ class ExtractRunner(RagRunner):
             )
         return True
 
-    def save(self, **kwargs) -> Union[Document, SqlDocumentStore.Document]:
+    def save(self, **kwargs) -> Document:
         return self._extraction_store.save(
             document_id=kwargs["document_id"],
             datasource_id=kwargs["datasource_id"],
             extract_metadata=kwargs["rag_metadata"],
             store_metadata=kwargs["store_metadata"],
             last_modified=kwargs["last_modified"],
+            base_uri=kwargs["base_uri"],
+            rag_metadata=kwargs["rag_metadata"],
+            filename=kwargs["filename"],
         )
 
     def delete(self, document: Document, **kwargs) -> None:
@@ -128,9 +136,6 @@ class IngestRunner(RagRunner):
         self._http_client: http.HttpClient = http_client
         self._endpoint = self._config
 
-        _sql_extraction_store = self._config["rag"]["extractions"]["store"]
-
-        self._extraction_store = SqlDocumentStore(**_sql_extraction_store)
         self._rag_endpoint = (self._config.get("rag") or {}).get("endpoint")
 
     def run(
@@ -195,13 +200,14 @@ class IngestRunner(RagRunner):
         else:
             return None
 
-    def save(self, **kwargs) -> Union[Document, SqlDocumentStore.Document]:
+    def save(self, **kwargs) -> Document:
         return save_document(
             document_id=kwargs["document_id"],
             filename=kwargs["filename"],
             base_uri=kwargs["base_uri"],
             rag_metadata=kwargs["rag_metadata"],
             store_metadata=kwargs["store_metadata"],
+            last_modified=kwargs["last_modified"],
         )
 
     def delete(self, document: Document, **kwargs) -> None:
@@ -231,11 +237,13 @@ class MinioProcessor(object):
         config,
         http_client: http.HttpClient,
         cache_client: memcache.Client,
+        datasource: Datasource,
         mode: str = "ingest",
     ):
         self._config = config
         self._http_client = http_client
         self._cache_client = cache_client
+        self._datasource = datasource
 
         match mode:
             case "ingest":
@@ -244,13 +252,15 @@ class MinioProcessor(object):
                 )
             case "extract":
                 self._ingest_runner: RagRunner = ExtractRunner(
-                    config=config, http_client=http_client
+                    config=config,
+                    http_client=http_client,
+                    destination=self._datasource.connection.get("destination"),
                 )
             case _:
                 raise ValueError(f"Invalid mode {mode}. Expected 'ingest' or 'extract'")
 
-    def run(self, datasource: Datasource, metadata: Dict[str, Any]):
-        connection: Dict[str, str] = datasource.connection
+    def run(self, metadata: Dict[str, Any]):
+        connection: Dict[str, str] = self._datasource.connection
         try:
             endpoint = connection.get("endpoint")
             access_key = connection.get("user")
@@ -266,7 +276,7 @@ class MinioProcessor(object):
 
             self._sync_documents(
                 client=_minio_client,
-                datasource=datasource,
+                datasource=self._datasource,
                 metadata=metadata,
             )
             self._unsync_documents(
@@ -395,6 +405,7 @@ class MinioProcessor(object):
                     ),
                     "version_id": item.version_id,
                 },
+                last_modified=item.last_modified,
             )
 
             _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")

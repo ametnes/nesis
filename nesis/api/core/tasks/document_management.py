@@ -47,6 +47,7 @@ def ingest_datasource(**kwargs) -> None:
                 http_client=http_client,
                 cache_client=cache_client,
                 mode=rag_mode,
+                datasource=datasource,
             )
 
             minio_ingestor.run(datasource=datasource, metadata=metadata)

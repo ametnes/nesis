@@ -244,6 +244,7 @@ def _sync_document(
                     "size": item["Size"],
                     "last_modified": str(item["LastModified"]),
                 },
+                last_modified=item["LastModified"],
             )
 
             _LOG.info(f"Done syncing object {item['Key']} in bucket {bucket_name}")

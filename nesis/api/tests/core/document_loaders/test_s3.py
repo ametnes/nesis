@@ -164,6 +164,7 @@ def test_update_sync_documents(
             "object_name": "file/path.pdf",
             "last_modified": "2023-07-18 06:40:07",
         },
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)
@@ -262,6 +263,7 @@ def test_unsync_s3_documents(
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={"bucket_name": "some-bucket", "object_name": "file/path.pdf"},
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)

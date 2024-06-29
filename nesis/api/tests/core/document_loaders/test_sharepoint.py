@@ -142,6 +142,7 @@ def test_sync_updated_sharepoint_documents(
             "author": "author_name",
             "last_modified": "2024-01-10 06:40:07",
         },
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)
@@ -258,6 +259,7 @@ def test_unsync_sharepoint_documents(
             "author": "author_name",
             "last_modified": "2024-03-10 06:40:07",
         },
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)

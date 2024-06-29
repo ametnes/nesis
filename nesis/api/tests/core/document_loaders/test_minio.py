@@ -7,11 +7,13 @@ import unittest.mock as mock
 import uuid
 
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 
 import nesis.api.core.services as services
 import nesis.api.core.document_loaders.minio as minio
 from nesis.api import tests
+from nesis.api.core.document_loaders.stores import SqlDocumentStore
 from nesis.api.core.models import DBSession
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.models.entities import (
@@ -91,7 +93,10 @@ def test_ingest_documents(
     minio_client.list_objects.return_value = [bucket]
 
     minio_ingestor = minio.MinioProcessor(
-        config=tests.config, http_client=http_client, cache_client=cache
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
     )
 
     # No document records exist
@@ -99,7 +104,6 @@ def test_ingest_documents(
     assert 0 == len(document_records)
 
     minio_ingestor.run(
-        datasource=datasource,
         metadata={"datasource": "documents"},
     )
 
@@ -136,6 +140,7 @@ def test_extract_documents(
             "access_key": "",
             "secret_key": "",
             "dataobjects": "buckets",
+            "destination": {"store": {"url": tests.config["database"]["url"]}},
         },
     }
 
@@ -165,11 +170,14 @@ def test_extract_documents(
     minio_client.list_objects.return_value = [bucket]
 
     minio_ingestor = minio.MinioProcessor(
-        config=tests.config, http_client=http_client, cache_client=cache, mode="extract"
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        mode="extract",
+        datasource=datasource,
     )
 
     minio_ingestor.run(
-        datasource=datasource,
         metadata={"datasource": "documents"},
     )
 
@@ -188,3 +196,9 @@ def test_extract_documents(
             "self_link": "https://s3.endpoint/buckets/SomeName",
         },
     )
+
+    extract_store = SqlDocumentStore(
+        url=data["connection"]["destination"]["store"]["url"]
+    )
+    with Session(extract_store._engine) as session:
+        assert len(session.query(Document).filter().all()) == 1
