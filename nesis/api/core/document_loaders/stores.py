@@ -54,14 +54,15 @@ class SqlDocumentStore(object):
 
         except sa.exc.ArgumentError as ex:
             # Table is already mapped
+            _LOG.warning("Error mapping store", exc_info=True)
             pass
         mapper_registry.metadata.create_all(self._engine)
 
     def get(self, document_id) -> DocumentObject:
         with Session(self._engine) as session:
             return (
-                session.query(Document)
-                .filter(DocumentObject.document_id == document_id)
+                session.query(DocumentObject)
+                .filter(DocumentObject.uuid == document_id)
                 .first()
             )
 

@@ -104,7 +104,7 @@ class ExtractRunner(RagRunner):
         """
         document: DocumentObject = self._extraction_store.get(document_id=document_id)
 
-        if document.last_modified < last_modified:
+        if document is None or document.last_modified < last_modified:
             return False
         try:
             self.delete(document=document)
@@ -126,7 +126,7 @@ class ExtractRunner(RagRunner):
             filename=kwargs["filename"],
         )
 
-    def delete(self, document: Document, **kwargs) -> None:
+    def delete(self, document: DocumentObject, **kwargs) -> None:
         self._extraction_store.delete(document_id=document.uuid)
 
 
@@ -316,30 +316,47 @@ class MinioProcessor(object):
                     _LOG.warning(f"Failed to list objects in bucket {bucket_name}")
                     continue
 
+                bucket_objects_list = []
+                batch_size = 5
                 for item in bucket_objects:
-                    futures = [
-                        IOBoundPool.submit(
-                            self._process_object,
-                            bucket_name,
-                            client,
-                            connection,
-                            datasource,
-                            item,
-                            metadata,
-                        )
-                    ]
-                    for future in as_completed(futures):
-                        try:
-                            future.result()
-                        except:
-                            _LOG.warning(future.exception())
+                    bucket_objects_list.append(item)
+                    if len(bucket_objects_list) < batch_size:
+                        continue
+                    self._process_objects(
+                        bucket_name, bucket_objects_list, client, datasource, metadata
+                    )
+                    bucket_objects_list = []
+
+                # Process the remaining objects if any
+                self._process_objects(
+                    bucket_name, bucket_objects_list, client, datasource, metadata
+                )
 
         except:
             _LOG.warning("Error fetching and updating documents", exc_info=True)
 
-    def _process_object(
-        self, bucket_name, client, connection, datasource, item, metadata
+    def _process_objects(
+        self, bucket_name, bucket_objects_list, client, datasource, metadata
     ):
+        futures = [
+            IOBoundPool.submit(
+                self._process_object,
+                bucket_name,
+                client,
+                datasource,
+                bucket_objects_list_item,
+                metadata,
+            )
+            for bucket_objects_list_item in bucket_objects_list
+        ]
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except:
+                _LOG.warning(future.exception())
+
+    def _process_object(self, bucket_name, client, datasource, item, metadata):
+        connection = datasource.connection
         endpoint = connection["endpoint"]
         self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
         _metadata = {
@@ -478,7 +495,7 @@ class MinioProcessor(object):
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
-    _valid_keys = ["endpoint", "user", "password", "dataobjects"]
+    _valid_keys = ["endpoint", "user", "password", "dataobjects", "destination", "mode"]
     assert not isblank(connection.get("endpoint")), "An endpoint must be supplied"
     assert not isblank(
         connection.get("dataobjects")

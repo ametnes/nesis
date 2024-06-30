@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os
 from concurrent.futures import (
     ProcessPoolExecutor,
     ThreadPoolExecutor,
@@ -12,4 +13,6 @@ from concurrent.futures import (
 CPUBoundPool = ProcessPoolExecutor(mp.cpu_count() + 2)
 
 # An IO bound thread pool
-IOBoundPool = ThreadPoolExecutor(mp.cpu_count() * 20)
+IOBoundPool = ThreadPoolExecutor(
+    os.environ.get("NESIS_API_WORKER_POOL_SIZE") or mp.cpu_count() * 5
+)
