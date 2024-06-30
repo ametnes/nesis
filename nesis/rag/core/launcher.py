@@ -11,6 +11,7 @@ from nesis.rag.core.server.chunks.chunks_router import chunks_router
 from nesis.rag.core.server.completions.completions_router import completions_router
 from nesis.rag.core.server.health.health_router import health_router
 from nesis.rag.core.server.ingest.ingest_router import ingest_router
+from nesis.rag.core.server.extract.extract_router import extract_router
 from nesis.rag.core.settings.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ def create_app(root_injector: Injector, settings: Settings = None) -> FastAPI:
     app.include_router(chunks_router)
     app.include_router(ingest_router)
     app.include_router(health_router)
+    app.include_router(extract_router)
 
     if settings.server.cors.enabled:
         logger.debug("Setting up CORS middleware")
