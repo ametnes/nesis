@@ -1,6 +1,6 @@
 import logging
+import multiprocessing
 import os
-import queue
 import tempfile
 from typing import Dict, Any
 
@@ -38,7 +38,7 @@ class MinioProcessor(object):
         self._http_client = http_client
         self._cache_client = cache_client
         self._datasource = datasource
-        self._task_queue = queue.Queue(5)
+        self._task_queue = multiprocessing.Queue(maxsize=3)
 
         _extract_runner = None
         _ingest_runner = IngestRunner(config=config, http_client=http_client)

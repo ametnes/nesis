@@ -1,9 +1,7 @@
 import json
 import logging
-from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import DateTime
 from sqlalchemy.orm import registry, Session
 
 from nesis.api.core.models.entities import Document, DocumentObject

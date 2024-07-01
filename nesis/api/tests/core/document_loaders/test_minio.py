@@ -1,17 +1,15 @@
 import datetime
 import json
 import os
-import random
 import unittest as ut
 import unittest.mock as mock
 import uuid
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 
-import nesis.api.core.services as services
 import nesis.api.core.document_loaders.minio as minio
+import nesis.api.core.services as services
 from nesis.api import tests
 from nesis.api.core.document_loaders.stores import SqlDocumentStore
 from nesis.api.core.models import DBSession
@@ -20,12 +18,10 @@ from nesis.api.core.models.entities import (
     Datasource,
     Document,
 )
-
 from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
 )
-from nesis.api.core.util import http
 
 
 @pytest.fixture
