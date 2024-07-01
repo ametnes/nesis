@@ -41,7 +41,7 @@ class ExtractService:
     def extract_file(
         file_name: str, file_data: Path, metadata: dict | None = None
     ) -> list[Dict[str, Any]]:
-        logger.info("Ingesting file_name=%s", file_name)
+        logger.info("Extracting file_name=%s", file_name)
         try:
 
             documents = IngestionHelper.transform_file_into_documents(
