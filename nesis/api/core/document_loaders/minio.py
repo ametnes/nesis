@@ -46,8 +46,6 @@ class MinioProcessor(object):
         self._cache_client = cache_client
         self._datasource = datasource
 
-        self._worker_executor_pool = BlockingThreadPoolExecutor(max_workers=3)
-
         _extract_runner = None
         _ingest_runner = IngestRunner(config=config, http_client=http_client)
         if self._datasource.connection.get("destination") is not None:
@@ -122,7 +120,7 @@ class MinioProcessor(object):
 
                 for bucket_object in bucket_objects:
                     futures.append(
-                        self._worker_executor_pool.submit(
+                        IOBoundPool.submit(
                             self._process_object,
                             bucket_name,
                             client,
@@ -275,10 +273,6 @@ class MinioProcessor(object):
 
         except:
             _LOG.warn("Error fetching and updating documents", exc_info=True)
-
-    def __del__(self) -> None:
-        logging.info("Closing the worker pool")
-        self._worker_executor_pool.shutdown(wait=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
