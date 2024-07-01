@@ -86,6 +86,7 @@ class DatasourceStatus(enum.Enum):
 
 
 class DocumentStatus(enum.Enum):
+    SUCCESS = enum.auto()
     PROCESSING = enum.auto()
     ERROR = enum.auto()
 
