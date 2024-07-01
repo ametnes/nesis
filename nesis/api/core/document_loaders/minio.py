@@ -1,3 +1,5 @@
+import concurrent
+import concurrent.futures
 import logging
 import multiprocessing
 import os
@@ -21,7 +23,11 @@ from nesis.api.core.services.util import (
     get_documents,
 )
 from nesis.api.core.util import clean_control, isblank
-from nesis.api.core.util.concurrency import IOBoundPool, as_completed
+from nesis.api.core.util.concurrency import (
+    IOBoundPool,
+    as_completed,
+    BlockingThreadPoolExecutor,
+)
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 
 _LOG = logging.getLogger(__name__)
@@ -39,7 +45,8 @@ class MinioProcessor(object):
         self._http_client = http_client
         self._cache_client = cache_client
         self._datasource = datasource
-        self._task_queue = queue.Queue(maxsize=3)
+
+        self._worker_executor_pool = BlockingThreadPoolExecutor(max_workers=3)
 
         _extract_runner = None
         _ingest_runner = IngestRunner(config=config, http_client=http_client)
@@ -104,10 +111,7 @@ class MinioProcessor(object):
             bucket_names = connection.get("dataobjects")
 
             bucket_names_parts = bucket_names.split(",")
-
-            process_objects_future = IOBoundPool.submit(
-                self._process_objects, client, datasource, metadata
-            )
+            futures = []
 
             for bucket_name in bucket_names_parts:
                 try:
@@ -116,51 +120,24 @@ class MinioProcessor(object):
                     _LOG.warning(f"Failed to list objects in bucket {bucket_name}")
                     continue
 
-                for item in bucket_objects:
-                    self._task_queue.put(
-                        {
-                            "bucket_name": bucket_name,
-                            "bucket_object": item,
-                        },
+                for bucket_object in bucket_objects:
+                    futures.append(
+                        self._worker_executor_pool.submit(
+                            self._process_object,
+                            bucket_name,
+                            client,
+                            datasource,
+                            bucket_object,
+                            metadata,
+                        )
                     )
-
-            self._task_queue.put({"type": "KILL"})
-
-            process_objects_future = list(as_completed([process_objects_future]))[0]
-            try:
-                process_objects_future.result()
-            except:
-                _LOG.warning(process_objects_future.exception())
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except:
+                    _LOG.warning(future.exception())
         except:
             _LOG.warning("Error fetching and updating documents", exc_info=True)
-
-    def _process_objects(self, client, datasource, metadata):
-        futures = []
-        while True:
-            params = self._task_queue.get()
-            _type = params.get("type")
-            bucket_name = params.get("bucket_name")
-            bucket_object = params.get("bucket_object")
-
-            if _type == "KILL":
-                break
-
-            futures.append(
-                IOBoundPool.submit(
-                    self._process_object,
-                    bucket_name,
-                    client,
-                    datasource,
-                    bucket_object,
-                    metadata,
-                )
-            )
-
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except:
-                _LOG.warning(future.exception())
 
     def _process_object(self, bucket_name, client, datasource, item, metadata):
         connection = datasource.connection
@@ -223,7 +200,6 @@ class MinioProcessor(object):
             document_id = None if document is None else document.uuid
 
             for _ingest_runner in self._ingest_runners:
-
                 try:
                     response_json = _ingest_runner.run(
                         file_path=file_path,
@@ -299,6 +275,10 @@ class MinioProcessor(object):
 
         except:
             _LOG.warn("Error fetching and updating documents", exc_info=True)
+
+    def __del__(self) -> None:
+        logging.info("Closing the worker pool")
+        self._worker_executor_pool.shutdown(wait=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
