@@ -17,9 +17,12 @@ from nesis.api.core.models import DBSession
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.models.entities import (
     Datasource,
+    Document,
+)
+
+from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
-    Document,
 )
 from nesis.api.core.util import http
 from nesis.api.core.util.dateutil import strptime
@@ -161,6 +164,7 @@ def test_update_sync_documents(
             "object_name": "file/path.pdf",
             "last_modified": "2023-07-18 06:40:07",
         },
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)
@@ -259,6 +263,7 @@ def test_unsync_s3_documents(
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={"bucket_name": "some-bucket", "object_name": "file/path.pdf"},
+        last_modified=datetime.datetime.utcnow(),
     )
 
     session.add(document)

@@ -77,3 +77,34 @@ class TaskStatus(enum.Enum):
     COMPLETED = enum.auto()
     ERROR = enum.auto()
     CREATED = enum.auto()
+
+
+class DatasourceStatus(enum.Enum):
+    ONLINE = enum.auto()
+    OFFLINE = enum.auto()
+    INGESTING = enum.auto()
+
+
+class DocumentStatus(enum.Enum):
+    SUCCESS = enum.auto()
+    PROCESSING = enum.auto()
+    ERROR = enum.auto()
+
+
+class Module(enum.Enum):
+    anomaly = enum.auto()
+    insights = enum.auto()
+    data = enum.auto()
+    qanda = enum.auto()
+
+
+class DatasourceType(enum.Enum):
+    MINIO = enum.auto()
+    POSTGRES = enum.auto()
+    WINDOWS_SHARE = enum.auto()
+    SQL_SERVER = enum.auto()
+    GOOGLE_DRIVE = enum.auto()
+    SHAREPOINT = enum.auto()
+    MYSQL = enum.auto()
+    DROPBOX = enum.auto()
+    S3 = enum.auto()

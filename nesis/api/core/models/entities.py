@@ -21,18 +21,12 @@ from sqlalchemy import (
     Unicode,
     Enum,
     ForeignKeyConstraint,
+    Text,
 )
 
 DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 from . import Base
-
-
-class Module(enum.Enum):
-    anomaly = enum.auto()
-    insights = enum.auto()
-    data = enum.auto()
-    qanda = enum.auto()
 
 
 class Prediction(Base):
@@ -100,41 +94,25 @@ class Setting(Base):
         return dict_value
 
 
-class DatasourceType(enum.Enum):
-    MINIO = enum.auto()
-    POSTGRES = enum.auto()
-    WINDOWS_SHARE = enum.auto()
-    SQL_SERVER = enum.auto()
-    GOOGLE_DRIVE = enum.auto()
-    SHAREPOINT = enum.auto()
-    MYSQL = enum.auto()
-    DROPBOX = enum.auto()
-    S3 = enum.auto()
-
-
-class DatasourceStatus(enum.Enum):
-    ONLINE = enum.auto()
-    OFFLINE = enum.auto()
-    INGESTING = enum.auto()
-
-
 class Datasource(Base):
     __tablename__ = "datasource"
     id = Column(BigInteger, primary_key=True, nullable=False)
     uuid = Column(Unicode(255), unique=True, nullable=False)
-    type = Column(Enum(DatasourceType, name="datasource_type"), nullable=False)
+    type = Column(Enum(objects.DatasourceType, name="datasource_type"), nullable=False)
     name = Column(Unicode(255), nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
-    status = Column(Enum(DatasourceStatus, name="datasource_status"), nullable=False)
+    status = Column(
+        Enum(objects.DatasourceStatus, name="datasource_status"), nullable=False
+    )
     connection = Column(JSONB, nullable=False)
 
     __table_args__ = (UniqueConstraint("name", name="uq_datasource_name"),)
 
     def __init__(
         self,
-        source_type: DatasourceType,
+        source_type: objects.DatasourceType,
         name: str,
-        status: DatasourceStatus = DatasourceStatus.ONLINE,
+        status: objects.DatasourceStatus = objects.DatasourceStatus.ONLINE,
         connection: Optional[dict] = None,
     ):
         self.type = source_type
@@ -160,15 +138,25 @@ class Datasource(Base):
         return dict_value
 
 
-class Document(Base):
+class DocumentObject:
     __tablename__ = "document"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
     # This is likely the endpoint e.g. hostname, URL, SambaShare e.t.c
-    base_uri = Column(Unicode(255), nullable=False)
-    filename = Column(Unicode(255), nullable=False)
-    rag_metadata = Column(JSONB, nullable=False)
+    base_uri = Column(Unicode(4096), nullable=False)
+    filename = Column(Unicode(4096), nullable=False)
+    rag_metadata = Column(JSONB)
+    extract_metadata = Column(JSONB)
+    datasource_id = Column(Unicode(255))
     store_metadata = Column(JSONB)
+    status = Column(
+        Enum(objects.DocumentStatus, name="document_status"),
+        nullable=False,
+        default=objects.DocumentStatus.PROCESSING,
+    )
+    last_modified = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    last_processed = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    last_processed_message = Column(Text)
 
     __table_args__ = (
         UniqueConstraint(
@@ -180,25 +168,47 @@ class Document(Base):
         self,
         document_id: str,
         filename: str,
-        rag_metadata: dict,
-        store_metadata: dict,
+        rag_metadata: Dict[str, Any],
+        store_metadata: Dict[str, Any],
         base_uri: str,
+        last_modified: dt.datetime,
+        datasource_id: str = None,
+        extract_metadata: Dict[str, Any] = None,
     ) -> None:
         self.uuid = document_id
         self.base_uri = base_uri
         self.filename = filename
         self.rag_metadata = rag_metadata
         self.store_metadata = store_metadata
+        self.datasource_id = datasource_id
+        self.last_modified = last_modified
+        self.extract_metadata = extract_metadata
 
     def to_dict(self, **kwargs) -> dict:
+        exclude = kwargs.get("exclude") or []
         dict_value = {
             "id": self.uuid,
             "filename": self.filename,
-            "rag_metadata": self.rag_metadata,
-            "store_metadata": self.store_metadata,
+            "rag_metadata": None if "rag_metadata" in exclude else self.rag_metadata,
+            "store_metadata": (
+                None if "store_metadata" in exclude else self.store_metadata
+            ),
+            "datasource_id": self.datasource_id,
+            "last_modified": self.last_modified,
+            "status": self.status.name,
+            "extract_metadata": (
+                None if "extract_metadata" in exclude else self.extract_metadata
+            ),
+            "last_processed": self.last_processed,
+            "last_processed_message": self.last_processed_message,
         }
 
         return dict_value
+
+
+class Document(Base, DocumentObject):
+    def __init__(self, **kwargs):
+        DocumentObject.__init__(self, **kwargs)
 
 
 # RBAC

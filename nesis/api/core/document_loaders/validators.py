@@ -2,7 +2,7 @@ from nesis.api.core.document_loaders import samba
 from nesis.api.core.document_loaders import s3
 from nesis.api.core.document_loaders import minio
 from nesis.api.core.document_loaders import sharepoint
-from nesis.api.core.models.entities import DatasourceType
+from nesis.api.core.models.objects import DatasourceType
 
 
 def validate_datasource_connection(datasource) -> dict:

@@ -66,9 +66,9 @@ def create_datasource(token: str, datasource_type: str) -> Datasource:
     return services.datasource_service.create(datasource=payload, token=token)
 
 
-@mock.patch("nesis.api.core.tasks.document_management.s3_documents")
+@mock.patch("nesis.api.core.tasks.document_management.minio.MinioProcessor")
 def test_ingest_datasource_minio(
-    s3_documents: mock.MagicMock, tc, cache_client, http_client
+    ingestor: mock.MagicMock, tc, cache_client, http_client
 ):
     """
     Test the ingestion happy path
@@ -90,9 +90,7 @@ def test_ingest_datasource_minio(
         params={"datasource": {"id": datasource.uuid}},
     )
 
-    _, kwargs_fetch_documents = s3_documents.fetch_documents.call_args_list[0]
-    assert kwargs_fetch_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    tc.assertDictEqual(kwargs_fetch_documents["connection"], datasource.connection)
+    _, kwargs_fetch_documents = ingestor.return_value.run.call_args_list[0]
     tc.assertDictEqual(
         kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
     )

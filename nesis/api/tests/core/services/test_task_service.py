@@ -15,7 +15,8 @@ import nesis.api.core.services as services
 import nesis.api.core.util.dateutil as du
 import nesis.api.tests as tests
 from nesis.api.core.models import initialize_engine, DBSession
-from nesis.api.core.models.entities import Datasource, Task, DatasourceStatus
+from nesis.api.core.models.entities import Datasource, Task
+from nesis.api.core.models.objects import DatasourceStatus
 from nesis.api.core.models.objects import TaskType, TaskStatus
 from nesis.api.core.services.util import ServiceException
 from nesis.api.core.util import http

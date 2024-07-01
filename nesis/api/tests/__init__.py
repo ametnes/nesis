@@ -40,7 +40,18 @@ config = {
         "debug": False,
         "create": True,
     },
-    "rag": {"endpoint": "http://localhost:8080"},
+    "rag": {
+        "endpoint": "http://localhost:8080",
+        "mode": "ingest",
+        "extractions": {
+            "store": {
+                "url": os.environ.get(
+                    "NESIS_API_DATABASE_URL",
+                    "postgresql://postgres:password@localhost:65432/nesis",
+                )
+            }
+        },
+    },
     "memcache": {
         "hosts": [os.environ.get("NESIS_MEMCACHE_HOSTS", "127.0.0.1:11211")],
         "session": {"expiry": 0},

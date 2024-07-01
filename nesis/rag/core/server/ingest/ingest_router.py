@@ -67,7 +67,7 @@ def ingest_file(
         _logger.exception(error)
         raise HTTPException(400, error)
     try:
-        if file.content_type.startswith("text"):
+        if file.content_type is not None and file.content_type.startswith("text"):
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 try:
                     with open(tmp_file.name, "wb") as file_descriptor:

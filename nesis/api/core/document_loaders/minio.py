@@ -1,273 +1,282 @@
-import json
-import pathlib
-import uuid
-import memcache
+import concurrent
+import concurrent.futures
+import logging
+import multiprocessing
+import os
+import queue
+import tempfile
 from typing import Dict, Any
 
+import memcache
 import minio
-
 from minio import Minio
 
 import nesis.api.core.util.http as http
-import logging
-from nesis.api.core.models.entities import Document
-from nesis.api.core.services import util
+from nesis.api.core.document_loaders.runners import (
+    IngestRunner,
+    ExtractRunner,
+    RagRunner,
+)
+from nesis.api.core.models.entities import Document, Datasource
 from nesis.api.core.services.util import (
-    save_document,
     get_document,
-    delete_document,
     get_documents,
-    ingest_file,
 )
 from nesis.api.core.util import clean_control, isblank
+from nesis.api.core.util.concurrency import (
+    IOBoundPool,
+    as_completed,
+    BlockingThreadPoolExecutor,
+)
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
-from nesis.api.core.util.dateutil import strptime
 
 _LOG = logging.getLogger(__name__)
 
 
-def fetch_documents(
-    connection: Dict[str, str],
-    rag_endpoint: str,
-    http_client: http.HttpClient,
-    cache_client: memcache.Client,
-    metadata: Dict[str, Any],
-) -> None:
-    try:
-        endpoint = connection.get("endpoint")
-        access_key = connection.get("user")
-        secret_key = connection.get("password")
+class MinioProcessor(object):
+    def __init__(
+        self,
+        config,
+        http_client: http.HttpClient,
+        cache_client: memcache.Client,
+        datasource: Datasource,
+    ):
+        self._config = config
+        self._http_client = http_client
+        self._cache_client = cache_client
+        self._datasource = datasource
 
-        endpoint_parts = endpoint.split("://")
-        _minio_client = Minio(
-            endpoint=endpoint_parts[1].split("/")[0],
-            access_key=access_key,
-            secret_key=secret_key,
-            secure=endpoint_parts[0] == "https",
-        )
+        _extract_runner = None
+        _ingest_runner = IngestRunner(config=config, http_client=http_client)
+        if self._datasource.connection.get("destination") is not None:
+            _extract_runner = ExtractRunner(
+                config=config,
+                http_client=http_client,
+                destination=self._datasource.connection.get("destination"),
+            )
+        self._ingest_runners = []
 
-        _sync_s3_documents(
-            client=_minio_client,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-            cache_client=cache_client,
-            metadata=metadata,
-        )
-        _unsync_s3_documents(
-            client=_minio_client,
-            connection=connection,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-        )
-    except:
-        _LOG.exception("Error fetching sharepoint documents")
+        self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
 
+        mode = self._datasource.connection.get("mode") or "ingest"
 
-def _sync_s3_documents(
-    client: Minio,
-    connection: dict,
-    rag_endpoint: str,
-    http_client: http.HttpClient,
-    cache_client: memcache.Client,
-    metadata: dict,
-) -> None:
-    #
+        match mode:
+            case "ingest":
+                self._ingest_runners: list[RagRunner] = [_ingest_runner]
+            case "extract":
+                self._ingest_runners: list[RagRunner] = [_extract_runner]
+            case _:
+                raise ValueError(f"Invalid mode {mode}. Expected 'ingest' or 'extract'")
 
-    try:
+    def run(self, metadata: Dict[str, Any]):
+        connection: Dict[str, str] = self._datasource.connection
+        try:
+            endpoint = connection.get("endpoint")
+            access_key = connection.get("user")
+            secret_key = connection.get("password")
 
-        # We allow setting for unit testing
+            endpoint_parts = endpoint.split("://")
+            _minio_client = Minio(
+                endpoint=endpoint_parts[1].split("/")[0],
+                access_key=access_key,
+                secret_key=secret_key,
+                secure=endpoint_parts[0] == "https",
+            )
 
-        # Data objects allow us to specify bucket names
-        bucket_names = connection.get("dataobjects")
+            self._sync_documents(
+                client=_minio_client,
+                datasource=self._datasource,
+                metadata=metadata,
+            )
+            self._unsync_documents(
+                client=_minio_client,
+                connection=connection,
+            )
+        except:
+            _LOG.exception("Error fetching sharepoint documents")
 
-        bucket_names_parts = bucket_names.split(",")
-        work_dir = f"/tmp/{uuid.uuid4()}"
-        pathlib.Path(work_dir).mkdir(parents=True)
-
-        _LOG.info(f"Initializing syncing to endpoint {rag_endpoint}")
-
-        for bucket_name in bucket_names_parts:
-            try:
-                bucket_objects = client.list_objects(bucket_name, recursive=True)
-            except:
-                _LOG.warn(f"Failed to list objects in bucket {bucket_name}")
-                continue
-            for item in bucket_objects:
-                endpoint = connection["endpoint"]
-                self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
-                _metadata = {
-                    **(metadata or {}),
-                    "file_name": f"{bucket_name}/{item.object_name}",
-                    "self_link": self_link,
-                }
-
-                """
-                We use memcache's add functionality to implement a shared lock to allow for multiple instances
-                operating 
-                """
-                _lock_key = clean_control(f"{__name__}/locks/{self_link}")
-                if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
-                    try:
-                        _sync_document(
-                            client=client,
-                            connection=connection,
-                            rag_endpoint=rag_endpoint,
-                            http_client=http_client,
-                            metadata=_metadata,
-                            bucket_name=bucket_name,
-                            item=item,
-                            work_dir=work_dir,
-                        )
-                    finally:
-                        cache_client.delete(_lock_key)
-                else:
-                    _LOG.info(f"Document {self_link} is already processing")
-
-        _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
-
-    except:
-        _LOG.warning("Error fetching and updating documents", exc_info=True)
-
-
-def _sync_document(
-    client: Minio,
-    connection: dict,
-    rag_endpoint: str,
-    http_client: http.HttpClient,
-    metadata: dict,
-    bucket_name: str,
-    item,
-    work_dir: str,
-):
-    endpoint = connection["endpoint"]
-    _metadata = metadata
-    file_path = f"{work_dir}/{item.object_name}"
-    try:
-        _LOG.info(f"Starting syncing object {item.object_name} in bucket {bucket_name}")
-        # Write item to file
-        client.fget_object(
-            bucket_name=bucket_name,
-            object_name=item.object_name,
-            file_path=file_path,
-        )
-
-        """
-        Here we check if this file has been updated.
-        If the file has been updated, we delete it from the vector store and re-ingest the new updated file
-        """
-        document: Document = get_document(document_id=item.etag)
-        if document and document.base_uri == endpoint:
-            store_metadata = document.store_metadata
-            if store_metadata and store_metadata.get("last_modified"):
-                if not strptime(date_string=store_metadata["last_modified"]).replace(
-                    tzinfo=None
-                ) < item.last_modified.replace(tzinfo=None).replace(microsecond=0):
-                    _LOG.debug(
-                        f"Skipping document {item.object_name} already up to date"
-                    )
-                    return
-                rag_metadata: dict = document.rag_metadata
-                if rag_metadata is None:
-                    return
-                for document_data in rag_metadata.get("data") or []:
-                    try:
-                        util.un_ingest_file(
-                            http_client=http_client,
-                            endpoint=rag_endpoint,
-                            doc_id=document_data["doc_id"],
-                        )
-                    except:
-                        _LOG.warning(
-                            f"Failed to delete document {document_data['doc_id']}"
-                        )
-
-                try:
-                    delete_document(document_id=item.etag)
-                except:
-                    _LOG.warning(
-                        f"Failed to delete document {item.object_name}'s record. Continuing anyway..."
-                    )
+    def _sync_documents(
+        self,
+        client: Minio,
+        datasource: Datasource,
+        metadata: dict,
+    ) -> None:
 
         try:
-            response = ingest_file(
-                http_client=http_client,
-                endpoint=rag_endpoint,
-                metadata=_metadata,
+
+            connection = datasource.connection
+            # Data objects allow us to specify bucket names
+            bucket_names = connection.get("dataobjects")
+
+            bucket_names_parts = bucket_names.split(",")
+            futures = []
+
+            for bucket_name in bucket_names_parts:
+                try:
+                    bucket_objects = client.list_objects(bucket_name, recursive=True)
+                except:
+                    _LOG.warning(f"Failed to list objects in bucket {bucket_name}")
+                    continue
+
+                for bucket_object in bucket_objects:
+                    futures.append(
+                        IOBoundPool.submit(
+                            self._process_object,
+                            bucket_name,
+                            client,
+                            datasource,
+                            bucket_object,
+                            metadata,
+                        )
+                    )
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except:
+                    _LOG.warning(future.exception())
+        except:
+            _LOG.warning("Error fetching and updating documents", exc_info=True)
+
+    def _process_object(self, bucket_name, client, datasource, item, metadata):
+        connection = datasource.connection
+        endpoint = connection["endpoint"]
+        self_link = f"{endpoint}/{bucket_name}/{item.object_name}"
+        _metadata = {
+            **(metadata or {}),
+            "file_name": f"{bucket_name}/{item.object_name}",
+            "self_link": self_link,
+        }
+        """
+        We use memcache's add functionality to implement a shared lock to allow for multiple instances
+        operating 
+        """
+        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+        if self._cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+            try:
+                self._sync_document(
+                    client=client,
+                    datasource=datasource,
+                    metadata=_metadata,
+                    bucket_name=bucket_name,
+                    item=item,
+                )
+            finally:
+                self._cache_client.delete(_lock_key)
+        else:
+            _LOG.info(f"Document {self_link} is already processing")
+
+    def _sync_document(
+        self,
+        client: Minio,
+        datasource: Datasource,
+        metadata: dict,
+        bucket_name: str,
+        item,
+    ):
+        connection = datasource.connection
+        endpoint = connection["endpoint"]
+        _metadata = metadata
+        tmp_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            _LOG.info(
+                f"Starting syncing object {item.object_name} in bucket {bucket_name}"
+            )
+            file_path = f"{tmp_file.name}-{item.object_name}"
+
+            # Write item to file
+            client.fget_object(
+                bucket_name=bucket_name,
+                object_name=item.object_name,
                 file_path=file_path,
             )
-            response_json = json.loads(response)
 
-        except ValueError:
-            _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
-            response_json = {}
-        except UserWarning:
-            _LOG.debug(f"File {file_path} is already processing")
-            return
+            """
+            Here we check if this file has been updated.
+            If the file has been updated, we delete it from the vector store and re-ingest the new updated file
+            """
+            document: Document = get_document(document_id=item.etag)
+            document_id = None if document is None else document.uuid
 
-        save_document(
-            document_id=item.etag,
-            filename=f"{item.bucket_name}/{item.object_name}",
-            base_uri=endpoint,
-            rag_metadata=response_json,
-            store_metadata={
-                "bucket_name": item.bucket_name,
-                "object_name": item.object_name,
-                "etag": item.etag,
-                "size": item.size,
-                "last_modified": item.last_modified.strftime(DEFAULT_DATETIME_FORMAT),
-                "version_id": item.version_id,
-            },
-        )
+            for _ingest_runner in self._ingest_runners:
+                try:
+                    response_json = _ingest_runner.run(
+                        file_path=file_path,
+                        metadata=metadata,
+                        document_id=document_id,
+                        last_modified=item.last_modified.replace(tzinfo=None).replace(
+                            microsecond=0
+                        ),
+                        datasource=datasource,
+                    )
+                except ValueError:
+                    _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
+                    response_json = {}
+                except UserWarning:
+                    _LOG.debug(f"File {file_path} is already processing")
+                    return
 
-        _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")
-    except Exception as ex:
-        _LOG.warn(
-            f"Error when getting and ingesting document {item.object_name} - {ex}"
-        )
+                _ingest_runner.save(
+                    document_id=item.etag,
+                    datasource_id=datasource.uuid,
+                    filename=item.object_name,
+                    base_uri=endpoint,
+                    rag_metadata=response_json,
+                    store_metadata={
+                        "bucket_name": item.bucket_name,
+                        "object_name": item.object_name,
+                        "etag": item.etag,
+                        "size": item.size,
+                        "last_modified": item.last_modified.strftime(
+                            DEFAULT_DATETIME_FORMAT
+                        ),
+                        "version_id": item.version_id,
+                    },
+                    last_modified=item.last_modified,
+                )
 
+            _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")
+        except Exception as ex:
+            _LOG.warning(
+                f"Error when getting and ingesting document {item.object_name} - {ex}",
+                exc_info=True,
+            )
+        finally:
+            tmp_file.close()
+            os.unlink(tmp_file.name)
 
-def _unsync_s3_documents(
-    client: Minio, connection: dict, rag_endpoint: str, http_client: http.HttpClient
-) -> None:
+    def _unsync_documents(
+        self,
+        client: Minio,
+        connection: dict,
+    ) -> None:
 
-    try:
-        endpoint = connection.get("endpoint")
+        try:
+            endpoint = connection.get("endpoint")
 
-        documents = get_documents(base_uri=endpoint)
-        for document in documents:
-            store_metadata = document.store_metadata
-            rag_metadata = document.rag_metadata
-            bucket_name = store_metadata["bucket_name"]
-            object_name = store_metadata["object_name"]
-            try:
-                client.stat_object(bucket_name=bucket_name, object_name=object_name)
-            except minio.error.S3Error as ex:
-                str_ex = str(ex)
-                if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                    try:
-                        http_client.deletes(
-                            urls=[
-                                f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
-                                for document_data in rag_metadata.get("data") or []
-                            ]
-                        )
-                        _LOG.info(f"Deleting document {document.filename}")
-                        delete_document(document_id=document.id)
-                    except:
-                        _LOG.warning(
-                            f"Failed to delete document {document.filename}",
-                            exc_info=True,
-                        )
-                else:
-                    raise
+            documents = get_documents(base_uri=endpoint)
+            for document in documents:
+                store_metadata = document.store_metadata
+                rag_metadata = document.rag_metadata
+                bucket_name = store_metadata["bucket_name"]
+                object_name = store_metadata["object_name"]
+                try:
+                    client.stat_object(bucket_name=bucket_name, object_name=object_name)
+                except minio.error.S3Error as ex:
+                    str_ex = str(ex)
+                    if "NoSuchKey" in str_ex and "does not exist" in str_ex:
+                        for _ingest_runner in self._ingest_runners:
+                            _ingest_runner.delete(
+                                document=document, rag_metadata=rag_metadata
+                            )
+                    else:
+                        raise
 
-    except:
-        _LOG.warn("Error fetching and updating documents", exc_info=True)
+        except:
+            _LOG.warn("Error fetching and updating documents", exc_info=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
-    _valid_keys = ["endpoint", "user", "password", "dataobjects"]
+    _valid_keys = ["endpoint", "user", "password", "dataobjects", "destination", "mode"]
     assert not isblank(connection.get("endpoint")), "An endpoint must be supplied"
     assert not isblank(
         connection.get("dataobjects")
