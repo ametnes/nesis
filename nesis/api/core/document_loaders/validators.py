@@ -1,3 +1,5 @@
+from sqlalchemy import engine, create_engine
+
 from nesis.api.core.document_loaders import samba
 from nesis.api.core.document_loaders import s3
 from nesis.api.core.document_loaders import minio
@@ -13,6 +15,10 @@ def validate_datasource_connection(datasource) -> dict:
     if source_type is None:
         raise ValueError("source_type must be supplied")
 
+    mode = datasource.get("mode")
+    if mode not in ["ingest", "extract", None]:
+        raise ValueError(f"Mode must be 'ingest' or 'extract'")
+
     try:
         datasource_type = DatasourceType[source_type.upper()]
     except KeyError:
@@ -21,6 +27,22 @@ def validate_datasource_connection(datasource) -> dict:
     connection = datasource.get("connection")
     if connection is None:
         raise ValueError("Missing connection")
+
+    destination_url = ((connection.get("destination") or {}).get("sql") or {}).get(
+        "url"
+    )
+    if mode == "extract":
+        if destination_url is None:
+            raise ValueError("Missing url for destination target")
+        else:
+            try:
+                _engine = create_engine(
+                    url=destination_url, connect_args={"connect_timeout": 10}
+                )
+                with _engine.connect() as conn:
+                    pass
+            except Exception as ex:
+                raise ValueError(f"Failed to connect to the destination - {ex}")
 
     match datasource_type:
         case DatasourceType.WINDOWS_SHARE:
