@@ -22,6 +22,7 @@ from sqlalchemy import (
     Enum,
     ForeignKeyConstraint,
     Text,
+    JSON,
 )
 
 DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -145,13 +146,13 @@ class DocumentObject:
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
     # This is likely the endpoint e.g. hostname, URL, SambaShare e.t.c
-    base_uri = Column(Unicode(4096), nullable=False)
-    filename = Column(Unicode(4096), nullable=False)
-    rag_metadata = Column(JSONB)
-    extract_metadata = Column(JSONB)
+    base_uri = Column(Unicode(4000), nullable=False)
+    filename = Column(Unicode(4000), nullable=False)
+    rag_metadata = Column(JSON)
+    extract_metadata = Column(JSON)
     # We leave this as nullable to allow for external database tables that will not have the Datasource entity
     datasource_id = Column(Unicode(255))
-    store_metadata = Column(JSONB)
+    store_metadata = Column(JSON)
     status = Column(
         Enum(objects.DocumentStatus, name="document_status"),
         nullable=False,
@@ -164,8 +165,6 @@ class DocumentObject:
     __table_args__ = (
         UniqueConstraint(
             "uuid",
-            "base_uri",
-            "filename",
             "datasource_id",
             name="uq_document_uuid_datasource_id",
         ),

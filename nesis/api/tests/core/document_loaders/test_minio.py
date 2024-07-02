@@ -128,6 +128,8 @@ def test_ingest_documents(
 def test_extract_documents(
     minio_instance: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
+    destination_sql_url = tests.config["database"]["url"]
+    # destination_sql_url = "mssql+pymssql://sa:Pa55woR.d12345@localhost:11433/master"
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -138,7 +140,7 @@ def test_extract_documents(
             "dataobjects": "buckets",
             "mode": "extract",
             "destination": {
-                "sql": {"url": tests.config["database"]["url"]},
+                "sql": {"url": destination_sql_url},
             },
         },
     }
@@ -154,7 +156,7 @@ def test_extract_documents(
     session.commit()
 
     http_client = mock.MagicMock()
-    http_client.upload.return_value = json.dumps({})
+    http_client.upload.return_value = json.dumps({"data": {}})
     minio_client = mock.MagicMock()
     bucket = mock.MagicMock()
 
@@ -202,4 +204,5 @@ def test_extract_documents(
     )
 
     with Session(extract_store._engine) as session:
-        assert len(session.query(Document).filter().all()) == initial_count + 1
+        all_documents = session.query(Document).filter().all()
+        assert len(all_documents) == initial_count + 1

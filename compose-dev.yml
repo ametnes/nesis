@@ -4,7 +4,7 @@
 version: '3'
 
 networks:
-  ametnes:
+  nesis:
     driver: overlay
     attachable: true
 
@@ -14,14 +14,14 @@ services:
     ports:
       - "11211:11211"
     networks:
-      - ametnes
+      - nesis
   samba:
     image: andyzhangx/samba:win-fix
     command: ["-u", "username;password", "-s", "share;/smbshare/;yes;no;no;all;none", "-p"]
     ports:
       - '2445:445'
     networks:
-      - ametnes
+      - nesis
     volumes:
       - 'samba_data2:/smbshare'
     environment:
@@ -33,7 +33,7 @@ services:
         - '59000:9000'
         - '59001:9001'
       networks:
-        - ametnes
+        - nesis
       volumes:
         - 'minio_data:/data'
       environment:
@@ -52,7 +52,7 @@ services:
       - postgres16_data:/var/lib/postgresql/data
     restart: on-failure
     networks:
-      - ametnes
+      - nesis
   qdrant:
     image: qdrant/qdrant:latest
     restart: always
@@ -67,7 +67,7 @@ services:
     volumes:
       - ./qdrant_data:/qdrant_data
     networks:
-      - ametnes
+      - nesis
   chroma:
     image: ghcr.io/chroma-core/chroma:latest
     environment:
@@ -79,7 +79,7 @@ services:
     ports:
       - 18000:8000
     networks:
-      - ametnes
+      - nesis
 
   localstack:
     image: localstack/localstack:latest
@@ -94,7 +94,19 @@ services:
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - local_stack:/localstack/data
-
+  mssql:
+    container_name: sql-server
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Pa55woR.d12345"
+    ports:
+      - "11433:1433"
+#    volumes:
+#      - mssql_data:/var/opt/mssql
+    networks:
+      - nesis
 volumes:
   minio_data:
   samba_data2:
@@ -102,3 +114,4 @@ volumes:
   qdrant_data:
   chroma-data:
   local_stack:
+  mssql_data:
