@@ -304,17 +304,13 @@ class DatasourceService(ServiceOperation):
 
             # We validate the schedule (if supplied), before we create the datasource
             schedule = self._validate_schedule(datasource)
-            datasource_record.schedule = schedule or datasource_record.schedule
+            datasource_record.schedule = schedule
 
             session.merge(datasource_record)
             session.commit()
 
             # if we do have a schedule on this datasource, we update it
-            schedule = datasource.get("schedule") or ""
-            if all([schedule, self._task_service]):
-                task = {
-                    "schedule": schedule,
-                }
+            if self._task_service:
                 task_records: List[Task] = self._task_service.get(
                     token=kwargs["token"], parent_id=datasource_id
                 )
@@ -329,7 +325,10 @@ class DatasourceService(ServiceOperation):
                     )
                     == 1
                 ):
-                    if schedule != "":
+                    if schedule is not None:
+                        task = {
+                            "schedule": schedule,
+                        }
                         self._task_service.update(
                             token=kwargs["token"],
                             task=task,
@@ -349,9 +348,10 @@ class DatasourceService(ServiceOperation):
             if session:
                 session.close()
 
-    def _validate_schedule(self, datasource):
+    @staticmethod
+    def _validate_schedule(datasource):
         schedule = datasource.get("schedule")
-        if schedule is not None:
+        if schedule is not None and schedule.strip() != "":
             try:
                 validate_schedule(schedule)
             except Exception as e:

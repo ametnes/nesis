@@ -104,6 +104,7 @@ function DataSourceForm({
     id: datasource?.id,
     name: datasource?.name,
     type: datasource?.type,
+    schedule: datasource?.schedule,
     connection: {
       user: datasource?.connection?.user,
       client_id: datasource?.connection?.client_id,
@@ -370,7 +371,6 @@ function minioConnection() {
               id="password"
               placeholder="password"
               name="connection.password"
-              validate={required}
             />
           </td>
         </tr>
