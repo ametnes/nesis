@@ -100,6 +100,7 @@ class Datasource(Base):
     uuid = Column(Unicode(255), unique=True, nullable=False)
     type = Column(Enum(objects.DatasourceType, name="datasource_type"), nullable=False)
     name = Column(Unicode(255), nullable=False)
+    schedule = Column(Unicode(255))
     enabled = Column(Boolean, default=True, nullable=False)
     status = Column(
         Enum(objects.DatasourceStatus, name="datasource_status"), nullable=False
@@ -133,6 +134,7 @@ class Datasource(Base):
             "enabled": self.enabled,
             "connection": connection,
             "status": self.status.name.lower(),
+            "schedule": self.schedule,
         }
 
         return dict_value
@@ -147,6 +149,7 @@ class DocumentObject:
     filename = Column(Unicode(4096), nullable=False)
     rag_metadata = Column(JSONB)
     extract_metadata = Column(JSONB)
+    # We leave this as nullable to allow for external database tables that will not have the Datasource entity
     datasource_id = Column(Unicode(255))
     store_metadata = Column(JSONB)
     status = Column(
@@ -160,8 +163,13 @@ class DocumentObject:
 
     __table_args__ = (
         UniqueConstraint(
-            "uuid", "base_uri", "filename", name="uq_document_uuid_base_url_filename"
+            "uuid",
+            "base_uri",
+            "filename",
+            "datasource_id",
+            name="uq_document_uuid_datasource_id",
         ),
+        # Index("idx_document_base_uri", "base_uri"),
     )
 
     def __init__(

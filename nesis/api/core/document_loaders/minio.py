@@ -58,15 +58,17 @@ class MinioProcessor(object):
 
         self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
 
-        mode = self._datasource.connection.get("mode") or "ingest"
+        self._mode = self._datasource.connection.get("mode") or "ingest"
 
-        match mode:
+        match self._mode:
             case "ingest":
                 self._ingest_runners: list[RagRunner] = [_ingest_runner]
             case "extract":
                 self._ingest_runners: list[RagRunner] = [_extract_runner]
             case _:
-                raise ValueError(f"Invalid mode {mode}. Expected 'ingest' or 'extract'")
+                raise ValueError(
+                    f"Invalid mode {self._mode}. Expected 'ingest' or 'extract'"
+                )
 
     def run(self, metadata: Dict[str, Any]):
         connection: Dict[str, str] = self._datasource.connection
@@ -179,7 +181,7 @@ class MinioProcessor(object):
         tmp_file = tempfile.NamedTemporaryFile(delete=False)
         try:
             _LOG.info(
-                f"Starting syncing object {item.object_name} in bucket {bucket_name}"
+                f"Starting {self._mode}ing object {item.object_name} in bucket {bucket_name}"
             )
             file_path = f"{tmp_file.name}-{item.object_name}"
 
@@ -234,7 +236,9 @@ class MinioProcessor(object):
                     last_modified=item.last_modified,
                 )
 
-            _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")
+            _LOG.info(
+                f"Done {self._mode}ing object {item.object_name} in bucket {bucket_name}"
+            )
         except Exception as ex:
             _LOG.warning(
                 f"Error when getting and ingesting document {item.object_name} - {ex}",

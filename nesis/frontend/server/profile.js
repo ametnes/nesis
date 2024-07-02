@@ -25,7 +25,7 @@ const profile = {
     SERVICE_ENDPOINT: `http://localhost:6000/v1`,
     NESIS_OAUTH_TOKEN_KEY: '___nesis_oauth_token_key___',
     NESIS_OAUTH_TOKEN_VALUE: '___nesis_oauth_token_value___',
-    NESIS_OAUTH_AZURE_ENABLED: true,
+    NESIS_OAUTH_AZURE_ENABLED: false,
     NESIS_OAUTH_AZURE_CLIENT_ID: process.env.NESIS_OAUTH_AZURE_CLIENT_ID,
     NESIS_OAUTH_AZURE_TENANT_ID: process.env.NESIS_OAUTH_AZURE_TENANT_ID,
     NESIS_OAUTH_AZURE_AUTHORITY: 'https://login.microsoftonline.com/common/',
@@ -37,7 +37,7 @@ const profile = {
     NESIS_OAUTH_AZURE_SCOPES: process.env.NESIS_OAUTH_AZURE_SCOPES || [
       'User.Read',
     ],
-    NESIS_OAUTH_GOOGLE_ENABLED: true,
+    NESIS_OAUTH_GOOGLE_ENABLED: false,
     NESIS_OAUTH_GOOGLE_CLIENT_ID: process.env.NESIS_OAUTH_GOOGLE_CLIENT_ID,
     NESIS_OAUTH_GOOGLE_CLIENT_SECRET:
       process.env.NESIS_OAUTH_GOOGLE_CLIENT_SECRET,

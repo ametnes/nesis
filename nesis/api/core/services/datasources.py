@@ -113,6 +113,8 @@ class DatasourceService(ServiceOperation):
             # We validate the schedule (if supplied), before we create the datasource
             self._validate_schedule(datasource)
 
+            entity.schedule = schedule
+
             session.add(entity)
             session.commit()
             session.refresh(entity)
@@ -301,13 +303,14 @@ class DatasourceService(ServiceOperation):
                     raise ServiceException(ve)
 
             # We validate the schedule (if supplied), before we create the datasource
-            self._validate_schedule(datasource)
+            schedule = self._validate_schedule(datasource)
+            datasource_record.schedule = schedule or datasource_record.schedule
 
             session.merge(datasource_record)
             session.commit()
 
             # if we do have a schedule on this datasource, we update it
-            schedule = datasource.get("schedule")
+            schedule = datasource.get("schedule") or ""
             if all([schedule, self._task_service]):
                 task = {
                     "schedule": schedule,
@@ -326,9 +329,16 @@ class DatasourceService(ServiceOperation):
                     )
                     == 1
                 ):
-                    self._task_service.update(
-                        token=kwargs["token"], task=task, task_id=task_records[0].uuid
-                    )
+                    if schedule != "":
+                        self._task_service.update(
+                            token=kwargs["token"],
+                            task=task,
+                            task_id=task_records[0].uuid,
+                        )
+                    else:
+                        self._task_service.delete(
+                            token=kwargs["token"], task_id=task_records[0].uuid
+                        )
 
             return datasource_record
         except Exception as e:
@@ -346,3 +356,6 @@ class DatasourceService(ServiceOperation):
                 validate_schedule(schedule)
             except Exception as e:
                 raise ServiceException(e)
+            return schedule
+        else:
+            return None
