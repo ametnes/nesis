@@ -11,6 +11,7 @@ from nesis.api.core.services.util import (
     save_document,
     get_document,
     delete_document,
+    get_documents,
 )
 from nesis.api.core.util.dateutil import strptime
 
@@ -36,6 +37,10 @@ class RagRunner(abc.ABC):
 
     @abc.abstractmethod
     def delete(self, document: Document, **kwargs) -> None:
+        pass
+
+    @abc.abstractmethod
+    def get(self, **kwargs) -> list:
         pass
 
 
@@ -85,6 +90,9 @@ class ExtractRunner(RagRunner):
         )
         return json.loads(response)
 
+    def get(self, **kwargs) -> list:
+        return self._extraction_store.get(base_uri=kwargs.get("base_uri"))
+
     def _is_modified(
         self, document_id, last_modified: datetime.datetime
     ) -> Union[bool, None]:
@@ -92,16 +100,16 @@ class ExtractRunner(RagRunner):
         Here we check if this file has been updated.
         If the file has been updated, we delete it from the vector store and re-ingest the new updated file
         """
-        document = self._extraction_store.get(document_id=document_id)
-
-        if document is None or document.last_modified < last_modified:
-            return False
-        try:
-            self.delete(document=document)
-        except:
-            _LOG.warning(
-                f"Failed to delete document {document_id}'s record. Continuing anyway..."
-            )
+        documents = self._extraction_store.get(document_id=document_id)
+        for document in documents:
+            if document is None or document.last_modified < last_modified:
+                return False
+            try:
+                self.delete(document=document)
+            except:
+                _LOG.warning(
+                    f"Failed to delete document {document_id}'s record. Continuing anyway..."
+                )
         return True
 
     def save(self, **kwargs):
@@ -121,6 +129,10 @@ class ExtractRunner(RagRunner):
 
 
 class IngestRunner(RagRunner):
+
+    def get(self, **kwargs) -> list:
+        base_uri = kwargs.get("base_uri")
+        return get_documents(base_uri=base_uri)
 
     def __init__(self, config, http_client):
         self._config = config

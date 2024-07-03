@@ -116,11 +116,17 @@ class SqlDocumentStore(object):
             else:
                 raise ex
 
-    def get(self, document_id):
+    def get(self, **kwargs):
+        document_id = kwargs.get("document_id")
+        base_uri = kwargs.get("base_uri")
         with Session(self._engine) as session:
-            return (
-                session.query(self.Store).filter(self.Store.uuid == document_id).first()
-            )
+            query = session.query(self.Store)
+            if document_id is not None:
+                query = query.filter(self.Store.uuid == document_id)
+            if base_uri is not None:
+                query = query.filter(self.Store.base_uri == base_uri)
+
+            return query.all()
 
     def save(self, **kwargs):
         with Session(self._engine) as session:
@@ -144,9 +150,7 @@ class SqlDocumentStore(object):
     def delete(self, document_id):
         with Session(self._engine) as session:
             store_record = (
-                session.query(self.Store)
-                .filter(self.Store.document_id == document_id)
-                .first()
+                session.query(self.Store).filter(self.Store.uuid == document_id).first()
             )
             session.delete(store_record)
             session.commit()

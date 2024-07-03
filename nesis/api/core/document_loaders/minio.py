@@ -258,23 +258,28 @@ class MinioProcessor(object):
         try:
             endpoint = connection.get("endpoint")
 
-            documents = get_documents(base_uri=endpoint)
-            for document in documents:
-                store_metadata = document.store_metadata
-                rag_metadata = document.rag_metadata
-                bucket_name = store_metadata["bucket_name"]
-                object_name = store_metadata["object_name"]
-                try:
-                    client.stat_object(bucket_name=bucket_name, object_name=object_name)
-                except minio.error.S3Error as ex:
-                    str_ex = str(ex)
-                    if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                        for _ingest_runner in self._ingest_runners:
+            for _ingest_runner in self._ingest_runners:
+                documents = _ingest_runner.get(base_uri=endpoint)
+                for document in documents:
+                    store_metadata = document.store_metadata
+                    try:
+                        rag_metadata = document.rag_metadata
+                    except AttributeError:
+                        rag_metadata = document.extract_metadata
+                    bucket_name = store_metadata["bucket_name"]
+                    object_name = store_metadata["object_name"]
+                    try:
+                        client.stat_object(
+                            bucket_name=bucket_name, object_name=object_name
+                        )
+                    except Exception as ex:
+                        str_ex = str(ex)
+                        if "NoSuchKey" in str_ex and "does not exist" in str_ex:
                             _ingest_runner.delete(
                                 document=document, rag_metadata=rag_metadata
                             )
-                    else:
-                        raise
+                        else:
+                            raise
 
         except:
             _LOG.warn("Error fetching and updating documents", exc_info=True)
