@@ -37,6 +37,7 @@ pydub==0.25.1
 odfpy==1.4.1
 EbookLib==0.18
 html2text==2024.2.26
+pikepdf==8.15.0
 
 # Dependency for video/audio encoders
 openai-whisper @ git+https://github.com/openai/whisper.git

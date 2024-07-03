@@ -5,7 +5,7 @@ import multiprocessing
 import os
 import queue
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import memcache
 import minio
@@ -46,10 +46,11 @@ class MinioProcessor(object):
         self._cache_client = cache_client
         self._datasource = datasource
 
-        _extract_runner = None
+        # This is left public for testing
+        self._extract_runner: ExtractRunner = Optional[None]
         _ingest_runner = IngestRunner(config=config, http_client=http_client)
         if self._datasource.connection.get("destination") is not None:
-            _extract_runner = ExtractRunner(
+            self._extract_runner = ExtractRunner(
                 config=config,
                 http_client=http_client,
                 destination=self._datasource.connection.get("destination"),
@@ -64,7 +65,7 @@ class MinioProcessor(object):
             case "ingest":
                 self._ingest_runners: list[RagRunner] = [_ingest_runner]
             case "extract":
-                self._ingest_runners: list[RagRunner] = [_extract_runner]
+                self._ingest_runners: list[RagRunner] = [self._extract_runner]
             case _:
                 raise ValueError(
                     f"Invalid mode {self._mode}. Expected 'ingest' or 'extract'"

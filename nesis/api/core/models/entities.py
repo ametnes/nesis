@@ -141,18 +141,16 @@ class Datasource(Base):
         return dict_value
 
 
-class DocumentObject:
+class Document(Base):
     __tablename__ = "document"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
     # This is likely the endpoint e.g. hostname, URL, SambaShare e.t.c
     base_uri = Column(Unicode(4000), nullable=False)
     filename = Column(Unicode(4000), nullable=False)
-    rag_metadata = Column(JSON)
-    extract_metadata = Column(JSON)
-    # We leave this as nullable to allow for external database tables that will not have the Datasource entity
-    datasource_id = Column(Unicode(255))
-    store_metadata = Column(JSON)
+    rag_metadata = Column(JSONB)
+    datasource_id = Column(Unicode(length=255))
+    store_metadata = Column(JSONB)
     status = Column(
         Enum(objects.DocumentStatus, name="document_status"),
         nullable=False,
@@ -168,7 +166,7 @@ class DocumentObject:
             "datasource_id",
             name="uq_document_uuid_datasource_id",
         ),
-        # Index("idx_document_base_uri", "base_uri"),
+        Index("idx_document_base_uri", "base_uri"),
     )
 
     def __init__(
@@ -211,11 +209,6 @@ class DocumentObject:
         }
 
         return dict_value
-
-
-class Document(Base, DocumentObject):
-    def __init__(self, **kwargs):
-        DocumentObject.__init__(self, **kwargs)
 
 
 # RBAC

@@ -11,6 +11,7 @@ from apscheduler.events import (
     EVENT_JOB_ADDED,
 )
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.date import DateTrigger
@@ -327,7 +328,11 @@ class TaskService(ServiceOperation):
                 session.delete(task)
                 session.commit()
 
-                self._scheduler.remove_job(job_id=task.uuid)
+                try:
+                    self._scheduler.remove_job(job_id=task.uuid)
+                except JobLookupError:
+                    # Ignore the error if job does not exist for some reason
+                    pass
 
         except Exception:
             session.rollback()

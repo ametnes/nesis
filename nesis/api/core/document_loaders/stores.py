@@ -1,10 +1,25 @@
 import json
 import logging
+import datetime as dt
+import os
+import uuid
 
 import sqlalchemy as sa
-from sqlalchemy.orm import registry, Session
+from sqlalchemy import (
+    Column,
+    UniqueConstraint,
+    Index,
+    BigInteger,
+    Unicode,
+    JSON,
+    DateTime,
+    Text,
+    Enum,
+)
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, declarative_base
 
-from nesis.api.core.models.entities import Document, DocumentObject
+from nesis.api.core.models import objects
 
 _LOG = logging.getLogger(__name__)
 
@@ -45,38 +60,82 @@ class SqlDocumentStore(object):
             pool_size=pool_size,
         )
 
-        mapper_registry = registry()
+        Base = declarative_base()
+
+        """
+        1. Create a dynamic class/type so as to allow for multiple database connections.
+        For example, we can extract data to a SQL Server or Postgres instance and avoid the class already mapped exception
+        
+        2. We use JSON database to allow for other database
+        """
+        self.Store = type(
+            f"Store{str(uuid.uuid4()).split('-')[0]}",
+            (Base,),
+            {
+                "__tablename__": "document_extract",
+                "id": Column(BigInteger, primary_key=True, autoincrement=True),
+                "uuid": Column(Unicode(255), nullable=False),
+                "base_uri": Column(Unicode(4000), nullable=False),
+                "filename": Column(Unicode(4000), nullable=False),
+                "extract_metadata": Column(JSON),
+                "datasource_id": Column(Unicode(255)),
+                "store_metadata": Column(JSON),
+                "status": Column(
+                    Enum(objects.DocumentStatus, name="document_status"),
+                    nullable=False,
+                    default=objects.DocumentStatus.PROCESSING,
+                ),
+                "last_modified": Column(
+                    DateTime, default=dt.datetime.utcnow, nullable=False
+                ),
+                "last_processed": Column(
+                    DateTime, default=dt.datetime.utcnow, nullable=False
+                ),
+                "last_processed_message": Column(Text),
+                "__table_args__": (
+                    UniqueConstraint(
+                        "uuid",
+                        "datasource_id",
+                        name="uq_document_extract_uuid_datasource_id",
+                    ),
+                    Index("idx_document_extract_base_uri", "base_uri"),
+                ),
+            },
+        )
 
         try:
-            mapper_registry.map_declaratively(DocumentObject)
+            Base.metadata.create_all(self._engine)
+        except Exception as ex:
+            ext_str = str(ex)
+            if (
+                "uq_document_extract_uuid_datasource_id" in ext_str
+                or "idx_document_extract_base_uri" in ext_str
+            ):
+                # This would be an error about the index or unique key
+                pass
+            else:
+                raise ex
 
-        except sa.exc.ArgumentError as ex:
-            # Table is already mapped
-            _LOG.warning("Error mapping store", exc_info=True)
-            pass
-        mapper_registry.metadata.create_all(self._engine)
-
-    def get(self, document_id) -> DocumentObject:
+    def get(self, document_id):
         with Session(self._engine) as session:
             return (
-                session.query(DocumentObject)
-                .filter(DocumentObject.uuid == document_id)
-                .first()
+                session.query(self.Store).filter(self.Store.uuid == document_id).first()
             )
 
-    def save(self, **kwargs) -> DocumentObject:
+    def save(self, **kwargs):
         with Session(self._engine) as session:
             session.expire_on_commit = False
-            store_record = Document(
-                document_id=kwargs["document_id"],
-                datasource_id=kwargs["datasource_id"],
-                extract_metadata=kwargs["extract_metadata"],
-                store_metadata=kwargs["store_metadata"],
-                last_modified=kwargs["last_modified"],
-                base_uri=kwargs["base_uri"],
-                rag_metadata=kwargs["rag_metadata"],
-                filename=kwargs["filename"],
-            )
+            store_record = self.Store()
+
+            store_record.uuid = kwargs["document_id"]
+            store_record.datasource_id = kwargs["datasource_id"]
+            store_record.extract_metadata = kwargs["extract_metadata"]
+            store_record.store_metadata = kwargs["store_metadata"]
+            store_record.last_modified = kwargs["last_modified"]
+            store_record.base_uri = kwargs["base_uri"]
+            store_record.rag_metadata = kwargs["rag_metadata"]
+            store_record.filename = kwargs["filename"]
+
             session.add(store_record)
             session.commit()
 
@@ -85,8 +144,8 @@ class SqlDocumentStore(object):
     def delete(self, document_id):
         with Session(self._engine) as session:
             store_record = (
-                session.query(DocumentObject)
-                .filter(DocumentObject.document_id == document_id)
+                session.query(self.Store)
+                .filter(self.Store.document_id == document_id)
                 .first()
             )
             session.delete(store_record)

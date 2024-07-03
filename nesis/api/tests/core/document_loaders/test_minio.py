@@ -180,8 +180,13 @@ def test_extract_documents(
     extract_store = SqlDocumentStore(
         url=data["connection"]["destination"]["sql"]["url"]
     )
+
     with Session(extract_store._engine) as session:
-        initial_count = len(session.query(Document).filter().all())
+        initial_count = len(
+            session.query(minio_ingestor._extract_runner._extraction_store.Store)
+            .filter()
+            .all()
+        )
 
     minio_ingestor.run(
         metadata={"datasource": "documents"},
@@ -204,5 +209,9 @@ def test_extract_documents(
     )
 
     with Session(extract_store._engine) as session:
-        all_documents = session.query(Document).filter().all()
+        all_documents = (
+            session.query(minio_ingestor._extract_runner._extraction_store.Store)
+            .filter()
+            .all()
+        )
         assert len(all_documents) == initial_count + 1
