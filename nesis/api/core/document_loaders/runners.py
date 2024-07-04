@@ -6,11 +6,12 @@ from typing import Dict, Any, Union
 
 import nesis.api.core.util.http as http
 from nesis.api.core.document_loaders.stores import SqlDocumentStore
-from nesis.api.core.models.entities import Document, Datasource, DocumentObject
+from nesis.api.core.models.entities import Document, Datasource
 from nesis.api.core.services.util import (
     save_document,
     get_document,
     delete_document,
+    get_documents,
 )
 from nesis.api.core.util.dateutil import strptime
 
@@ -36,6 +37,10 @@ class RagRunner(abc.ABC):
 
     @abc.abstractmethod
     def delete(self, document: Document, **kwargs) -> None:
+        pass
+
+    @abc.abstractmethod
+    def get(self, **kwargs) -> list:
         pass
 
 
@@ -85,6 +90,9 @@ class ExtractRunner(RagRunner):
         )
         return json.loads(response)
 
+    def get(self, **kwargs) -> list:
+        return self._extraction_store.get(base_uri=kwargs.get("base_uri"))
+
     def _is_modified(
         self, document_id, last_modified: datetime.datetime
     ) -> Union[bool, None]:
@@ -92,19 +100,19 @@ class ExtractRunner(RagRunner):
         Here we check if this file has been updated.
         If the file has been updated, we delete it from the vector store and re-ingest the new updated file
         """
-        document: DocumentObject = self._extraction_store.get(document_id=document_id)
-
-        if document is None or document.last_modified < last_modified:
-            return False
-        try:
-            self.delete(document=document)
-        except:
-            _LOG.warning(
-                f"Failed to delete document {document_id}'s record. Continuing anyway..."
-            )
+        documents = self._extraction_store.get(document_id=document_id)
+        for document in documents:
+            if document is None or document.last_modified < last_modified:
+                return False
+            try:
+                self.delete(document=document)
+            except:
+                _LOG.warning(
+                    f"Failed to delete document {document_id}'s record. Continuing anyway..."
+                )
         return True
 
-    def save(self, **kwargs) -> DocumentObject:
+    def save(self, **kwargs):
         return self._extraction_store.save(
             document_id=kwargs["document_id"],
             datasource_id=kwargs["datasource_id"],
@@ -116,11 +124,15 @@ class ExtractRunner(RagRunner):
             filename=kwargs["filename"],
         )
 
-    def delete(self, document: DocumentObject, **kwargs) -> None:
+    def delete(self, document, **kwargs) -> None:
         self._extraction_store.delete(document_id=document.uuid)
 
 
 class IngestRunner(RagRunner):
+
+    def get(self, **kwargs) -> list:
+        base_uri = kwargs.get("base_uri")
+        return get_documents(base_uri=base_uri)
 
     def __init__(self, config, http_client):
         self._config = config
@@ -180,9 +192,7 @@ class IngestRunner(RagRunner):
                 ):
                     return False
                 try:
-                    self.delete(
-                        document_id=document_id, rag_metadata=document.rag_metadata
-                    )
+                    self.delete(document=document)
                 except:
                     _LOG.warning(
                         f"Failed to delete document {document_id}'s record. Continuing anyway..."

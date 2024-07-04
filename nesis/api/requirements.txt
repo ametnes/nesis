@@ -32,3 +32,7 @@ dropbox==11.36.2
 injector==0.21.0
 
 apscheduler==3.10.4
+
+# sql engines as text extract destination
+pymssql==2.3.0
+oracledb==2.2.1

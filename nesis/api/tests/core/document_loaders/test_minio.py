@@ -128,6 +128,8 @@ def test_ingest_documents(
 def test_extract_documents(
     minio_instance: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
+    destination_sql_url = tests.config["database"]["url"]
+    # destination_sql_url = "mssql+pymssql://sa:Pa55woR.d12345@localhost:11433/master"
     data = {
         "name": "s3 documents",
         "engine": "s3",
@@ -138,7 +140,7 @@ def test_extract_documents(
             "dataobjects": "buckets",
             "mode": "extract",
             "destination": {
-                "sql": {"url": tests.config["database"]["url"]},
+                "sql": {"url": destination_sql_url},
             },
         },
     }
@@ -154,7 +156,7 @@ def test_extract_documents(
     session.commit()
 
     http_client = mock.MagicMock()
-    http_client.upload.return_value = json.dumps({})
+    http_client.upload.return_value = json.dumps({"data": {}})
     minio_client = mock.MagicMock()
     bucket = mock.MagicMock()
 
@@ -178,8 +180,13 @@ def test_extract_documents(
     extract_store = SqlDocumentStore(
         url=data["connection"]["destination"]["sql"]["url"]
     )
+
     with Session(extract_store._engine) as session:
-        initial_count = len(session.query(Document).filter().all())
+        initial_count = len(
+            session.query(minio_ingestor._extract_runner._extraction_store.Store)
+            .filter()
+            .all()
+        )
 
     minio_ingestor.run(
         metadata={"datasource": "documents"},
@@ -202,4 +209,167 @@ def test_extract_documents(
     )
 
     with Session(extract_store._engine) as session:
-        assert len(session.query(Document).filter().all()) == initial_count + 1
+        all_documents = (
+            session.query(minio_ingestor._extract_runner._extraction_store.Store)
+            .filter()
+            .all()
+        )
+        assert len(all_documents) == initial_count + 1
+
+
+@mock.patch("nesis.api.core.document_loaders.minio.Minio")
+def test_uningest_documents(
+    client: mock.MagicMock, cache: mock.MagicMock, session: Session
+) -> None:
+    """
+    Test deleting of s3 documents from the rag engine if they have been deleted from the s3 bucket
+    """
+    data = {
+        "name": "s3 documents",
+        "engine": "s3",
+        "connection": {
+            "endpoint": "http://localhost:4566",
+            # "user": "test",
+            # "password": "test",
+            "region": "us-east-1",
+            "dataobjects": "some-non-existing-bucket",
+        },
+    }
+
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.MINIO,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
+    document = Document(
+        base_uri="http://localhost:4566",
+        document_id=str(uuid.uuid4()),
+        filename="invalid.pdf",
+        rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
+        store_metadata={"bucket_name": "some-bucket", "object_name": "file/path.pdf"},
+        last_modified=datetime.datetime.utcnow(),
+    )
+
+    session.add(document)
+    session.commit()
+
+    http_client = mock.MagicMock()
+    minio_client = mock.MagicMock()
+
+    client.return_value = minio_client
+    minio_client.stat_object.side_effect = Exception("NoSuchKey - does not exist")
+
+    documents = session.query(Document).all()
+    assert len(documents) == 1
+
+    minio_ingestor = minio.MinioProcessor(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
+    )
+
+    # # No document records exist
+    # document_records = session.query(Document).all()
+    # assert 0 == len(document_records)
+
+    minio_ingestor.run(
+        metadata={"datasource": "documents"},
+    )
+
+    _, upload_kwargs = http_client.deletes.call_args_list[0]
+    urls = upload_kwargs["urls"]
+
+    assert (
+        urls[0]
+        == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    )
+    documents = session.query(Document).all()
+    assert len(documents) == 0
+
+
+@mock.patch("nesis.api.core.document_loaders.minio.Minio")
+def test_unextract_documents(
+    client: mock.MagicMock, cache: mock.MagicMock, session: Session
+) -> None:
+    """
+    Test deleting of s3 documents from the rag engine if they have been deleted from the s3 bucket
+    """
+    destination_sql_url = tests.config["database"]["url"]
+    data = {
+        "name": "s3 documents",
+        "engine": "s3",
+        "connection": {
+            "endpoint": "https://s3.endpoint",
+            "access_key": "",
+            "secret_key": "",
+            "dataobjects": "buckets",
+            "mode": "extract",
+            "destination": {
+                "sql": {"url": destination_sql_url},
+            },
+        },
+    }
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.MINIO,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
+    http_client = mock.MagicMock()
+    minio_client = mock.MagicMock()
+
+    client.return_value = minio_client
+    minio_client.stat_object.side_effect = Exception("NoSuchKey - does not exist")
+
+    minio_ingestor = minio.MinioProcessor(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
+    )
+
+    extract_store = SqlDocumentStore(
+        url=data["connection"]["destination"]["sql"]["url"]
+    )
+
+    with Session(extract_store._engine) as session:
+        session.query(minio_ingestor._extract_runner._extraction_store.Store).delete()
+        document = minio_ingestor._extract_runner._extraction_store.Store()
+        document.base_uri = data["connection"]["endpoint"]
+        document.uuid = str(uuid.uuid4())
+        document.filename = "invalid.pdf"
+        document.extract_metadata = {"data": [{"doc_id": str(uuid.uuid4())}]}
+        document.store_metadata = {
+            "bucket_name": "some-bucket",
+            "object_name": "file/path.pdf",
+        }
+        document.last_modified = datetime.datetime.utcnow()
+
+        session.add(document)
+        session.commit()
+
+        initial_count = len(
+            session.query(minio_ingestor._extract_runner._extraction_store.Store)
+            .filter()
+            .all()
+        )
+
+    minio_ingestor.run(
+        metadata={"datasource": "documents"},
+    )
+
+    with Session(extract_store._engine) as session:
+        documents = session.query(
+            minio_ingestor._extract_runner._extraction_store.Store
+        ).all()
+        assert len(documents) == initial_count - 1

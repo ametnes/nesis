@@ -162,6 +162,42 @@ def test_create_datasource(client, tc):
     assert 404 == response.status_code, response.json
 
 
+def test_create_datasource_destination(client, tc):
+    payload = {
+        "type": "minio",
+        "name": "finance6",
+        "mode": "extract",
+        "connection": {
+            "user": "caikuodda",
+            "password": "some.password",
+            "endpoint": "localhost",
+            "dataobjects": "initdb",
+            "destination": {
+                "sql": {"url": "postgresql://localhost"},
+            },
+        },
+    }
+
+    admin_session = get_admin_session(client=client)
+
+    # Test invalid destination url
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 400 == response.status_code, response.json
+
+    # Test valid destination url
+    payload["connection"]["destination"]["sql"]["url"] = tests.config["database"]["url"]
+    response = client.post(
+        f"/v1/datasources",
+        headers=tests.get_header(token=admin_session["token"]),
+        data=json.dumps(payload),
+    )
+    assert 200 == response.status_code, response.json
+
+
 def test_update_datasource(client, tc):
     # Create a datasource
     payload = {

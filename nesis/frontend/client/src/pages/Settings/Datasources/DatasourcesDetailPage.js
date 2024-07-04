@@ -104,6 +104,7 @@ function DataSourceForm({
     id: datasource?.id,
     name: datasource?.name,
     type: datasource?.type,
+    schedule: datasource?.schedule,
     connection: {
       user: datasource?.connection?.user,
       client_id: datasource?.connection?.client_id,
@@ -112,6 +113,11 @@ function DataSourceForm({
       port: datasource?.connection?.port,
       region: datasource?.connection?.region,
       dataobjects: datasource?.connection?.dataobjects,
+      destination: {
+        sql: {
+          url: datasource?.connection?.destination?.sql?.url,
+        },
+      },
     },
   },
 }) {
@@ -120,6 +126,14 @@ function DataSourceForm({
   const addToast = useAddToast();
 
   function handleSubmit(values, actions) {
+    values.connection.mode =
+      !values?.connection?.destination?.sql?.url ||
+      values?.connection?.destination?.sql?.url.trim() == ''
+        ? 'ingest'
+        : 'extract';
+    if (values.connection.mode == 'ingest') {
+      values.connection.destination = null;
+    }
     client
       .post(`datasources`, values)
       .then(() => {
@@ -178,6 +192,39 @@ function DataSourceForm({
               values?.type,
             ) && <div></div>}
 
+            {['s3', 'minio', 'windows_share', 'sharepoint'].includes(
+              values?.type,
+            ) && (
+              <div>
+                <h6>Extract to</h6>
+                <div>
+                  <div>
+                    Enter a connection string to extract text and data to
+                  </div>
+                  <StyledTable>
+                    <thead>
+                      <tr>
+                        <th>Attribute</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Connection String</td>
+                        <td>
+                          <TextField
+                            type="text"
+                            id="destination_sql"
+                            placeholder="Connection string"
+                            name="connection.destination.sql.url"
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </StyledTable>
+                </div>
+              </div>
+            )}
             <FormControls
               centered
               submitTitle={submitButtonText}
@@ -324,7 +371,6 @@ function minioConnection() {
               id="password"
               placeholder="password"
               name="connection.password"
-              validate={required}
             />
           </td>
         </tr>

@@ -5,7 +5,7 @@ import multiprocessing
 import os
 import queue
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import memcache
 import minio
@@ -46,10 +46,11 @@ class MinioProcessor(object):
         self._cache_client = cache_client
         self._datasource = datasource
 
-        _extract_runner = None
+        # This is left public for testing
+        self._extract_runner: ExtractRunner = Optional[None]
         _ingest_runner = IngestRunner(config=config, http_client=http_client)
         if self._datasource.connection.get("destination") is not None:
-            _extract_runner = ExtractRunner(
+            self._extract_runner = ExtractRunner(
                 config=config,
                 http_client=http_client,
                 destination=self._datasource.connection.get("destination"),
@@ -58,15 +59,17 @@ class MinioProcessor(object):
 
         self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
 
-        mode = self._datasource.connection.get("mode") or "ingest"
+        self._mode = self._datasource.connection.get("mode") or "ingest"
 
-        match mode:
+        match self._mode:
             case "ingest":
                 self._ingest_runners: list[RagRunner] = [_ingest_runner]
             case "extract":
-                self._ingest_runners: list[RagRunner] = [_extract_runner]
+                self._ingest_runners: list[RagRunner] = [self._extract_runner]
             case _:
-                raise ValueError(f"Invalid mode {mode}. Expected 'ingest' or 'extract'")
+                raise ValueError(
+                    f"Invalid mode {self._mode}. Expected 'ingest' or 'extract'"
+                )
 
     def run(self, metadata: Dict[str, Any]):
         connection: Dict[str, str] = self._datasource.connection
@@ -179,7 +182,7 @@ class MinioProcessor(object):
         tmp_file = tempfile.NamedTemporaryFile(delete=False)
         try:
             _LOG.info(
-                f"Starting syncing object {item.object_name} in bucket {bucket_name}"
+                f"Starting {self._mode}ing object {item.object_name} in bucket {bucket_name}"
             )
             file_path = f"{tmp_file.name}-{item.object_name}"
 
@@ -234,7 +237,9 @@ class MinioProcessor(object):
                     last_modified=item.last_modified,
                 )
 
-            _LOG.info(f"Done syncing object {item.object_name} in bucket {bucket_name}")
+            _LOG.info(
+                f"Done {self._mode}ing object {item.object_name} in bucket {bucket_name}"
+            )
         except Exception as ex:
             _LOG.warning(
                 f"Error when getting and ingesting document {item.object_name} - {ex}",
@@ -253,23 +258,28 @@ class MinioProcessor(object):
         try:
             endpoint = connection.get("endpoint")
 
-            documents = get_documents(base_uri=endpoint)
-            for document in documents:
-                store_metadata = document.store_metadata
-                rag_metadata = document.rag_metadata
-                bucket_name = store_metadata["bucket_name"]
-                object_name = store_metadata["object_name"]
-                try:
-                    client.stat_object(bucket_name=bucket_name, object_name=object_name)
-                except minio.error.S3Error as ex:
-                    str_ex = str(ex)
-                    if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                        for _ingest_runner in self._ingest_runners:
+            for _ingest_runner in self._ingest_runners:
+                documents = _ingest_runner.get(base_uri=endpoint)
+                for document in documents:
+                    store_metadata = document.store_metadata
+                    try:
+                        rag_metadata = document.rag_metadata
+                    except AttributeError:
+                        rag_metadata = document.extract_metadata
+                    bucket_name = store_metadata["bucket_name"]
+                    object_name = store_metadata["object_name"]
+                    try:
+                        client.stat_object(
+                            bucket_name=bucket_name, object_name=object_name
+                        )
+                    except Exception as ex:
+                        str_ex = str(ex)
+                        if "NoSuchKey" in str_ex and "does not exist" in str_ex:
                             _ingest_runner.delete(
                                 document=document, rag_metadata=rag_metadata
                             )
-                    else:
-                        raise
+                        else:
+                            raise
 
         except:
             _LOG.warn("Error fetching and updating documents", exc_info=True)

@@ -22,6 +22,7 @@ from sqlalchemy import (
     Enum,
     ForeignKeyConstraint,
     Text,
+    JSON,
 )
 
 DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -100,6 +101,7 @@ class Datasource(Base):
     uuid = Column(Unicode(255), unique=True, nullable=False)
     type = Column(Enum(objects.DatasourceType, name="datasource_type"), nullable=False)
     name = Column(Unicode(255), nullable=False)
+    schedule = Column(Unicode(255))
     enabled = Column(Boolean, default=True, nullable=False)
     status = Column(
         Enum(objects.DatasourceStatus, name="datasource_status"), nullable=False
@@ -133,21 +135,21 @@ class Datasource(Base):
             "enabled": self.enabled,
             "connection": connection,
             "status": self.status.name.lower(),
+            "schedule": self.schedule,
         }
 
         return dict_value
 
 
-class DocumentObject:
+class Document(Base):
     __tablename__ = "document"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     uuid = Column(Unicode(255), nullable=False)
     # This is likely the endpoint e.g. hostname, URL, SambaShare e.t.c
-    base_uri = Column(Unicode(4096), nullable=False)
-    filename = Column(Unicode(4096), nullable=False)
+    base_uri = Column(Unicode(4000), nullable=False)
+    filename = Column(Unicode(4000), nullable=False)
     rag_metadata = Column(JSONB)
-    extract_metadata = Column(JSONB)
-    datasource_id = Column(Unicode(255))
+    datasource_id = Column(Unicode(length=255))
     store_metadata = Column(JSONB)
     status = Column(
         Enum(objects.DocumentStatus, name="document_status"),
@@ -160,8 +162,11 @@ class DocumentObject:
 
     __table_args__ = (
         UniqueConstraint(
-            "uuid", "base_uri", "filename", name="uq_document_uuid_base_url_filename"
+            "uuid",
+            "datasource_id",
+            name="uq_document_uuid_datasource_id",
         ),
+        Index("idx_document_base_uri", "base_uri"),
     )
 
     def __init__(
@@ -204,11 +209,6 @@ class DocumentObject:
         }
 
         return dict_value
-
-
-class Document(Base, DocumentObject):
-    def __init__(self, **kwargs):
-        DocumentObject.__init__(self, **kwargs)
 
 
 # RBAC
