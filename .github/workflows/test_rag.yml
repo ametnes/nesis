@@ -66,6 +66,7 @@ jobs:
           sudo apt update -y
           sudo apt install ffmpeg tesseract-ocr poppler-utils -y
           pip install -r nesis/rag/requirements.txt -r nesis/rag/requirements-test.txt -r nesis/rag/requirements-huggingface.txt
+          pip install -U tokenizers
       - name: Run unit tests
         env:
           NESIS_MEMCACHE_HOSTS: localhost:11211
