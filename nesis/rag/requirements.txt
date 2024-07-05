@@ -52,3 +52,6 @@ pillow_heif==0.16.0
 
 # This causes conflicts from onnxruntime, so we attempt to install it last. Do not pin to a version so pip resolves it
 llama-index-embeddings-fastembed
+
+#
+tokenizers==0.19.1
