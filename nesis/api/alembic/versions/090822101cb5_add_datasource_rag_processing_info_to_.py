@@ -37,15 +37,11 @@ def upgrade() -> None:
     op.add_column(
         "document",
         sa.Column(
-            "status",
-            sa.Enum("SUCCESS", "PROCESSING", "ERROR", name="document_status"),
-            nullable=False,
+            "status", sa.Enum("SUCCESS", "PROCESSING", "ERROR", name="document_status")
         ),
     )
-    op.add_column("document", sa.Column("last_modified", sa.DateTime(), nullable=False))
-    op.add_column(
-        "document", sa.Column("last_processed", sa.DateTime(), nullable=False)
-    )
+    op.add_column("document", sa.Column("last_modified", sa.DateTime()))
+    op.add_column("document", sa.Column("last_processed", sa.DateTime()))
     op.add_column(
         "document", sa.Column("last_processed_message", sa.Text(), nullable=True)
     )
