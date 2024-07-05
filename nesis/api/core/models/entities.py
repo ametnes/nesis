@@ -153,11 +153,10 @@ class Document(Base):
     store_metadata = Column(JSONB)
     status = Column(
         Enum(objects.DocumentStatus, name="document_status"),
-        nullable=False,
         default=objects.DocumentStatus.PROCESSING,
     )
-    last_modified = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
-    last_processed = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    last_modified = Column(DateTime, default=dt.datetime.utcnow)
+    last_processed = Column(DateTime, default=dt.datetime.utcnow)
     last_processed_message = Column(Text)
 
     __table_args__ = (
