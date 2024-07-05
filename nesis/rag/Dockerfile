@@ -20,7 +20,8 @@ RUN if [ "$CORE" = "cuda" ] ; \
     --default-timeout=1200 ; \
     fi
 
-RUN /app/.venv/bin/pip install -U transformers
+RUN /app/.venv/bin/pip install -U transformers tokenizers
+
 
 FROM python:3.11.6-slim-bookworm
 ARG NESIS_VERSION
