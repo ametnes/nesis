@@ -8,7 +8,7 @@ import boto3
 import memcache
 
 import nesis.api.core.util.http as http
-from nesis.api.core.models.entities import Document
+from nesis.api.core.models.entities import Document, Datasource
 from nesis.api.core.services import util
 from nesis.api.core.services.util import (
     save_document,
@@ -24,13 +24,14 @@ _LOG = logging.getLogger(__name__)
 
 
 def fetch_documents(
-    connection: Dict[str, str],
+    datasource: Datasource,
     rag_endpoint: str,
     http_client: http.HttpClient,
     cache_client: memcache.Client,
     metadata: Dict[str, Any],
 ) -> None:
     try:
+        connection = datasource.connection
         endpoint = connection.get("endpoint")
         access_key = connection.get("user")
         secret_key = connection.get("password")
@@ -61,7 +62,7 @@ def fetch_documents(
 
         _sync_documents(
             client=s3_client,
-            connection=connection,
+            datasource=datasource,
             rag_endpoint=rag_endpoint,
             http_client=http_client,
             cache_client=cache_client,
@@ -79,7 +80,7 @@ def fetch_documents(
 
 def _sync_documents(
     client,
-    connection: dict,
+    datasource: Datasource,
     rag_endpoint: str,
     http_client: http.HttpClient,
     cache_client: memcache.Client,
@@ -89,6 +90,7 @@ def _sync_documents(
     try:
 
         # Data objects allow us to specify bucket names
+        connection = datasource.connection
         bucket_paths = connection.get("dataobjects")
         if bucket_paths is None:
             _LOG.warning("No bucket names supplied, so I can't do much")
@@ -138,7 +140,7 @@ def _sync_documents(
                         try:
                             _sync_document(
                                 client=client,
-                                connection=connection,
+                                datasource=datasource,
                                 rag_endpoint=rag_endpoint,
                                 http_client=http_client,
                                 metadata=_metadata,
@@ -158,13 +160,14 @@ def _sync_documents(
 
 def _sync_document(
     client,
-    connection: dict,
+    datasource: Datasource,
     rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: dict,
     bucket_name: str,
     item,
 ):
+    connection = datasource.connection
     endpoint = connection["endpoint"]
     _metadata = metadata
 
@@ -235,6 +238,7 @@ def _sync_document(
             save_document(
                 document_id=item["ETag"],
                 filename=item["Key"],
+                datasource_id=datasource.uuid,
                 base_uri=endpoint,
                 rag_metadata=response_json,
                 store_metadata={
