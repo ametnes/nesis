@@ -102,15 +102,17 @@ class ExtractRunner(RagRunner):
         """
         documents = self._extraction_store.get(document_id=document_id)
         for document in documents:
-            if document is None or document.last_modified == last_modified:
-                return False
-            try:
-                self.delete(document=document)
-            except:
-                _LOG.warning(
-                    f"Failed to delete document {document_id}'s record. Continuing anyway..."
-                )
-        return True
+            if document is not None and last_modified.replace(
+                microsecond=0
+            ) > document.last_modified.replace(microsecond=0):
+                try:
+                    self.delete(document=document)
+                except:
+                    _LOG.warning(
+                        f"Failed to delete document {document_id}'s record. Continuing anyway..."
+                    )
+                return True
+            return False
 
     def save(self, **kwargs):
         return self._extraction_store.save(
@@ -192,9 +194,9 @@ class IngestRunner(RagRunner):
                 document_last_modified = strptime(
                     date_string=store_metadata["last_modified"]
                 ).replace(tzinfo=None)
-            if document_last_modified is not None:
-                if document_last_modified == last_modified:
-                    return False
+            if document_last_modified is not None and last_modified.replace(
+                microsecond=0
+            ) > document_last_modified.replace(microsecond=0):
                 try:
                     self.delete(document=document, rag_metadata=document.rag_metadata)
                 except:
@@ -203,6 +205,7 @@ class IngestRunner(RagRunner):
                         exc_info=True,
                     )
                 return True
+            return False
         else:
             return None
 

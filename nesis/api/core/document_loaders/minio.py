@@ -212,9 +212,12 @@ class MinioProcessor(object):
                     )
                 except ValueError:
                     _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
-                    response_json = {}
+                    response_json = None
                 except UserWarning:
                     _LOG.debug(f"File {file_path} is already processing")
+                    return
+
+                if response_json is None:
                     return
 
                 _ingest_runner.save(
