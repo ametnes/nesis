@@ -106,7 +106,6 @@ class MinioProcessor(object):
     ) -> None:
 
         try:
-
             connection = datasource.connection
             # Data objects allow us to specify bucket names
             bucket_names = connection.get("dataobjects")

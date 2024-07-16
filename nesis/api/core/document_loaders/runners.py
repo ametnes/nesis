@@ -102,7 +102,7 @@ class ExtractRunner(RagRunner):
         """
         documents = self._extraction_store.get(document_id=document_id)
         for document in documents:
-            if document is None or document.last_modified < last_modified:
+            if document is None or document.last_modified == last_modified:
                 return False
             try:
                 self.delete(document=document)
@@ -183,19 +183,24 @@ class IngestRunner(RagRunner):
             return False
         elif document.base_uri == endpoint:
             store_metadata = document.store_metadata
-            if store_metadata and store_metadata.get("last_modified"):
-                if (
-                    not strptime(date_string=store_metadata["last_modified"]).replace(
-                        tzinfo=None
-                    )
-                    < last_modified
-                ):
+            document_last_modified = document.last_modified
+            if (
+                document_last_modified is None
+                and store_metadata
+                and store_metadata.get("last_modified")
+            ):
+                document_last_modified = strptime(
+                    date_string=store_metadata["last_modified"]
+                ).replace(tzinfo=None)
+            if document_last_modified is not None:
+                if document_last_modified == last_modified:
                     return False
                 try:
-                    self.delete(document=document)
+                    self.delete(document=document, rag_metadata=document.rag_metadata)
                 except:
                     _LOG.warning(
-                        f"Failed to delete document {document_id}'s record. Continuing anyway..."
+                        f"Failed to delete document {document_id}'s record. Continuing anyway...",
+                        exc_info=True,
                     )
                 return True
         else:
@@ -209,6 +214,7 @@ class IngestRunner(RagRunner):
             rag_metadata=kwargs["rag_metadata"],
             store_metadata=kwargs["store_metadata"],
             last_modified=kwargs["last_modified"],
+            datasource_id=kwargs["datasource_id"],
         )
 
     def delete(self, document: Document, **kwargs) -> None:

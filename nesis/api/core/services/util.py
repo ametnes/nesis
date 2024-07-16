@@ -73,6 +73,7 @@ def save_document(**kwargs) -> Document:
             store_metadata=kwargs["store_metadata"],
             base_uri=kwargs["base_uri"],
             last_modified=kwargs["last_modified"],
+            datasource_id=kwargs["datasource_id"],
         )
 
     session = kwargs.get("session")
