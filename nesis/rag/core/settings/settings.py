@@ -110,6 +110,7 @@ class LLMSettings(BaseModel):
 
 class VectorstoreSettings(BaseModel):
     database: Literal["chroma", "qdrant", "pgvector"]
+    similarity_top_k: int
 
 
 class LocalSettings(BaseModel):

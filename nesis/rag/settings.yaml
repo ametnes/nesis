@@ -21,6 +21,7 @@ embedding:
 
 vectorstore:
   database: pgvector
+  similarity_top_k: ${NESIS_RAG_VECTORSTORE_SIMILARITY_TOP_K:5}
 
 pgvector:
   url: ${NESIS_RAG_PGVECTOR_URL:postgresql://postgres:password@localhost:65432/nesis}

@@ -183,31 +183,28 @@ class IngestRunner(RagRunner):
         document: Document = get_document(document_id=document_id)
         if document is None or document.base_uri != endpoint:
             return False
-        elif document.base_uri == endpoint:
-            store_metadata = document.store_metadata
-            document_last_modified = document.last_modified
-            if (
-                document_last_modified is None
-                and store_metadata
-                and store_metadata.get("last_modified")
-            ):
-                document_last_modified = strptime(
-                    date_string=store_metadata["last_modified"]
-                ).replace(tzinfo=None)
-            if document_last_modified is not None and last_modified.replace(
-                microsecond=0
-            ) > document_last_modified.replace(microsecond=0):
-                try:
-                    self.delete(document=document, rag_metadata=document.rag_metadata)
-                except:
-                    _LOG.warning(
-                        f"Failed to delete document {document_id}'s record. Continuing anyway...",
-                        exc_info=True,
-                    )
-                return True
-            return False
-        else:
-            return None
+        store_metadata = document.store_metadata
+        document_last_modified = document.last_modified
+        if (
+            document_last_modified is None
+            and store_metadata is not None
+            and store_metadata.get("last_modified")
+        ):
+            document_last_modified = strptime(
+                date_string=store_metadata["last_modified"]
+            ).replace(tzinfo=None)
+        if document_last_modified is not None and last_modified.replace(
+            microsecond=0
+        ) > document_last_modified.replace(microsecond=0):
+            try:
+                self.delete(document=document, rag_metadata=document.rag_metadata)
+            except:
+                _LOG.warning(
+                    f"Failed to delete document {document_id}'s record. Continuing anyway...",
+                    exc_info=True,
+                )
+            return True
+        return False
 
     def save(self, **kwargs) -> Document:
         return save_document(
@@ -231,10 +228,11 @@ class IngestRunner(RagRunner):
                     for document_data in rag_metadata.get("data") or []
                 ]
             )
-            _LOG.info(f"Deleting document {document.filename}")
-            delete_document(document_id=document.id)
         except:
             _LOG.warning(
                 f"Failed to delete document {document.filename}",
                 exc_info=True,
             )
+
+        _LOG.info(f"Deleting document {document.filename}")
+        delete_document(document_id=document.id)

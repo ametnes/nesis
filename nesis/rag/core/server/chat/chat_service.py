@@ -23,6 +23,7 @@ from nesis.rag.core.components.vector_store.vector_store_component import (
 )
 from nesis.rag.core.open_ai.extensions.context_filter import ContextFilter
 from nesis.rag.core.server.chunks.chunks_service import Chunk
+from nesis.rag.core.settings.settings import Settings
 
 
 class Completion(BaseModel):
@@ -78,8 +79,10 @@ class ChatService:
         vector_store_component: VectorStoreComponent,
         embedding_component: EmbeddingComponent,
         node_store_component: NodeStoreComponent,
+        settings: Settings,
     ) -> None:
         self.llm_service = llm_component
+        self.settings = settings
         self.vector_store_component = vector_store_component
         self.storage_context = StorageContext.from_defaults(
             vector_store=vector_store_component.vector_store,
@@ -104,7 +107,9 @@ class ChatService:
     ) -> BaseChatEngine:
         if use_context:
             vector_index_retriever = self.vector_store_component.get_retriever(
-                index=self.index, context_filter=context_filter
+                index=self.index,
+                context_filter=context_filter,
+                similarity_top_k=self.settings.vectorstore.similarity_top_k,
             )
             return ContextChatEngine.from_defaults(
                 system_prompt=system_prompt,
