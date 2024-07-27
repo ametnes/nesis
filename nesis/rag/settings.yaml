@@ -12,6 +12,7 @@ llm:
   # Should be matching the selected model
   max_new_tokens: 512
   context_window: 3900
+  token_limit: ${NESIS_RAG_LLM_TOKEN_LIMIT:9439}
   tokenizer: mistralai/Mistral-7B-Instruct-v0.2
 
 embedding:
