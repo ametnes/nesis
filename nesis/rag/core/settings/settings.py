@@ -106,10 +106,15 @@ class LLMSettings(BaseModel):
         "like `HuggingFaceH4/zephyr-7b-beta`. If not set, will load a tokenizer matching "
         "gpt-3.5-turbo LLM.",
     )
+    token_limit: int = Field(
+        9439,
+        description="The maximum number of chat memory tokens.",
+    )
 
 
 class VectorstoreSettings(BaseModel):
     database: Literal["chroma", "qdrant", "pgvector"]
+    similarity_top_k: int
 
 
 class LocalSettings(BaseModel):

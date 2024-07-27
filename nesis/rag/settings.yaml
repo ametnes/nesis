@@ -12,6 +12,7 @@ llm:
   # Should be matching the selected model
   max_new_tokens: 512
   context_window: 3900
+  token_limit: ${NESIS_RAG_LLM_TOKEN_LIMIT:9439}
   tokenizer: mistralai/Mistral-7B-Instruct-v0.2
 
 embedding:
@@ -21,6 +22,7 @@ embedding:
 
 vectorstore:
   database: pgvector
+  similarity_top_k: ${NESIS_RAG_VECTORSTORE_SIMILARITY_TOP_K:5}
 
 pgvector:
   url: ${NESIS_RAG_PGVECTOR_URL:postgresql://postgres:password@localhost:65432/nesis}
