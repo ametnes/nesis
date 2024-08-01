@@ -197,7 +197,8 @@ def test_ingest_datasource_s3(
     assert (
         kwargs_sync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
     )
-    tc.assertDictEqual(kwargs_sync_samba_documents["connection"], datasource.connection)
+    assert kwargs_sync_samba_documents.get("datasource") is not None
+
     tc.assertDictEqual(
         kwargs_sync_samba_documents["metadata"], {"datasource": datasource.name}
     )
@@ -249,9 +250,8 @@ def test_ingest_datasource_sharepoint(
         kwargs_sync_sharepoint_documents["rag_endpoint"]
         == tests.config["rag"]["endpoint"]
     )
-    tc.assertDictEqual(
-        kwargs_sync_sharepoint_documents["connection"], datasource.connection
-    )
+    assert kwargs_sync_sharepoint_documents.get("datasource") is not None
+
     tc.assertDictEqual(
         kwargs_sync_sharepoint_documents["metadata"], {"datasource": datasource.name}
     )

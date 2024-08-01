@@ -52,17 +52,10 @@ def ingest_datasource(**kwargs) -> None:
 
         case DatasourceType.SHAREPOINT:
             sharepoint.fetch_documents(
-                connection=datasource.connection,
+                datasource=datasource,
                 rag_endpoint=rag_endpoint,
                 http_client=http_client,
                 cache_client=cache_client,
-                metadata={"datasource": datasource.name},
-            )
-        case DatasourceType.GOOGLE_DRIVE:
-            google_drive.fetch_documents(
-                connection=datasource.connection,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
                 metadata={"datasource": datasource.name},
             )
         case DatasourceType.WINDOWS_SHARE:
@@ -75,7 +68,7 @@ def ingest_datasource(**kwargs) -> None:
             )
         case DatasourceType.S3:
             s3.fetch_documents(
-                connection=datasource.connection,
+                datasource=datasource,
                 rag_endpoint=rag_endpoint,
                 http_client=http_client,
                 metadata={"datasource": datasource.name},

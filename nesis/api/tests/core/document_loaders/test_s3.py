@@ -108,7 +108,7 @@ def test_sync_documents(
     s3_client.get_paginator.return_value = paginator
 
     s3.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",
@@ -154,6 +154,16 @@ def test_update_sync_documents(
         },
     }
 
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.SHAREPOINT,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
     document = Document(
         base_uri="http://localhost:4566",
         document_id="d41d8cd98f00b204e9800998ecf8427e",
@@ -197,7 +207,7 @@ def test_update_sync_documents(
     s3_client.get_paginator.return_value = paginator
 
     s3.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",
@@ -257,8 +267,19 @@ def test_unsync_s3_documents(
         },
     }
 
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.SHAREPOINT,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
     document = Document(
         base_uri="http://localhost:4566",
+        datasource_id=datasource.uuid,
         document_id=str(uuid.uuid4()),
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
@@ -279,7 +300,7 @@ def test_unsync_s3_documents(
     assert len(documents) == 1
 
     s3.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",

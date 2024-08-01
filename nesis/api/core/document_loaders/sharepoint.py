@@ -12,7 +12,7 @@ from office365.runtime.client_request_exception import ClientRequestException
 
 from nesis.api.core.util import http, clean_control, isblank
 import logging
-from nesis.api.core.models.entities import Document
+from nesis.api.core.models.entities import Document, Datasource
 from nesis.api.core.services.util import (
     save_document,
     get_document,
@@ -29,7 +29,7 @@ _LOG = logging.getLogger(__name__)
 
 
 def fetch_documents(
-    connection: Dict[str, str],
+    datasource: Datasource,
     rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: Dict[str, Any],
@@ -37,6 +37,7 @@ def fetch_documents(
 ) -> None:
     try:
 
+        connection = datasource.connection
         site_url = connection.get("endpoint")
         client_id = connection.get("client_id")
         tenant = connection.get("tenant_id")
@@ -55,7 +56,7 @@ def fetch_documents(
 
             _sync_sharepoint_documents(
                 sp_context=_sharepoint_context,
-                connection=connection,
+                datasource=datasource,
                 rag_endpoint=rag_endpoint,
                 http_client=http_client,
                 metadata=metadata,
@@ -72,7 +73,7 @@ def fetch_documents(
 
 
 def _sync_sharepoint_documents(
-    sp_context, connection, rag_endpoint, http_client, metadata, cache_client
+    sp_context, datasource, rag_endpoint, http_client, metadata, cache_client
 ):
     try:
         _LOG.info(f"Initializing sharepoint syncing to endpoint {rag_endpoint}")
@@ -83,6 +84,7 @@ def _sync_sharepoint_documents(
             )
 
         # Data objects allow us to specify folder names
+        connection = datasource.connection
         sharepoint_folders = connection.get("dataobjects")
         if sharepoint_folders is None:
             _LOG.warning("Sharepoint folders are specified, so I can't do much")
@@ -102,7 +104,7 @@ def _sync_sharepoint_documents(
 
             _process_folder_files(
                 sharepoint_folder,
-                connection=connection,
+                datasource=datasource,
                 rag_endpoint=rag_endpoint,
                 http_client=http_client,
                 metadata=metadata,
@@ -130,7 +132,10 @@ def _sync_sharepoint_documents(
         )
 
 
-def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_client):
+def _process_file(
+    file, datasource: Datasource, rag_endpoint, http_client, metadata, cache_client
+):
+    connection = datasource.connection
     site_url = connection.get("endpoint")
     parsed_site_url = urlparse(site_url)
     site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
@@ -149,7 +154,7 @@ def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_c
     if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
         try:
             _sync_document(
-                connection=connection,
+                datasource=datasource,
                 rag_endpoint=rag_endpoint,
                 http_client=http_client,
                 metadata=_metadata,
@@ -162,14 +167,14 @@ def _process_file(file, connection, rag_endpoint, http_client, metadata, cache_c
 
 
 def _process_folder_files(
-    folder, connection, rag_endpoint, http_client, metadata, cache_client
+    folder, datasource, rag_endpoint, http_client, metadata, cache_client
 ):
     # process files in folder
     _files = folder.get_files(False).execute_query()
     for file in _files:
         _process_file(
             file=file,
-            connection=connection,
+            datasource=datasource,
             rag_endpoint=rag_endpoint,
             http_client=http_client,
             metadata=metadata,
@@ -178,12 +183,13 @@ def _process_folder_files(
 
 
 def _sync_document(
-    connection: dict,
+    datasource: Datasource,
     rag_endpoint: str,
     http_client: http.HttpClient,
     metadata: dict,
     file,
 ):
+    connection = datasource.connection
     site_url = connection["endpoint"]
     _metadata = metadata
 
@@ -260,6 +266,7 @@ def _sync_document(
                 filename=file.serverRelativeUrl,
                 base_uri=site_url,
                 rag_metadata=response_json,
+                datasource_id=datasource.uuid,
                 store_metadata={
                     "file_name": file.name,
                     "file_url": file.serverRelativeUrl,
@@ -274,7 +281,9 @@ def _sync_document(
             )
             _LOG.info(f"Done syncing object {file.name} in at {file.serverRelativeUrl}")
         except Exception as ex:
-            _LOG.warning(f"Error when getting and ingesting file {file.name} - {ex}")
+            _LOG.warning(
+                f"Error when getting and ingesting file {file.name}", exc_info=True
+            )
 
 
 def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connection):

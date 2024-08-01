@@ -82,7 +82,7 @@ def test_sync_sharepoint_documents(
     http_client.upload.return_value = json.dumps({})
 
     sharepoint.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",
@@ -129,7 +129,18 @@ def test_sync_updated_sharepoint_documents(
         },
     }
 
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.MINIO,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
     document = Document(
+        datasource_id=datasource.uuid,
         base_uri="https://ametnes.sharepoint.com/sites/nesis-test/",
         document_id="edu323-23423-23frs-234232",
         filename="sharepoint_file.pdf",
@@ -185,7 +196,7 @@ def test_sync_updated_sharepoint_documents(
     http_client.upload.return_value = json.dumps({})
 
     sharepoint.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",
@@ -246,8 +257,19 @@ def test_unsync_sharepoint_documents(
         },
     }
 
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.SHAREPOINT,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
     document = Document(
         base_uri="https://ametnes.sharepoint.com/sites/nesis-test/",
+        datasource_id=datasource.uuid,
         document_id="edu323-23423-23frs",
         filename="Test_file.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
@@ -297,7 +319,7 @@ def test_unsync_sharepoint_documents(
     assert len(documents) == 1
 
     sharepoint.fetch_documents(
-        connection=data["connection"],
+        datasource=datasource,
         http_client=http_client,
         metadata={"datasource": "documents"},
         rag_endpoint="http://localhost:8080",

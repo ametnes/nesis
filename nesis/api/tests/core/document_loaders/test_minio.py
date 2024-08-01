@@ -22,6 +22,7 @@ from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
 )
+from nesis.api.core.util.dateutil import strptime
 
 
 @pytest.fixture
@@ -53,8 +54,8 @@ def test_ingest_documents(
     minio_instance: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
     data = {
-        "name": "s3 documents",
-        "engine": "s3",
+        "name": "minio documents",
+        "engine": "minio",
         "connection": {
             "endpoint": "https://s3.endpoint",
             "access_key": "",
@@ -274,10 +275,6 @@ def test_uningest_documents(
         datasource=datasource,
     )
 
-    # # No document records exist
-    # document_records = session.query(Document).all()
-    # assert 0 == len(document_records)
-
     minio_ingestor.run(
         metadata={"datasource": "documents"},
     )
@@ -373,3 +370,115 @@ def test_unextract_documents(
             minio_ingestor._extract_runner._extraction_store.Store
         ).all()
         assert len(documents) == initial_count - 1
+
+
+@mock.patch("nesis.api.core.document_loaders.minio.Minio")
+def test_update_ingest_documents(
+    client: mock.MagicMock, cache: mock.MagicMock, session: Session
+) -> None:
+    """
+    Test updating documents if they have been updated at the minio bucket end.
+    """
+
+    data = {
+        "name": "s3 documents",
+        "engine": "minio",
+        "connection": {
+            "endpoint": "http://localhost:4566",
+            "region": "us-east-1",
+            "dataobjects": "my-test-bucket",
+        },
+    }
+
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.MINIO,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
+    # The document record
+
+    document = Document(
+        base_uri="http://localhost:4566",
+        document_id="d41d8cd98f00b204e9800998ecf8427e",
+        filename="invalid.pdf",
+        rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
+        store_metadata={
+            "bucket_name": "some-bucket",
+            "object_name": "file/path.pdf",
+            "last_modified": "2023-07-18 06:40:07",
+        },
+        last_modified=strptime("2023-07-19 06:40:07"),
+        datasource_id=datasource.uuid,
+    )
+
+    session.add(document)
+    session.commit()
+
+    http_client = mock.MagicMock()
+    http_client.upload.return_value = json.dumps({})
+    minio_client = mock.MagicMock()
+    bucket = mock.MagicMock()
+
+    client.return_value = minio_client
+    type(bucket).etag = mock.PropertyMock(
+        return_value="d41d8cd98f00b204e9800998ecf8427e"
+    )
+    last_modified = datetime.datetime.now()
+    type(bucket).bucket_name = mock.PropertyMock(return_value="SomeName")
+    type(bucket).object_name = mock.PropertyMock(return_value="SomeName")
+    type(bucket).last_modified = mock.PropertyMock(return_value=last_modified)
+    type(bucket).size = mock.PropertyMock(return_value=1000)
+    type(bucket).version_id = mock.PropertyMock(return_value="2")
+
+    minio_client.list_objects.return_value = [bucket]
+
+    minio_ingestor = minio.MinioProcessor(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
+    )
+
+    minio_ingestor.run(
+        metadata={"datasource": "documents"},
+    )
+
+    # The document would be deleted from the rag engine
+    _, upload_kwargs = http_client.deletes.call_args_list[0]
+    urls = upload_kwargs["urls"]
+
+    assert (
+        urls[0]
+        == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    )
+    documents = session.query(Document).all()
+    assert len(documents) == 1
+    assert document.id != documents[0].id
+
+    # And then re-ingested
+    _, upload_kwargs = http_client.upload.call_args_list[0]
+    url = upload_kwargs["url"]
+    file_path = upload_kwargs["filepath"]
+    metadata = upload_kwargs["metadata"]
+    field = upload_kwargs["field"]
+
+    assert url == f"http://localhost:8080/v1/ingest/files"
+    assert field == "file"
+    ut.TestCase().assertDictEqual(
+        metadata,
+        {
+            "datasource": "documents",
+            "file_name": "my-test-bucket/SomeName",
+            "self_link": "http://localhost:4566/my-test-bucket/SomeName",
+        },
+    )
+
+    # The document has now been updated
+    documents = session.query(Document).all()
+    assert len(documents) == 1
+    assert documents[0].last_modified == last_modified
