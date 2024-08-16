@@ -2,6 +2,7 @@ import json
 import logging
 import pathlib
 import tempfile
+from concurrent.futures import as_completed
 from typing import Dict, Any
 
 import boto3
@@ -19,6 +20,7 @@ from nesis.api.core.services.util import (
     ingest_file,
 )
 from nesis.api.core.util import clean_control, isblank
+from nesis.api.core.util.concurrency import IOBoundPool
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 from nesis.api.core.util.dateutil import strptime
 
@@ -97,7 +99,7 @@ class Processor(DocumentProcessor):
                 _LOG.warning("No bucket names supplied, so I can't do much")
 
             bucket_paths_parts = bucket_paths.split(",")
-
+            futures = []
             for bucket_path in bucket_paths_parts:
 
                 # a/b/c/// should only give [a,b,c]
@@ -121,38 +123,52 @@ class Processor(DocumentProcessor):
                         # Paths ending in / are folders so we skip them
                         if item["Key"].endswith("/"):
                             continue
-
-                        endpoint = connection["endpoint"]
-                        self_link = f"{endpoint}/{bucket_name}/{item['Key']}"
-                        _metadata = {
-                            **(metadata or {}),
-                            "file_name": f"{bucket_name}/{item['Key']}",
-                            "self_link": self_link,
-                        }
-
-                        """
-                        We use memcache's add functionality to implement a shared lock to allow for multiple instances
-                        operating 
-                        """
-                        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
-                        if self._cache_client.add(
-                            key=_lock_key, val=_lock_key, time=30 * 60
-                        ):
-                            try:
-                                self._sync_document(
-                                    client=client,
-                                    datasource=datasource,
-                                    metadata=_metadata,
-                                    bucket_name=bucket_name,
-                                    item=item,
-                                )
-                            finally:
-                                self._cache_client.delete(_lock_key)
-                        else:
-                            _LOG.info(f"Document {self_link} is already processing")
+                        futures.append(
+                            IOBoundPool.submit(
+                                self._process_object,
+                                bucket_name,
+                                client,
+                                datasource,
+                                item,
+                                metadata,
+                            )
+                        )
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except:
+                    _LOG.warning(future.exception())
 
         except:
             _LOG.warning("Error fetching and updating documents", exc_info=True)
+
+    def _process_object(self, bucket_name, client, datasource, item, metadata):
+        connection = datasource.connection
+        endpoint = connection["endpoint"]
+        self_link = f"{endpoint}/{bucket_name}/{item['Key']}"
+        _metadata = {
+            **(metadata or {}),
+            "file_name": f"{bucket_name}/{item['Key']}",
+            "self_link": self_link,
+        }
+        """
+                            We use memcache's add functionality to implement a shared lock to allow for multiple instances
+                            operating 
+                            """
+        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+        if self._cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+            try:
+                self._sync_document(
+                    client=client,
+                    datasource=datasource,
+                    metadata=_metadata,
+                    bucket_name=bucket_name,
+                    item=item,
+                )
+            finally:
+                self._cache_client.delete(_lock_key)
+        else:
+            _LOG.info(f"Document {self_link} is already processing")
 
     def _sync_document(
         self,
