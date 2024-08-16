@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import queue
 import tempfile
+import uuid
 from typing import Dict, Any, Optional
 
 import memcache
@@ -196,15 +197,17 @@ class MinioProcessor(object):
             Here we check if this file has been updated.
             If the file has been updated, we delete it from the vector store and re-ingest the new updated file
             """
-            document: Document = get_document(document_id=item.etag)
-            document_id = None if document is None else document.uuid
+            document_id = str(
+                uuid.uuid5(uuid.NAMESPACE_DNS, f"{datasource.uuid}/{item.etag}")
+            )
+            document: Document = get_document(document_id=document_id)
 
             for _ingest_runner in self._ingest_runners:
                 try:
                     response_json = _ingest_runner.run(
                         file_path=file_path,
                         metadata=metadata,
-                        document_id=document_id,
+                        document_id=None if document is None else document.uuid,
                         last_modified=item.last_modified.replace(tzinfo=None).replace(
                             microsecond=0
                         ),
@@ -214,14 +217,15 @@ class MinioProcessor(object):
                     _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
                     response_json = None
                 except UserWarning:
-                    _LOG.debug(f"File {file_path} is already processing")
-                    return
+                    _LOG.warning(f"File {file_path} is already processing")
+                    continue
 
                 if response_json is None:
-                    return
+                    _LOG.warning("No response from ingest runner received")
+                    continue
 
                 _ingest_runner.save(
-                    document_id=item.etag,
+                    document_id=document_id,
                     datasource_id=datasource.uuid,
                     filename=item.object_name,
                     base_uri=endpoint,
@@ -229,7 +233,6 @@ class MinioProcessor(object):
                     store_metadata={
                         "bucket_name": item.bucket_name,
                         "object_name": item.object_name,
-                        "etag": item.etag,
                         "size": item.size,
                         "last_modified": item.last_modified.strftime(
                             DEFAULT_DATETIME_FORMAT

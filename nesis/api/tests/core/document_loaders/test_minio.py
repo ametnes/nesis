@@ -401,10 +401,14 @@ def test_update_ingest_documents(
     session.commit()
 
     # The document record
-
     document = Document(
         base_uri="http://localhost:4566",
-        document_id="d41d8cd98f00b204e9800998ecf8427e",
+        document_id=str(
+            uuid.uuid5(
+                uuid.NAMESPACE_DNS,
+                f"{datasource.uuid}/d41d8cd98f00b204e9800998ecf8427e",
+            )
+        ),
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={

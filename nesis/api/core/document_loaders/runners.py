@@ -74,14 +74,16 @@ class ExtractRunner(RagRunner):
     ) -> Union[Dict[str, Any], None]:
 
         if document_id is not None:
+            _LOG.debug(f"Checking if document {document_id} is modified")
             _is_modified = self._is_modified(
                 document_id=document_id, last_modified=last_modified
             )
             if _is_modified is None or not _is_modified:
+                _LOG.debug(f"Document {document_id} is not modified")
                 return
 
         url = f"{self._rag_endpoint}/v1/extractions/text"
-
+        _LOG.debug(f"Document {document_id} is modified, performing extraction")
         response = self._http_client.upload(
             url=url,
             filepath=file_path,
