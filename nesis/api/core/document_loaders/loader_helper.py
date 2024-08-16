@@ -110,7 +110,7 @@ class DocumentProcessor(object):
         """
         document_id = str(
             uuid.uuid5(
-                uuid.NAMESPACE_DNS, f"{self._datasource.uuid}/{metadata['self_link']}"
+                uuid.NAMESPACE_DNS, f"{self._datasource.uuid}:{metadata['self_link']}"
             )
         )
         document: Document = get_document(document_id=document_id)

@@ -67,12 +67,14 @@ def ingest_datasource(**kwargs) -> None:
                 cache_client=cache_client,
             )
         case DatasourceType.S3:
-            s3.fetch_documents(
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
+            minio_ingestor = s3.Processor(
+                config=config,
                 http_client=http_client,
-                metadata={"datasource": datasource.name},
                 cache_client=cache_client,
+                datasource=datasource,
             )
+
+            minio_ingestor.run(metadata=metadata)
+
         case _:
             raise ValueError("Invalid datasource type")

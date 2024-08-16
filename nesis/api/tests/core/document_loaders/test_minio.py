@@ -408,7 +408,7 @@ def test_update_ingest_documents(
         document_id=str(
             uuid.uuid5(
                 uuid.NAMESPACE_DNS,
-                f"{datasource.uuid}/{self_link}",
+                f"{datasource.uuid}:{self_link}",
             )
         ),
         filename="invalid.pdf",

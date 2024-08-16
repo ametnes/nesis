@@ -162,17 +162,8 @@ def test_ingest_datasource_invalid_datasource(
         assert "Invalid datasource" in str(ex_info)
 
 
-@mock.patch("nesis.api.core.document_loaders.s3.boto3.client")
-@mock.patch("nesis.api.core.tasks.document_management.s3._unsync_documents")
-@mock.patch("nesis.api.core.tasks.document_management.s3._sync_documents")
-def test_ingest_datasource_s3(
-    _sync_documents: mock.MagicMock,
-    _unsync_documents: mock.MagicMock,
-    client: mock.MagicMock(),
-    tc,
-    cache_client,
-    http_client,
-):
+@mock.patch("nesis.api.core.tasks.document_management.s3.Processor")
+def test_ingest_datasource_s3(ingestor: mock.MagicMock, tc, cache_client, http_client):
     """
     Test the ingestion happy path
     """
@@ -193,22 +184,9 @@ def test_ingest_datasource_s3(
         params={"datasource": {"id": datasource.uuid}},
     )
 
-    _, kwargs_sync_samba_documents = _sync_documents.call_args_list[0]
-    assert (
-        kwargs_sync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    )
-    assert kwargs_sync_samba_documents.get("datasource") is not None
-
+    _, kwargs_fetch_documents = ingestor.return_value.run.call_args_list[0]
     tc.assertDictEqual(
-        kwargs_sync_samba_documents["metadata"], {"datasource": datasource.name}
-    )
-
-    _, kwargs_unsync_samba_documents = _unsync_documents.call_args_list[0]
-    assert (
-        kwargs_unsync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    )
-    tc.assertDictEqual(
-        kwargs_unsync_samba_documents["connection"], datasource.connection
+        kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
     )
 
 
