@@ -34,31 +34,25 @@ from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 _LOG = logging.getLogger(__name__)
 
 
-class MinioProcessor(object):
+class DocumentProcessor(object):
     def __init__(
         self,
         config,
         http_client: http.HttpClient,
-        cache_client: memcache.Client,
         datasource: Datasource,
     ):
-        self._config = config
-        self._http_client = http_client
-        self._cache_client = cache_client
         self._datasource = datasource
 
-        # This is left public for testing
+        # This is left package public for testing
         self._extract_runner: ExtractRunner = Optional[None]
         _ingest_runner = IngestRunner(config=config, http_client=http_client)
+
         if self._datasource.connection.get("destination") is not None:
             self._extract_runner = ExtractRunner(
                 config=config,
                 http_client=http_client,
                 destination=self._datasource.connection.get("destination"),
             )
-        self._ingest_runners = []
-
-        self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
 
         self._mode = self._datasource.connection.get("mode") or "ingest"
 
@@ -71,6 +65,85 @@ class MinioProcessor(object):
                 raise ValueError(
                     f"Invalid mode {self._mode}. Expected 'ingest' or 'extract'"
                 )
+
+    def sync(self, endpoint, file_path, item, metadata):
+        """
+        Here we check if this file has been updated.
+        If the file has been updated, we delete it from the vector store and re-ingest the new updated file
+        """
+        document_id = str(
+            uuid.uuid5(uuid.NAMESPACE_DNS, f"{self._datasource.uuid}/{item.etag}")
+        )
+        document: Document = get_document(document_id=document_id)
+        for _ingest_runner in self._ingest_runners:
+            try:
+                response_json = _ingest_runner.run(
+                    file_path=file_path,
+                    metadata=metadata,
+                    document_id=None if document is None else document.uuid,
+                    last_modified=item.last_modified.replace(tzinfo=None).replace(
+                        microsecond=0
+                    ),
+                    datasource=self._datasource,
+                )
+            except ValueError:
+                _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
+                response_json = None
+            except UserWarning:
+                _LOG.warning(f"File {file_path} is already processing")
+                continue
+
+            if response_json is None:
+                _LOG.warning("No response from ingest runner received")
+                continue
+
+            _ingest_runner.save(
+                document_id=document_id,
+                datasource_id=self._datasource.uuid,
+                filename=item.object_name,
+                base_uri=endpoint,
+                rag_metadata=response_json,
+                store_metadata={
+                    "bucket_name": item.bucket_name,
+                    "object_name": item.object_name,
+                    "size": item.size,
+                    "last_modified": item.last_modified.strftime(
+                        DEFAULT_DATETIME_FORMAT
+                    ),
+                    "version_id": item.version_id,
+                },
+                last_modified=item.last_modified,
+            )
+
+    def unsync(self, clean):
+        endpoint = self._datasource.connection.get("endpoint")
+
+        for _ingest_runner in self._ingest_runners:
+            documents = _ingest_runner.get(base_uri=endpoint)
+            for document in documents:
+                store_metadata = document.store_metadata
+                try:
+                    rag_metadata = document.rag_metadata
+                except AttributeError:
+                    rag_metadata = document.extract_metadata
+
+                if clean(store_metadata=store_metadata):
+                    _ingest_runner.delete(document=document, rag_metadata=rag_metadata)
+
+
+class MinioProcessor(DocumentProcessor):
+    def __init__(
+        self,
+        config,
+        http_client: http.HttpClient,
+        cache_client: memcache.Client,
+        datasource: Datasource,
+    ):
+        super().__init__(config, http_client, datasource)
+        self._config = config
+        self._http_client = http_client
+        self._cache_client = cache_client
+        self._datasource = datasource
 
     def run(self, metadata: Dict[str, Any]):
         connection: Dict[str, str] = self._datasource.connection
@@ -193,54 +266,7 @@ class MinioProcessor(object):
                 file_path=file_path,
             )
 
-            """
-            Here we check if this file has been updated.
-            If the file has been updated, we delete it from the vector store and re-ingest the new updated file
-            """
-            document_id = str(
-                uuid.uuid5(uuid.NAMESPACE_DNS, f"{datasource.uuid}/{item.etag}")
-            )
-            document: Document = get_document(document_id=document_id)
-
-            for _ingest_runner in self._ingest_runners:
-                try:
-                    response_json = _ingest_runner.run(
-                        file_path=file_path,
-                        metadata=metadata,
-                        document_id=None if document is None else document.uuid,
-                        last_modified=item.last_modified.replace(tzinfo=None).replace(
-                            microsecond=0
-                        ),
-                        datasource=datasource,
-                    )
-                except ValueError:
-                    _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
-                    response_json = None
-                except UserWarning:
-                    _LOG.warning(f"File {file_path} is already processing")
-                    continue
-
-                if response_json is None:
-                    _LOG.warning("No response from ingest runner received")
-                    continue
-
-                _ingest_runner.save(
-                    document_id=document_id,
-                    datasource_id=datasource.uuid,
-                    filename=item.object_name,
-                    base_uri=endpoint,
-                    rag_metadata=response_json,
-                    store_metadata={
-                        "bucket_name": item.bucket_name,
-                        "object_name": item.object_name,
-                        "size": item.size,
-                        "last_modified": item.last_modified.strftime(
-                            DEFAULT_DATETIME_FORMAT
-                        ),
-                        "version_id": item.version_id,
-                    },
-                    last_modified=item.last_modified,
-                )
+            self.sync(endpoint, file_path, item, metadata)
 
             _LOG.info(
                 f"Done {self._mode}ing object {item.object_name} in bucket {bucket_name}"
@@ -261,33 +287,50 @@ class MinioProcessor(object):
     ) -> None:
 
         try:
-            endpoint = connection.get("endpoint")
+            # endpoint = connection.get("endpoint")
+            #
+            # for _ingest_runner in self._ingest_runners:
+            #     documents = _ingest_runner.get(base_uri=endpoint)
+            #     for document in documents:
+            #         store_metadata = document.store_metadata
+            #         try:
+            #             rag_metadata = document.rag_metadata
+            #         except AttributeError:
+            #             rag_metadata = document.extract_metadata
+            #         bucket_name = store_metadata["bucket_name"]
+            #         object_name = store_metadata["object_name"]
+            #         try:
+            #             client.stat_object(
+            #                 bucket_name=bucket_name, object_name=object_name
+            #             )
+            #         except Exception as ex:
+            #             str_ex = str(ex)
+            #             if "NoSuchKey" in str_ex and "does not exist" in str_ex:
+            #                 _ingest_runner.delete(
+            #                     document=document, rag_metadata=rag_metadata
+            #                 )
+            #             else:
+            #                 raise
 
-            for _ingest_runner in self._ingest_runners:
-                documents = _ingest_runner.get(base_uri=endpoint)
-                for document in documents:
-                    store_metadata = document.store_metadata
-                    try:
-                        rag_metadata = document.rag_metadata
-                    except AttributeError:
-                        rag_metadata = document.extract_metadata
-                    bucket_name = store_metadata["bucket_name"]
-                    object_name = store_metadata["object_name"]
-                    try:
-                        client.stat_object(
-                            bucket_name=bucket_name, object_name=object_name
-                        )
-                    except Exception as ex:
-                        str_ex = str(ex)
-                        if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                            _ingest_runner.delete(
-                                document=document, rag_metadata=rag_metadata
-                            )
-                        else:
-                            raise
+            def clean(**kwargs):
+                store_metadata = kwargs["store_metadata"]
+                try:
+                    client.stat_object(
+                        bucket_name=store_metadata["bucket_name"],
+                        object_name=store_metadata["object_name"],
+                    )
+                    return False
+                except Exception as ex:
+                    str_ex = str(ex)
+                    if "NoSuchKey" in str_ex and "does not exist" in str_ex:
+                        return True
+                    else:
+                        raise
+
+            self.unsync(clean=clean)
 
         except:
-            _LOG.warn("Error fetching and updating documents", exc_info=True)
+            _LOG.warning("Error fetching and updating documents", exc_info=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:
