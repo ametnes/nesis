@@ -107,12 +107,14 @@ def test_sync_documents(
     ]
     s3_client.get_paginator.return_value = paginator
 
-    s3.fetch_documents(
-        datasource=datasource,
+    ingestor = s3.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]
@@ -150,7 +152,7 @@ def test_update_sync_documents(
         "connection": {
             "endpoint": "http://localhost:4566",
             "region": "us-east-1",
-            "dataobjects": "my-test-bucket",
+            "dataobjects": "some-bucket",
         },
     }
 
@@ -164,17 +166,26 @@ def test_update_sync_documents(
     session.add(datasource)
     session.commit()
 
+    self_link = "http://localhost:4566/some-bucket/invalid.pdf"
+
+    # The document record
     document = Document(
         base_uri="http://localhost:4566",
-        document_id="d41d8cd98f00b204e9800998ecf8427e",
+        document_id=str(
+            uuid.uuid5(
+                uuid.NAMESPACE_DNS,
+                f"{datasource.uuid}/{self_link}",
+            )
+        ),
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={
             "bucket_name": "some-bucket",
-            "object_name": "file/path.pdf",
+            "object_name": "invalid.pdf",
             "last_modified": "2023-07-18 06:40:07",
         },
-        last_modified=datetime.datetime.utcnow(),
+        last_modified=strptime("2023-07-19 06:40:07"),
+        datasource_id=datasource.uuid,
     )
 
     session.add(document)
@@ -191,8 +202,8 @@ def test_update_sync_documents(
             "KeyCount": 1,
             "Contents": [
                 {
-                    "Key": "image.jpg",
-                    "LastModified": strptime("2023-07-19 06:40:07"),
+                    "Key": "invalid.pdf",
+                    "LastModified": strptime("2023-07-20 06:40:07"),
                     "ETag": "d41d8cd98f00b204e9800998ecf8427e",
                     "Size": 0,
                     "StorageClass": "STANDARD",
@@ -206,22 +217,24 @@ def test_update_sync_documents(
     ]
     s3_client.get_paginator.return_value = paginator
 
-    s3.fetch_documents(
-        datasource=datasource,
+    ingestor = s3.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     # The document would be deleted from the rag engine
-    _, upload_kwargs = http_client.delete.call_args_list[0]
-    url = upload_kwargs["url"]
+    _, deletes_kwargs = http_client.deletes.call_args_list[0]
+    url = deletes_kwargs["urls"]
 
-    assert (
-        url
-        == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
-    )
+    assert url == [
+        f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    ]
 
     # And then re-ingested
     _, upload_kwargs = http_client.upload.call_args_list[0]
@@ -231,21 +244,22 @@ def test_update_sync_documents(
     field = upload_kwargs["field"]
 
     assert url == f"http://localhost:8080/v1/ingest/files"
-    assert file_path.endswith("image.jpg")
+    assert file_path.endswith("invalid.pdf")
     assert field == "file"
     ut.TestCase().assertDictEqual(
         metadata,
         {
             "datasource": "documents",
-            "file_name": "my-test-bucket/image.jpg",
-            "self_link": "http://localhost:4566/my-test-bucket/image.jpg",
+            "file_name": "some-bucket/invalid.pdf",
+            "self_link": self_link,
         },
     )
 
     # The document has now been updated
     documents = session.query(Document).all()
     assert len(documents) == 1
-    assert documents[0].store_metadata["last_modified"] == "2023-07-19 06:40:07"
+    assert documents[0].store_metadata["last_modified"] == "2023-07-20 06:40:07"
+    assert str(documents[0].last_modified) == "2023-07-20 06:40:07"
 
 
 @mock.patch("nesis.api.core.document_loaders.s3.boto3.client")
@@ -260,8 +274,6 @@ def test_unsync_s3_documents(
         "engine": "s3",
         "connection": {
             "endpoint": "http://localhost:4566",
-            # "user": "test",
-            # "password": "test",
             "region": "us-east-1",
             "dataobjects": "some-non-existing-bucket",
         },
@@ -299,12 +311,15 @@ def test_unsync_s3_documents(
     documents = session.query(Document).all()
     assert len(documents) == 1
 
-    s3.fetch_documents(
-        datasource=datasource,
+    ingestor = s3.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.deletes.call_args_list[0]
