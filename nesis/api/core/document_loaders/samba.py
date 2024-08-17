@@ -209,7 +209,7 @@ class Processor(DocumentProcessor):
             try:
                 stat(file_path, username=username, password=password, port=port)
                 return False
-            except smbprotocol.exceptions.SMBOSError as error:
+            except Exception as error:
                 if "No such file" in str(error):
                     return True
                 else:
