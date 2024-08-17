@@ -172,18 +172,9 @@ def test_ingest_datasource_s3(ingestor: mock.MagicMock, tc, cache_client, http_c
     )
 
 
-@mock.patch(
-    "nesis.api.core.tasks.document_management.sharepoint._unsync_sharepoint_documents"
-)
-@mock.patch(
-    "nesis.api.core.tasks.document_management.sharepoint._sync_sharepoint_documents"
-)
+@mock.patch("nesis.api.core.tasks.document_management.sharepoint.Processor")
 def test_ingest_datasource_sharepoint(
-    _sync_sharepoint_documents: mock.MagicMock,
-    _unsync_sharepoint_documents: mock.MagicMock,
-    tc,
-    cache_client,
-    http_client,
+    ingestor: mock.MagicMock, tc, cache_client, http_client
 ):
     """
     Test the ingestion happy path
@@ -205,24 +196,7 @@ def test_ingest_datasource_sharepoint(
         params={"datasource": {"id": datasource.uuid}},
     )
 
-    _, kwargs_sync_sharepoint_documents = _sync_sharepoint_documents.call_args_list[0]
-    assert (
-        kwargs_sync_sharepoint_documents["rag_endpoint"]
-        == tests.config["rag"]["endpoint"]
-    )
-    assert kwargs_sync_sharepoint_documents.get("datasource") is not None
-
+    _, kwargs_fetch_documents = ingestor.return_value.run.call_args_list[0]
     tc.assertDictEqual(
-        kwargs_sync_sharepoint_documents["metadata"], {"datasource": datasource.name}
-    )
-
-    _, kwargs_unsync_sharepoint_documents = _unsync_sharepoint_documents.call_args_list[
-        0
-    ]
-    assert (
-        kwargs_unsync_sharepoint_documents["rag_endpoint"]
-        == tests.config["rag"]["endpoint"]
-    )
-    tc.assertDictEqual(
-        kwargs_unsync_sharepoint_documents["connection"], datasource.connection
+        kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
     )
