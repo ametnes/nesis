@@ -10,6 +10,7 @@ import memcache
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.client_request_exception import ClientRequestException
 
+from nesis.api.core.document_loaders.loader_helper import DocumentProcessor
 from nesis.api.core.util import http, clean_control, isblank
 import logging
 from nesis.api.core.models.entities import Document, Datasource
@@ -28,278 +29,195 @@ from nesis.api.core.util.dateutil import strptime
 _LOG = logging.getLogger(__name__)
 
 
-def fetch_documents(
-    datasource: Datasource,
-    rag_endpoint: str,
-    http_client: http.HttpClient,
-    metadata: Dict[str, Any],
-    cache_client: memcache.Client,
-) -> None:
-    try:
+class Processor(DocumentProcessor):
+    def __init__(
+        self,
+        config,
+        http_client: http.HttpClient,
+        cache_client: memcache.Client,
+        datasource: Datasource,
+    ):
+        super().__init__(config, http_client, datasource)
+        self._config = config
+        self._http_client = http_client
+        self._cache_client = cache_client
+        self._datasource = datasource
+        self._futures = []
 
-        connection = datasource.connection
-        site_url = connection.get("endpoint")
-        client_id = connection.get("client_id")
-        tenant = connection.get("tenant_id")
-        thumbprint = connection.get("thumbprint")
+    def run(self, metadata: Dict[str, Any]):
 
-        with tempfile.NamedTemporaryFile(dir=tempfile.gettempdir()) as tmp:
-            cert_path = f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
-            pathlib.Path(cert_path).write_text(connection["certificate"])
+        try:
 
-            _sharepoint_context = ClientContext(site_url).with_client_certificate(
-                tenant=tenant,
-                client_id=client_id,
-                thumbprint=thumbprint,
-                cert_path=cert_path,
-            )
+            connection = self._datasource.connection
+            site_url = connection.get("endpoint")
+            client_id = connection.get("client_id")
+            tenant = connection.get("tenant_id")
+            thumbprint = connection.get("thumbprint")
 
-            _sync_sharepoint_documents(
-                sp_context=_sharepoint_context,
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
-                metadata=metadata,
-                cache_client=cache_client,
-            )
-            _unsync_sharepoint_documents(
-                sp_context=_sharepoint_context,
-                connection=connection,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
-            )
-    except Exception as ex:
-        _LOG.exception(f"Error fetching sharepoint documents - {ex}")
-
-
-def _sync_sharepoint_documents(
-    sp_context, datasource, rag_endpoint, http_client, metadata, cache_client
-):
-    try:
-        _LOG.info(f"Initializing sharepoint syncing to endpoint {rag_endpoint}")
-
-        if sp_context is None:
-            raise Exception(
-                "Sharepoint context is null, cannot proceed with document processing."
-            )
-
-        # Data objects allow us to specify folder names
-        connection = datasource.connection
-        sharepoint_folders = connection.get("dataobjects")
-        if sharepoint_folders is None:
-            _LOG.warning("Sharepoint folders are specified, so I can't do much")
-
-        sp_folders = sharepoint_folders.split(",")
-
-        root_folder = sp_context.web.default_document_library().root_folder
-
-        for folder_name in sp_folders:
-            sharepoint_folder = root_folder.folders.get_by_path(folder_name)
-
-            if sharepoint_folder is None:
-                _LOG.warning(
-                    f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders"
+            with tempfile.NamedTemporaryFile(dir=tempfile.gettempdir()) as tmp:
+                cert_path = (
+                    f"{str(pathlib.Path(tmp.name).absolute())}-{uuid.uuid4()}.key"
                 )
-                continue
+                pathlib.Path(cert_path).write_text(connection["certificate"])
 
-            _process_folder_files(
-                sharepoint_folder,
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
-                metadata=metadata,
-                cache_client=cache_client,
-            )
+                _sharepoint_context = ClientContext(site_url).with_client_certificate(
+                    tenant=tenant,
+                    client_id=client_id,
+                    thumbprint=thumbprint,
+                    cert_path=cert_path,
+                )
 
-            # Recursively get all the child folders
-            _child_folders_recursive = sharepoint_folder.get_folders(
-                True
-            ).execute_query()
-            for _child_folder in _child_folders_recursive:
-                _process_folder_files(
-                    _child_folder,
-                    connection=connection,
-                    rag_endpoint=rag_endpoint,
-                    http_client=http_client,
+                self._sync_sharepoint_documents(
+                    sp_context=_sharepoint_context,
                     metadata=metadata,
-                    cache_client=cache_client,
                 )
-        _LOG.info(f"Completed syncing to endpoint {rag_endpoint}")
-
-    except Exception as file_ex:
-        _LOG.exception(
-            f"Error fetching and updating documents - Error: {file_ex}", exc_info=True
-        )
-
-
-def _process_file(
-    file, datasource: Datasource, rag_endpoint, http_client, metadata, cache_client
-):
-    connection = datasource.connection
-    site_url = connection.get("endpoint")
-    parsed_site_url = urlparse(site_url)
-    site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
-    self_link = f"{site_root_url}{file.serverRelativeUrl}"
-    _metadata = {
-        **(metadata or {}),
-        "file_name": file.name,
-        "self_link": self_link,
-    }
-
-    """
-    We use memcache's add functionality to implement a shared lock to allow for multiple instances
-    operating 
-    """
-    _lock_key = clean_control(f"{__name__}/locks/{self_link}")
-    if cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
-        try:
-            _sync_document(
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
-                metadata=_metadata,
-                file=file,
-            )
-        finally:
-            cache_client.delete(_lock_key)
-    else:
-        _LOG.info(f"Document {self_link} is already processing")
-
-
-def _process_folder_files(
-    folder, datasource, rag_endpoint, http_client, metadata, cache_client
-):
-    # process files in folder
-    _files = folder.get_files(False).execute_query()
-    for file in _files:
-        _process_file(
-            file=file,
-            datasource=datasource,
-            rag_endpoint=rag_endpoint,
-            http_client=http_client,
-            metadata=metadata,
-            cache_client=cache_client,
-        )
-
-
-def _sync_document(
-    datasource: Datasource,
-    rag_endpoint: str,
-    http_client: http.HttpClient,
-    metadata: dict,
-    file,
-):
-    connection = datasource.connection
-    site_url = connection["endpoint"]
-    _metadata = metadata
-
-    with tempfile.NamedTemporaryFile(
-        dir=tempfile.gettempdir(),
-    ) as tmp:
-        key_parts = file.serverRelativeUrl.split("/")
-
-        path_to_tmp = f"{str(pathlib.Path(tmp.name).absolute())}-{key_parts[-1]}"
-
-        try:
-            _LOG.info(
-                f"Starting syncing file {file.name} from {file.serverRelativeUrl}"
-            )
-            # Write item to file
-            downloaded_file_name = path_to_tmp  # os.path.join(path_to_tmp, file.name)
-            # How can we refine this for efficiency
-            with open(downloaded_file_name, "wb") as local_file:
-                file.download(local_file).execute_query()
-
-            document: Document = get_document(document_id=file.unique_id)
-            if document and document.base_uri == site_url:
-                store_metadata = document.store_metadata
-                if store_metadata and store_metadata.get("last_modified"):
-                    last_modified = store_metadata["last_modified"]
-                    if (
-                        not strptime(date_string=last_modified).replace(tzinfo=None)
-                        < file.time_last_modified
-                    ):
-                        _LOG.debug(
-                            f"Skipping sharepoint document {file.name} already up to date"
-                        )
-                        return
-                    rag_metadata: dict = document.rag_metadata
-                    if rag_metadata is None:
-                        return
-                    for document_data in rag_metadata.get("data") or []:
-                        try:
-                            un_ingest_file(
-                                http_client=http_client,
-                                endpoint=rag_endpoint,
-                                doc_id=document_data["doc_id"],
-                            )
-                        except:
-                            _LOG.warning(
-                                f"Failed to delete document {document_data['doc_id']}"
-                            )
-                    try:
-                        delete_document(document_id=document.id)
-                    except:
-                        _LOG.warning(
-                            f"Failed to delete document {file.name}'s record. Continuing anyway..."
-                        )
-            try:
-                response = ingest_file(
-                    http_client=http_client,
-                    endpoint=rag_endpoint,
-                    metadata=_metadata,
-                    file_path=downloaded_file_name,
+                self._unsync_sharepoint_documents(
+                    sp_context=_sharepoint_context,
                 )
-                response_json = json.loads(response)
-
-            except ValueError:
-                _LOG.warning(
-                    f"File {downloaded_file_name} ingestion failed", exc_info=True
-                )
-                response_json = {}
-            except UserWarning:
-                _LOG.debug(f"File {downloaded_file_name} is already processing")
-                return
-
-            save_document(
-                document_id=file.unique_id,
-                filename=file.serverRelativeUrl,
-                base_uri=site_url,
-                rag_metadata=response_json,
-                datasource_id=datasource.uuid,
-                store_metadata={
-                    "file_name": file.name,
-                    "file_url": file.serverRelativeUrl,
-                    "etag": file.unique_id,
-                    "size": file.length,
-                    "author": file.author,
-                    "last_modified": file.time_last_modified.strftime(
-                        DEFAULT_DATETIME_FORMAT
-                    ),
-                },
-                last_modified=file.time_last_modified,
-            )
-            _LOG.info(f"Done syncing object {file.name} in at {file.serverRelativeUrl}")
         except Exception as ex:
-            _LOG.warning(
-                f"Error when getting and ingesting file {file.name}", exc_info=True
+            _LOG.exception(f"Error fetching sharepoint documents - {ex}")
+
+    def _sync_sharepoint_documents(self, sp_context, metadata):
+        try:
+
+            if sp_context is None:
+                raise Exception(
+                    "Sharepoint context is null, cannot proceed with document processing."
+                )
+
+            # Data objects allow us to specify folder names
+            connection = self._datasource.connection
+            sharepoint_folders = connection.get("dataobjects")
+            if sharepoint_folders is None:
+                _LOG.warning("Sharepoint folders are specified, so I can't do much")
+
+            sp_folders = sharepoint_folders.split(",")
+
+            root_folder = sp_context.web.default_document_library().root_folder
+
+            for folder_name in sp_folders:
+                sharepoint_folder = root_folder.folders.get_by_path(folder_name)
+
+                if sharepoint_folder is None:
+                    _LOG.warning(
+                        f"Cannot retrieve Sharepoint folder {sharepoint_folder} proceeding to process other folders"
+                    )
+                    continue
+
+                self._process_folder_files(
+                    sharepoint_folder,
+                    metadata=metadata,
+                )
+
+                # Recursively get all the child folders
+                _child_folders_recursive = sharepoint_folder.get_folders(
+                    True
+                ).execute_query()
+                for _child_folder in _child_folders_recursive:
+                    self._process_folder_files(
+                        _child_folder,
+                        metadata=metadata,
+                    )
+
+        except Exception as file_ex:
+            _LOG.exception(
+                f"Error fetching and updating documents - Error: {file_ex}",
+                exc_info=True,
             )
 
-
-def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connection):
-
-    try:
+    def _process_file(
+        self,
+        file,
+        metadata,
+    ):
+        connection = self._datasource.connection
         site_url = connection.get("endpoint")
+        parsed_site_url = urlparse(site_url)
+        site_root_url = "{uri.scheme}://{uri.netloc}".format(uri=parsed_site_url)
+        self_link = f"{site_root_url}{file.serverRelativeUrl}"
+        _metadata = {
+            **(metadata or {}),
+            "file_name": file.name,
+            "self_link": self_link,
+        }
 
-        if sp_context is None:
-            raise Exception(
-                "Sharepoint context is null, cannot proceed with document processing."
+        """
+        We use memcache's add functionality to implement a shared lock to allow for multiple instances
+        operating 
+        """
+        _lock_key = clean_control(f"{__name__}/locks/{self_link}")
+        if self._cache_client.add(key=_lock_key, val=_lock_key, time=30 * 60):
+            try:
+                self._sync_document(
+                    metadata=_metadata,
+                    file=file,
+                )
+            finally:
+                self._cache_client.delete(_lock_key)
+        else:
+            _LOG.info(f"Document {self_link} is already processing")
+
+    def _process_folder_files(self, folder, metadata):
+        # process files in folder
+        _files = folder.get_files(False).execute_query()
+        for file in _files:
+            self._process_file(
+                file=file,
+                metadata=metadata,
             )
 
-        documents = get_documents(base_uri=site_url)
-        for document in documents:
-            store_metadata = document.store_metadata
-            rag_metadata = document.rag_metadata
+    def _sync_document(
+        self,
+        metadata: dict,
+        file,
+    ):
+        connection = self._datasource.connection
+        site_url = connection["endpoint"]
+        _metadata = metadata
+
+        with tempfile.NamedTemporaryFile(
+            dir=tempfile.gettempdir(),
+        ) as tmp:
+            key_parts = file.serverRelativeUrl.split("/")
+
+            path_to_tmp = f"{str(pathlib.Path(tmp.name).absolute())}-{key_parts[-1]}"
+
+            try:
+                _LOG.info(
+                    f"Starting syncing file {file.name} from {file.serverRelativeUrl}"
+                )
+                # Write item to file
+
+                # How can we refine this for efficiency
+                with open(path_to_tmp, "wb") as local_file:
+                    file.download(local_file).execute_query()
+
+                self.sync(
+                    site_url,
+                    path_to_tmp,
+                    last_modified=file.time_last_modified,
+                    metadata=metadata,
+                    store_metadata={
+                        "filename": file.name,
+                        "file_url": file.serverRelativeUrl,
+                        "etag": file.unique_id,
+                        "size": file.length,
+                        "author": file.author,
+                        "last_modified": file.time_last_modified.strftime(
+                            DEFAULT_DATETIME_FORMAT
+                        ),
+                    },
+                )
+            except:
+                _LOG.warning(
+                    f"Error when getting and ingesting file {file.name}", exc_info=True
+                )
+
+    def _unsync_sharepoint_documents(self, sp_context):
+
+        def clean(**kwargs):
+            store_metadata = kwargs["store_metadata"]
+
             file_url = store_metadata["file_url"]
             try:
                 # Check that the file still exists on the sharepoint server
@@ -308,27 +226,14 @@ def _unsync_sharepoint_documents(sp_context, http_client, rag_endpoint, connecti
                 ).get().execute_query()
             except ClientRequestException as e:
                 if e.response.status_code == 404:
-                    # File no longer exists on sharepoint server so we need to delete from model
-                    try:
-                        http_client.deletes(
-                            urls=[
-                                f"{rag_endpoint}/v1/ingest/documents/{document_data['doc_id']}"
-                                for document_data in rag_metadata.get("data") or []
-                            ]
-                        )
-                        _LOG.info(f"Deleting document {document.filename}")
-                        delete_document(document_id=document.id)
-                    except:
-                        _LOG.warning(
-                            f"Failed to delete document {document.filename}",
-                            exc_info=True,
-                        )
-            except Exception as ex:
-                _LOG.warning(
-                    f"Failed to retrieve file {file_url} from sharepoint - {ex}"
-                )
-    except:
-        _LOG.warning("Error fetching and updating documents", exc_info=True)
+                    return True
+                else:
+                    raise
+
+        try:
+            self.unsync(clean=clean)
+        except:
+            _LOG.warning("Error fetching and updating documents", exc_info=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:

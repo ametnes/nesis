@@ -51,13 +51,15 @@ def ingest_datasource(**kwargs) -> None:
             minio_ingestor.run(metadata=metadata)
 
         case DatasourceType.SHAREPOINT:
-            sharepoint.fetch_documents(
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
+
+            ingestor = sharepoint.Processor(
+                config=config,
                 http_client=http_client,
                 cache_client=cache_client,
-                metadata={"datasource": datasource.name},
+                datasource=datasource,
             )
+
+            ingestor.run(metadata=metadata)
         case DatasourceType.WINDOWS_SHARE:
 
             ingestor = samba.Processor(

@@ -22,10 +22,11 @@ from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
 )
+from nesis.api.core.util.dateutil import strptime
 
 
 @mock.patch("nesis.api.core.document_loaders.sharepoint.ClientContext")
-def test_sync_sharepoint_documents(
+def test_ingest(
     client_context: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
     data = {
@@ -81,12 +82,14 @@ def test_sync_sharepoint_documents(
     http_client = mock.MagicMock()
     http_client.upload.return_value = json.dumps({})
 
-    sharepoint.fetch_documents(
-        datasource=datasource,
+    ingestor = sharepoint.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]
@@ -109,7 +112,7 @@ def test_sync_sharepoint_documents(
 
 
 @mock.patch("nesis.api.core.document_loaders.sharepoint.ClientContext")
-def test_sync_updated_sharepoint_documents(
+def test_updated(
     sharepoint_context: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
     """
@@ -139,10 +142,13 @@ def test_sync_updated_sharepoint_documents(
     session.add(datasource)
     session.commit()
 
+    self_link = "https://ametnes.sharepoint.com/sites/nesit-test/Shared Documents/sharepoint_file.pdf"
     document = Document(
         datasource_id=datasource.uuid,
         base_uri="https://ametnes.sharepoint.com/sites/nesis-test/",
-        document_id="edu323-23423-23frs-234232",
+        document_id=str(
+            uuid.uuid5(uuid.NAMESPACE_DNS, f"{datasource.uuid}:{self_link}")
+        ),
         filename="sharepoint_file.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={
@@ -153,7 +159,7 @@ def test_sync_updated_sharepoint_documents(
             "author": "author_name",
             "last_modified": "2024-01-10 06:40:07",
         },
-        last_modified=datetime.datetime.utcnow(),
+        last_modified=strptime("2024-01-10 06:40:07"),
     )
 
     session.add(document)
@@ -180,7 +186,7 @@ def test_sync_updated_sharepoint_documents(
     )
     type(file_mock).time_last_modified = mock.PropertyMock(
         return_value=datetime.datetime.strptime(
-            "2024-04-10 06:40:07", "%Y-%m-%d %H:%M:%S"
+            "2024-04-11 06:40:07", "%Y-%m-%d %H:%M:%S"
         )
     )
     type(file_mock).length = mock.PropertyMock(return_value=2023)
@@ -195,22 +201,23 @@ def test_sync_updated_sharepoint_documents(
     http_client = mock.MagicMock()
     http_client.upload.return_value = json.dumps({})
 
-    sharepoint.fetch_documents(
-        datasource=datasource,
+    ingestor = sharepoint.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     # The document would be deleted from the rag engine
-    _, upload_kwargs = http_client.delete.call_args_list[0]
-    url = upload_kwargs["url"]
+    _, upload_kwargs = http_client.deletes.call_args_list[0]
+    urls = upload_kwargs["urls"]
 
-    assert (
-        url
-        == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
-    )
+    assert urls == [
+        f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    ]
 
     # And then re-ingested
     _, upload_kwargs = http_client.upload.call_args_list[0]
@@ -234,11 +241,11 @@ def test_sync_updated_sharepoint_documents(
     # The document has now been updated
     documents = session.query(Document).all()
     assert len(documents) == 1
-    assert documents[0].store_metadata["last_modified"] == "2024-04-10 06:40:07"
+    assert documents[0].store_metadata["last_modified"] == "2024-04-11 06:40:07"
 
 
 @mock.patch("nesis.api.core.document_loaders.sharepoint.ClientContext")
-def test_unsync_sharepoint_documents(
+def test_uningest(
     sharepoint_context: mock.MagicMock, cache: mock.MagicMock, session: Session
 ) -> None:
     """
@@ -318,12 +325,14 @@ def test_unsync_sharepoint_documents(
     documents = session.query(Document).all()
     assert len(documents) == 1
 
-    sharepoint.fetch_documents(
-        datasource=datasource,
+    ingestor = sharepoint.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.deletes.call_args_list[0]
