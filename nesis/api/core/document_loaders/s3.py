@@ -211,9 +211,9 @@ class Processor(DocumentProcessor):
                 )
 
                 _LOG.info(f"Done syncing object {item['Key']} in bucket {bucket_name}")
-            except Exception as ex:
+            except:
                 _LOG.warning(
-                    f"Error when getting and ingesting document {item['Key']} - {ex}",
+                    f"Error when getting and ingesting document {item['Key']}",
                     exc_info=True,
                 )
 

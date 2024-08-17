@@ -53,7 +53,7 @@ def test_fetch_documents(
 ) -> None:
     data = {
         "name": "s3 documents",
-        "engine": "s3",
+        "engine": "samba",
         "connection": {
             "endpoint": "https://s3.endpoint",
             "user": "user",
@@ -87,12 +87,14 @@ def test_fetch_documents(
     http_client = mock.MagicMock()
     http_client.upload.return_value = json.dumps({})
 
-    samba.fetch_documents(
-        connection=data["connection"],
+    ingestor = samba.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]

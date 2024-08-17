@@ -97,15 +97,9 @@ def test_ingest_datasource_minio(
 
 
 @mock.patch("nesis.api.core.document_loaders.samba.scandir")
-@mock.patch("nesis.api.core.tasks.document_management.samba._unsync_samba_documents")
-@mock.patch("nesis.api.core.tasks.document_management.samba._sync_samba_documents")
+@mock.patch("nesis.api.core.tasks.document_management.samba.Processor")
 def test_ingest_datasource_samba(
-    _sync_samba_documents: mock.MagicMock,
-    _unsync_samba_documents: mock.MagicMock,
-    scandir,
-    tc,
-    cache_client,
-    http_client,
+    ingestor: mock.MagicMock, scandir, tc, cache_client, http_client
 ):
     """
     Test the ingestion happy path
@@ -117,7 +111,7 @@ def test_ingest_datasource_samba(
         password=tests.admin_password,
     )
     datasource: Datasource = create_datasource(
-        token=admin_user.token, datasource_type="windows_share"
+        token=admin_user.token, datasource_type="WINDOWS_SHARE"
     )
 
     ingest_datasource(
@@ -127,21 +121,9 @@ def test_ingest_datasource_samba(
         params={"datasource": {"id": datasource.uuid}},
     )
 
-    _, kwargs_sync_samba_documents = _sync_samba_documents.call_args_list[0]
-    assert (
-        kwargs_sync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    )
-    tc.assertDictEqual(kwargs_sync_samba_documents["connection"], datasource.connection)
+    _, kwargs_fetch_documents = ingestor.return_value.run.call_args_list[0]
     tc.assertDictEqual(
-        kwargs_sync_samba_documents["metadata"], {"datasource": datasource.name}
-    )
-
-    _, kwargs_unsync_samba_documents = _unsync_samba_documents.call_args_list[0]
-    assert (
-        kwargs_unsync_samba_documents["rag_endpoint"] == tests.config["rag"]["endpoint"]
-    )
-    tc.assertDictEqual(
-        kwargs_unsync_samba_documents["connection"], datasource.connection
+        kwargs_fetch_documents["metadata"], {"datasource": datasource.name}
     )
 
 

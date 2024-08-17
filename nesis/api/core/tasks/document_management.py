@@ -59,13 +59,16 @@ def ingest_datasource(**kwargs) -> None:
                 metadata={"datasource": datasource.name},
             )
         case DatasourceType.WINDOWS_SHARE:
-            samba.fetch_documents(
-                connection=datasource.connection,
-                rag_endpoint=rag_endpoint,
+
+            ingestor = samba.Processor(
+                config=config,
                 http_client=http_client,
-                metadata={"datasource": datasource.name},
                 cache_client=cache_client,
+                datasource=datasource,
             )
+
+            ingestor.run(metadata=metadata)
+
         case DatasourceType.S3:
             minio_ingestor = s3.Processor(
                 config=config,
