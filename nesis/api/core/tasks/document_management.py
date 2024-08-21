@@ -51,28 +51,35 @@ def ingest_datasource(**kwargs) -> None:
             minio_ingestor.run(metadata=metadata)
 
         case DatasourceType.SHAREPOINT:
-            sharepoint.fetch_documents(
-                datasource=datasource,
-                rag_endpoint=rag_endpoint,
+
+            ingestor = sharepoint.Processor(
+                config=config,
                 http_client=http_client,
                 cache_client=cache_client,
-                metadata={"datasource": datasource.name},
+                datasource=datasource,
             )
+
+            ingestor.run(metadata=metadata)
         case DatasourceType.WINDOWS_SHARE:
-            samba.fetch_documents(
-                connection=datasource.connection,
-                rag_endpoint=rag_endpoint,
+
+            ingestor = samba.Processor(
+                config=config,
                 http_client=http_client,
-                metadata={"datasource": datasource.name},
                 cache_client=cache_client,
-            )
-        case DatasourceType.S3:
-            s3.fetch_documents(
                 datasource=datasource,
-                rag_endpoint=rag_endpoint,
-                http_client=http_client,
-                metadata={"datasource": datasource.name},
-                cache_client=cache_client,
             )
+
+            ingestor.run(metadata=metadata)
+
+        case DatasourceType.S3:
+            minio_ingestor = s3.Processor(
+                config=config,
+                http_client=http_client,
+                cache_client=cache_client,
+                datasource=datasource,
+            )
+
+            minio_ingestor.run(metadata=metadata)
+
         case _:
             raise ValueError("Invalid datasource type")
