@@ -1,8 +1,10 @@
+import datetime
 import json
 import os
 import time
 import unittest as ut
 import unittest.mock as mock
+import uuid
 
 import pytest
 from sqlalchemy.orm.session import Session
@@ -14,12 +16,14 @@ from nesis.api.core.models import DBSession
 from nesis.api.core.models import initialize_engine
 from nesis.api.core.models.entities import (
     Datasource,
+    Document,
 )
 
 from nesis.api.core.models.objects import (
     DatasourceType,
     DatasourceStatus,
 )
+from nesis.api.core.util.dateutil import strptime
 
 
 @pytest.fixture
@@ -48,14 +52,12 @@ def configure() -> None:
 @mock.patch("nesis.api.core.document_loaders.samba.scandir")
 @mock.patch("nesis.api.core.document_loaders.samba.stat")
 @mock.patch("nesis.api.core.document_loaders.samba.shutil")
-def test_fetch_documents(
-    shutil, stat, scandir, cache: mock.MagicMock, session: Session
-) -> None:
+def test_ingest(shutil, stat, scandir, cache: mock.MagicMock, session: Session) -> None:
     data = {
         "name": "s3 documents",
-        "engine": "s3",
+        "engine": "samba",
         "connection": {
-            "endpoint": "https://s3.endpoint",
+            "endpoint": r"\\Share",
             "user": "user",
             "port": "445",
             "password": "password",
@@ -87,12 +89,14 @@ def test_fetch_documents(
     http_client = mock.MagicMock()
     http_client.upload.return_value = json.dumps({})
 
-    samba.fetch_documents(
-        connection=data["connection"],
+    ingestor = samba.Processor(
+        config=tests.config,
         http_client=http_client,
-        metadata={"datasource": "documents"},
-        rag_endpoint="http://localhost:8080",
         cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
     )
 
     _, upload_kwargs = http_client.upload.call_args_list[0]
@@ -112,3 +116,180 @@ def test_fetch_documents(
             "self_link": r"\\Share\SomeName",
         },
     )
+
+
+@mock.patch("nesis.api.core.document_loaders.samba.scandir")
+@mock.patch("nesis.api.core.document_loaders.samba.stat")
+@mock.patch("nesis.api.core.document_loaders.samba.shutil")
+def test_uningest(
+    shutil, stat, scandir, cache: mock.MagicMock, session: Session
+) -> None:
+    """
+    Test deleting of s3 documents from the rag engine if they have been deleted from the s3 bucket
+    """
+    data = {
+        "name": "s3 documents",
+        "engine": "windows_share",
+        "connection": {
+            "endpoint": r"\\Share",
+            "user": "user",
+            "port": "445",
+            "password": "password",
+            "dataobjects": "buckets",
+        },
+    }
+
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.SHAREPOINT,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
+    document = Document(
+        base_uri=datasource.connection["endpoint"],
+        datasource_id=datasource.uuid,
+        document_id=str(uuid.uuid4()),
+        filename="invalid.pdf",
+        rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
+        store_metadata={
+            "bucket_name": "some-bucket",
+            "object_name": "file/path.pdf",
+            "file_path": r"\\Share\file\path.pdf",
+        },
+        last_modified=datetime.datetime.utcnow(),
+    )
+
+    session.add(document)
+    session.commit()
+
+    http_client = mock.MagicMock()
+
+    stat.side_effect = Exception("No such file")
+
+    documents = session.query(Document).all()
+    assert len(documents) == 1
+
+    ingestor = samba.Processor(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
+    )
+
+    ingestor.run(
+        metadata={"datasource": "documents"},
+    )
+
+    _, upload_kwargs = http_client.deletes.call_args_list[0]
+    urls = upload_kwargs["urls"]
+
+    assert (
+        urls[0]
+        == f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    )
+    documents = session.query(Document).all()
+    assert len(documents) == 0
+
+
+@mock.patch("nesis.api.core.document_loaders.samba.scandir")
+@mock.patch("nesis.api.core.document_loaders.samba.stat")
+@mock.patch("nesis.api.core.document_loaders.samba.shutil")
+def test_update(shutil, stat, scandir, cache: mock.MagicMock, session: Session) -> None:
+    """
+    Test updating documents if they have been updated at the s3 bucket end.
+    """
+
+    data = {
+        "name": "s3 documents",
+        "engine": "windows_share",
+        "connection": {
+            "endpoint": r"\\Share",
+            "user": "user",
+            "port": "445",
+            "password": "password",
+            "dataobjects": "buckets",
+        },
+    }
+
+    datasource = Datasource(
+        name=data["name"],
+        connection=data["connection"],
+        source_type=DatasourceType.SHAREPOINT,
+        status=DatasourceStatus.ONLINE,
+    )
+
+    session.add(datasource)
+    session.commit()
+
+    self_link = "http://localhost:4566/some-bucket/invalid.pdf"
+
+    # The document record
+    document = Document(
+        base_uri=r"\\Share",
+        document_id=str(
+            uuid.uuid5(
+                uuid.NAMESPACE_DNS,
+                rf"{datasource.uuid}:\\Share\file\path.pdf",
+            )
+        ),
+        filename="invalid.pdf",
+        rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
+        store_metadata={
+            "bucket_name": "some-bucket",
+            "object_name": "invalid.pdf",
+            "last_modified": "2023-07-18 06:40:07",
+            "file_path": r"\\Share\file\path.pdf",
+        },
+        last_modified=strptime("2023-07-19 06:40:07"),
+        datasource_id=datasource.uuid,
+    )
+
+    session.add(document)
+    session.commit()
+
+    share = mock.MagicMock()
+    share.is_dir.return_value = False
+    type(share).name = mock.PropertyMock(return_value="SomeName")
+    type(share).path = mock.PropertyMock(return_value=r"\\Share\file\path.pdf")
+    scandir.return_value = [share]
+
+    file_stat = mock.MagicMock()
+    stat.return_value = file_stat
+    type(file_stat).st_size = mock.PropertyMock(return_value=1)
+    type(file_stat).st_chgtime = mock.PropertyMock(
+        return_value=strptime("2023-07-20 06:40:07").timestamp()
+    )
+
+    http_client = mock.MagicMock()
+    http_client.upload.return_value = json.dumps({})
+
+    ingestor = samba.Processor(
+        config=tests.config,
+        http_client=http_client,
+        cache_client=cache,
+        datasource=datasource,
+    )
+    ingestor.run(
+        metadata={"datasource": "documents"},
+    )
+
+    # The document would be deleted from the rag engine
+    _, deletes_kwargs = http_client.deletes.call_args_list[0]
+    url = deletes_kwargs["urls"]
+
+    assert url == [
+        f"http://localhost:8080/v1/ingest/documents/{document.rag_metadata['data'][0]['doc_id']}"
+    ]
+
+    # And then re-ingested
+    _, upload_kwargs = http_client.upload.call_args_list[0]
+
+    # The document has now been updated
+    documents = session.query(Document).all()
+    assert len(documents) == 1
+    assert documents[0].store_metadata["last_modified"] == "2023-07-20 06:40:07"
+    assert str(documents[0].last_modified) == "2023-07-20 06:40:07"

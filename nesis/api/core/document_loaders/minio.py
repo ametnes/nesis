@@ -1,39 +1,26 @@
-import concurrent
-import concurrent.futures
 import logging
-import multiprocessing
+import logging
 import os
-import queue
 import tempfile
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 import memcache
-import minio
 from minio import Minio
 
 import nesis.api.core.util.http as http
-from nesis.api.core.document_loaders.runners import (
-    IngestRunner,
-    ExtractRunner,
-    RagRunner,
-)
-from nesis.api.core.models.entities import Document, Datasource
-from nesis.api.core.services.util import (
-    get_document,
-    get_documents,
-)
+from nesis.api.core.document_loaders.loader_helper import DocumentProcessor
+from nesis.api.core.models.entities import Datasource
 from nesis.api.core.util import clean_control, isblank
 from nesis.api.core.util.concurrency import (
     IOBoundPool,
     as_completed,
-    BlockingThreadPoolExecutor,
 )
 from nesis.api.core.util.constants import DEFAULT_DATETIME_FORMAT
 
 _LOG = logging.getLogger(__name__)
 
 
-class MinioProcessor(object):
+class MinioProcessor(DocumentProcessor):
     def __init__(
         self,
         config,
@@ -41,35 +28,11 @@ class MinioProcessor(object):
         cache_client: memcache.Client,
         datasource: Datasource,
     ):
+        super().__init__(config, http_client, datasource)
         self._config = config
         self._http_client = http_client
         self._cache_client = cache_client
         self._datasource = datasource
-
-        # This is left public for testing
-        self._extract_runner: ExtractRunner = Optional[None]
-        _ingest_runner = IngestRunner(config=config, http_client=http_client)
-        if self._datasource.connection.get("destination") is not None:
-            self._extract_runner = ExtractRunner(
-                config=config,
-                http_client=http_client,
-                destination=self._datasource.connection.get("destination"),
-            )
-        self._ingest_runners = []
-
-        self._ingest_runners = [IngestRunner(config=config, http_client=http_client)]
-
-        self._mode = self._datasource.connection.get("mode") or "ingest"
-
-        match self._mode:
-            case "ingest":
-                self._ingest_runners: list[RagRunner] = [_ingest_runner]
-            case "extract":
-                self._ingest_runners: list[RagRunner] = [self._extract_runner]
-            case _:
-                raise ValueError(
-                    f"Invalid mode {self._mode}. Expected 'ingest' or 'extract'"
-                )
 
     def run(self, metadata: Dict[str, Any]):
         connection: Dict[str, str] = self._datasource.connection
@@ -93,7 +56,6 @@ class MinioProcessor(object):
             )
             self._unsync_documents(
                 client=_minio_client,
-                connection=connection,
             )
         except:
             _LOG.exception("Error fetching sharepoint documents")
@@ -192,52 +154,22 @@ class MinioProcessor(object):
                 file_path=file_path,
             )
 
-            """
-            Here we check if this file has been updated.
-            If the file has been updated, we delete it from the vector store and re-ingest the new updated file
-            """
-            document: Document = get_document(document_id=item.etag)
-            document_id = None if document is None else document.uuid
-
-            for _ingest_runner in self._ingest_runners:
-                try:
-                    response_json = _ingest_runner.run(
-                        file_path=file_path,
-                        metadata=metadata,
-                        document_id=document_id,
-                        last_modified=item.last_modified.replace(tzinfo=None).replace(
-                            microsecond=0
-                        ),
-                        datasource=datasource,
-                    )
-                except ValueError:
-                    _LOG.warning(f"File {file_path} ingestion failed", exc_info=True)
-                    response_json = None
-                except UserWarning:
-                    _LOG.debug(f"File {file_path} is already processing")
-                    return
-
-                if response_json is None:
-                    return
-
-                _ingest_runner.save(
-                    document_id=item.etag,
-                    datasource_id=datasource.uuid,
-                    filename=item.object_name,
-                    base_uri=endpoint,
-                    rag_metadata=response_json,
-                    store_metadata={
-                        "bucket_name": item.bucket_name,
-                        "object_name": item.object_name,
-                        "etag": item.etag,
-                        "size": item.size,
-                        "last_modified": item.last_modified.strftime(
-                            DEFAULT_DATETIME_FORMAT
-                        ),
-                        "version_id": item.version_id,
-                    },
-                    last_modified=item.last_modified,
-                )
+            self.sync(
+                endpoint,
+                file_path,
+                item.last_modified,
+                metadata,
+                store_metadata={
+                    "bucket_name": item.bucket_name,
+                    "object_name": item.object_name,
+                    "filename": item.object_name,
+                    "size": item.size,
+                    "last_modified": item.last_modified.strftime(
+                        DEFAULT_DATETIME_FORMAT
+                    ),
+                    "version_id": item.version_id,
+                },
+            )
 
             _LOG.info(
                 f"Done {self._mode}ing object {item.object_name} in bucket {bucket_name}"
@@ -254,37 +186,27 @@ class MinioProcessor(object):
     def _unsync_documents(
         self,
         client: Minio,
-        connection: dict,
     ) -> None:
 
+        def clean(**kwargs):
+            store_metadata = kwargs["store_metadata"]
+            try:
+                client.stat_object(
+                    bucket_name=store_metadata["bucket_name"],
+                    object_name=store_metadata["object_name"],
+                )
+                return False
+            except Exception as ex:
+                str_ex = str(ex)
+                if "NoSuchKey" in str_ex and "does not exist" in str_ex:
+                    return True
+                else:
+                    raise
+
         try:
-            endpoint = connection.get("endpoint")
-
-            for _ingest_runner in self._ingest_runners:
-                documents = _ingest_runner.get(base_uri=endpoint)
-                for document in documents:
-                    store_metadata = document.store_metadata
-                    try:
-                        rag_metadata = document.rag_metadata
-                    except AttributeError:
-                        rag_metadata = document.extract_metadata
-                    bucket_name = store_metadata["bucket_name"]
-                    object_name = store_metadata["object_name"]
-                    try:
-                        client.stat_object(
-                            bucket_name=bucket_name, object_name=object_name
-                        )
-                    except Exception as ex:
-                        str_ex = str(ex)
-                        if "NoSuchKey" in str_ex and "does not exist" in str_ex:
-                            _ingest_runner.delete(
-                                document=document, rag_metadata=rag_metadata
-                            )
-                        else:
-                            raise
-
+            self.unsync(clean=clean)
         except:
-            _LOG.warn("Error fetching and updating documents", exc_info=True)
+            _LOG.warning("Error fetching and updating documents", exc_info=True)
 
 
 def validate_connection_info(connection: Dict[str, Any]) -> Dict[str, Any]:

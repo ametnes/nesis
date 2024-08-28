@@ -400,11 +400,17 @@ def test_update_ingest_documents(
     session.add(datasource)
     session.commit()
 
-    # The document record
+    self_link = "http://localhost:4566/my-test-bucket/SomeName"
 
+    # The document record
     document = Document(
         base_uri="http://localhost:4566",
-        document_id="d41d8cd98f00b204e9800998ecf8427e",
+        document_id=str(
+            uuid.uuid5(
+                uuid.NAMESPACE_DNS,
+                f"{datasource.uuid}:{self_link}",
+            )
+        ),
         filename="invalid.pdf",
         rag_metadata={"data": [{"doc_id": str(uuid.uuid4())}]},
         store_metadata={
@@ -449,8 +455,8 @@ def test_update_ingest_documents(
     )
 
     # The document would be deleted from the rag engine
-    _, upload_kwargs = http_client.deletes.call_args_list[0]
-    urls = upload_kwargs["urls"]
+    _, deletes_kwargs = http_client.deletes.call_args_list[0]
+    urls = deletes_kwargs["urls"]
 
     assert (
         urls[0]
@@ -474,7 +480,7 @@ def test_update_ingest_documents(
         {
             "datasource": "documents",
             "file_name": "my-test-bucket/SomeName",
-            "self_link": "http://localhost:4566/my-test-bucket/SomeName",
+            "self_link": self_link,
         },
     )
 
