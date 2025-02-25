@@ -42,6 +42,7 @@ Add clear unit tests for your changes.
 ## Submitting your changes
 
 When you are ready to submit a pull request, commit your changes.
+The commit should be: <type>(<module>): the change in lower chase. Here type can be feat, chore, fix and module can be frontend, docs, api, rag. e.g(git commit -m "(fix(docs): add contribution.md)")
 
     ```bash
     git status
