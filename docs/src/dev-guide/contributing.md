@@ -58,7 +58,6 @@ Create a PR with these guidelines
     1. Title the PR using `<type>(<module>): the change in lower chase`. Here `type` can be `feat`, `chore`, `fix` and `module` can be `frontend`, `docs`, `api`, `rag`.
     2. Describe the change in no more than two lines.
 
-
 ### Merging your PR
 
 Sometimes reviewers commit to your pull request. Before making any other changes, fetch those commits.
