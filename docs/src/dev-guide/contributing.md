@@ -27,7 +27,8 @@ Here is how you get the code working locally.:
     ```bash
     git checkout -b <my_new_branch> origin/main
     ```
-    4. Work on your changes
+    4. Go through the local development guide [here](https://ametnes.github.io/nesis/dev-guide/local/)
+    5. Work on your changes
 
 ## Coding Style
 
